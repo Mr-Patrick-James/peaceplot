@@ -39,6 +39,11 @@ function handleGet($conn) {
     try {
         $id = isset($_GET['id']) ? intval($_GET['id']) : null;
         
+        // Check if burial_record_images table exists
+        $tableCheck = $conn->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='burial_record_images'");
+        $tableCheck->execute();
+        $imagesTableExists = $tableCheck->fetch() !== false;
+        
         if ($id) {
             $stmt = $conn->prepare("
                 SELECT dr.*, cl.lot_number, cl.section, cl.block 
@@ -51,6 +56,26 @@ function handleGet($conn) {
             $result = $stmt->fetch();
             
             if ($result) {
+                // Only fetch images if table exists
+                if ($imagesTableExists) {
+                    try {
+                        $imageStmt = $conn->prepare("
+                            SELECT * FROM burial_record_images 
+                            WHERE burial_record_id = :burial_record_id 
+                            ORDER BY display_order ASC, created_at ASC
+                        ");
+                        $imageStmt->bindParam(':burial_record_id', $id);
+                        $imageStmt->execute();
+                        $images = $imageStmt->fetchAll();
+                        $result['images'] = $images;
+                    } catch (PDOException $e) {
+                        // If images query fails, set empty array
+                        $result['images'] = [];
+                    }
+                } else {
+                    $result['images'] = [];
+                }
+                
                 echo json_encode(['success' => true, 'data' => $result]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Record not found']);
@@ -63,6 +88,32 @@ function handleGet($conn) {
                 ORDER BY dr.date_of_death DESC
             ");
             $results = $stmt->fetchAll();
+            
+            // Get images for each burial record only if table exists
+            if ($imagesTableExists) {
+                foreach ($results as &$record) {
+                    try {
+                        $imageStmt = $conn->prepare("
+                            SELECT * FROM burial_record_images 
+                            WHERE burial_record_id = :burial_record_id 
+                            ORDER BY display_order ASC, created_at ASC
+                        ");
+                        $imageStmt->bindParam(':burial_record_id', $record['id']);
+                        $imageStmt->execute();
+                        $images = $imageStmt->fetchAll();
+                        $record['images'] = $images;
+                    } catch (PDOException $e) {
+                        // If images query fails, set empty array
+                        $record['images'] = [];
+                    }
+                }
+            } else {
+                // Set empty images array for all records if table doesn't exist
+                foreach ($results as &$record) {
+                    $record['images'] = [];
+                }
+            }
+            
             echo json_encode(['success' => true, 'data' => $results]);
         }
     } catch (PDOException $e) {

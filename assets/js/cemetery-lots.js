@@ -76,10 +76,9 @@ async function handleDelete(lotId) {
     const result = await API.deleteLot(lotId);
     
     if (result.success) {
-        alert('Lot deleted successfully!');
         loadCemeteryLots();
     } else {
-        alert('Failed to delete lot: ' + result.message);
+        console.error('Failed to delete lot:', result.message);
     }
 }
 
@@ -166,12 +165,11 @@ function createLotModal(lot = null) {
             : await API.createLot(data);
         
         if (result.success) {
-            alert(isEdit ? 'Lot updated successfully!' : 'Lot created successfully!');
             closeModal(modal);
             loadCemeteryLots();
             editingLotId = null;
         } else {
-            alert('Error: ' + result.message);
+            console.error('Error:', result.message);
         }
     };
 

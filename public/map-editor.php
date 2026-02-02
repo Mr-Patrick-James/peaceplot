@@ -38,16 +38,16 @@ if ($conn) {
     .editor-container {
       background: white;
       border-radius: 12px;
-      padding: 24px;
-      margin-top: 20px;
+      padding: 16px;
+      margin-top: 16px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
     .editor-toolbar {
       display: flex;
       gap: 12px;
-      margin-bottom: 20px;
-      padding: 16px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
       background: var(--page);
       border-radius: 8px;
       flex-wrap: wrap;
@@ -111,7 +111,7 @@ if ($conn) {
     .map-canvas-wrapper {
       position: relative;
       width: 100%;
-      height: 600px;
+      height: 500px;
       overflow: hidden;
       border-radius: 8px;
       border: 2px solid var(--border);
@@ -222,36 +222,90 @@ if ($conn) {
     .assign-modal {
       display: none;
       position: fixed;
-      z-index: 2000;
+      z-index: 1000;
       left: 0;
       top: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
       align-items: center;
       justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .assign-modal.show {
+      display: flex;
     }
     
     .assign-modal-content {
       background: white;
       border-radius: 12px;
-      width: 90%;
-      max-width: 500px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
     
     .assign-modal-header {
       padding: 20px 24px;
       border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     
     .assign-modal-header h3 {
       margin: 0;
       font-size: 18px;
+      color: var(--text);
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .modal-close:hover {
+      background: var(--page);
+      color: var(--text);
     }
     
     .assign-modal-body {
       padding: 24px;
+    }
+    
+    .assign-modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
     }
     
     .form-group {
@@ -263,22 +317,40 @@ if ($conn) {
       margin-bottom: 6px;
       font-weight: 600;
       font-size: 14px;
+      color: var(--text);
     }
     
+    .form-group input,
     .form-group select {
       width: 100%;
-      padding: 10px;
+      padding: 10px 12px;
       border: 2px solid var(--border);
       border-radius: 8px;
       font-size: 14px;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
     }
     
-    .assign-modal-footer {
-      padding: 16px 24px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.1);
+    }
+    
+    .form-group input[type="radio"] {
+      width: auto;
+      margin-right: 8px;
+      margin-bottom: 0;
+    }
+    
+    .form-group label:has(input[type="radio"]) {
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 0;
+      margin-right: 20px;
+      font-weight: 500;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -360,12 +432,25 @@ if ($conn) {
   </div>
 
   <div id="assignModal" class="assign-modal">
-    <div class="assign-modal-content">
+    <div class="assign-modal-content" style="max-width:600px;">
       <div class="assign-modal-header">
-        <h3>Assign Lot to Rectangle</h3>
+        <h3>Assign or Create Lot</h3>
+        <button class="modal-close" onclick="closeAssignModal()">&times;</button>
       </div>
       <div class="assign-modal-body">
         <div class="form-group">
+          <label>
+            <input type="radio" name="assignMode" value="existing" checked onchange="toggleAssignMode()">
+            Assign Existing Lot
+          </label>
+          <label style="margin-left:20px;">
+            <input type="radio" name="assignMode" value="new" onchange="toggleAssignMode()">
+            Create New Lot
+          </label>
+        </div>
+        
+        <!-- Existing Lot Selection -->
+        <div id="existingLotSection" class="form-group">
           <label>Select Cemetery Lot:</label>
           <select id="lotSelect">
             <option value="">-- Select a lot --</option>
@@ -378,6 +463,51 @@ if ($conn) {
               </option>
             <?php endforeach; ?>
           </select>
+        </div>
+        
+        <!-- New Lot Creation Form -->
+        <div id="newLotSection" style="display:none;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="form-group">
+              <label>Lot Number *</label>
+              <input type="text" id="newLotNumber" placeholder="e.g., A-001" required>
+            </div>
+            
+            <div class="form-group">
+              <label>Section *</label>
+              <input type="text" id="newSection" placeholder="e.g., Section A" required>
+            </div>
+            
+            <div class="form-group">
+              <label>Block</label>
+              <input type="text" id="newBlock" placeholder="e.g., Block 1">
+            </div>
+            
+            <div class="form-group">
+              <label>Position</label>
+              <input type="text" id="newPosition" placeholder="e.g., North Corner">
+            </div>
+            
+            <div class="form-group">
+              <label>Status *</label>
+              <select id="newStatus" required>
+                <option value="Vacant">Vacant</option>
+                <option value="Occupied">Occupied</option>
+                <option value="Reserved">Reserved</option>
+                <option value="Maintenance">Maintenance</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Size (sqm)</label>
+              <input type="number" id="newSize" placeholder="e.g., 12" step="0.01" min="0">
+            </div>
+            
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label>Price (₱)</label>
+              <input type="number" id="newPrice" placeholder="e.g., 25000" step="0.01" min="0">
+            </div>
+          </div>
         </div>
       </div>
       <div class="assign-modal-footer">
@@ -582,40 +712,185 @@ if ($conn) {
       rectangles.push({ rect, lotData, x, y, width, height });
     }
 
+    function toggleAssignMode() {
+      const mode = document.querySelector('input[name="assignMode"]:checked').value;
+      const existingSection = document.getElementById('existingLotSection');
+      const newSection = document.getElementById('newLotSection');
+      
+      if (mode === 'existing') {
+        existingSection.style.display = 'block';
+        newSection.style.display = 'none';
+      } else {
+        existingSection.style.display = 'none';
+        newSection.style.display = 'block';
+      }
+    }
+
     function showAssignModal() {
-      document.getElementById('assignModal').style.display = 'flex';
+      const modal = document.getElementById('assignModal');
+      modal.classList.add('show');
+      // Reset to existing lot mode by default
+      document.querySelector('input[name="assignMode"][value="existing"]').checked = true;
+      toggleAssignMode();
+      
+      // Add event listeners for closing modal
+      modal.addEventListener('click', handleModalClick);
+      document.addEventListener('keydown', handleModalKeydown);
     }
 
     function closeAssignModal() {
-      document.getElementById('assignModal').style.display = 'none';
+      const modal = document.getElementById('assignModal');
+      modal.classList.remove('show');
       pendingRect = null;
+      
+      // Clear new lot form
+      document.getElementById('newLotNumber').value = '';
+      document.getElementById('newSection').value = '';
+      document.getElementById('newBlock').value = '';
+      document.getElementById('newPosition').value = '';
+      document.getElementById('newStatus').value = 'Vacant';
+      document.getElementById('newSize').value = '';
+      document.getElementById('newPrice').value = '';
+      
+      // Remove event listeners
+      modal.removeEventListener('click', handleModalClick);
+      document.removeEventListener('keydown', handleModalKeydown);
+    }
+    
+    function handleModalClick(e) {
+      if (e.target === e.currentTarget) {
+        closeAssignModal();
+      }
+    }
+    
+    function handleModalKeydown(e) {
+      if (e.key === 'Escape') {
+        closeAssignModal();
+      }
     }
 
-    function assignLot() {
-      const select = document.getElementById('lotSelect');
-      const lotId = select.value;
-      
-      if (!lotId || !pendingRect) {
-        alert('Please select a lot');
+    async function createNewLot(lotData) {
+      try {
+        const response = await fetch('../api/cemetery_lots.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(lotData)
+        });
+        
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error('Error creating lot:', error);
+        return { success: false, message: error.message };
+      }
+    }
+
+    async function updateLotCoordinates(lotId, coordinates) {
+      try {
+        const response = await fetch('../api/save_map_coordinates.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            lot_id: lotId,
+            map_x: coordinates.x,
+            map_y: coordinates.y,
+            map_width: coordinates.width,
+            map_height: coordinates.height
+          })
+        });
+        
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error('Error updating coordinates:', error);
+        return { success: false, message: error.message };
+      }
+    }
+
+    async function assignLot() {
+      if (!pendingRect) {
+        alert('No rectangle to assign');
         return;
       }
-      
-      const option = select.options[select.selectedIndex];
-      const lotData = JSON.parse(option.getAttribute('data-lot'));
-      
-      lotData.map_x = pendingRect.x;
-      lotData.map_y = pendingRect.y;
-      lotData.map_width = pendingRect.width;
-      lotData.map_height = pendingRect.height;
-      
+
+      const mode = document.querySelector('input[name="assignMode"]:checked').value;
+      let lotId = null;
+      let lotData = null;
+
+      if (mode === 'existing') {
+        const select = document.getElementById('lotSelect');
+        lotId = select.value;
+        
+        if (!lotId) {
+          alert('Please select a lot');
+          return;
+        }
+        
+        const option = select.querySelector(`option[value="${lotId}"]`);
+        lotData = JSON.parse(option.getAttribute('data-lot'));
+      } else {
+        // Create new lot
+        const lotNumber = document.getElementById('newLotNumber').value.trim();
+        const section = document.getElementById('newSection').value.trim();
+        const block = document.getElementById('newBlock').value.trim();
+        const position = document.getElementById('newPosition').value.trim();
+        const status = document.getElementById('newStatus').value;
+        const size = document.getElementById('newSize').value;
+        const price = document.getElementById('newPrice').value;
+
+        if (!lotNumber || !section) {
+          alert('Please fill in required fields (Lot Number and Section)');
+          return;
+        }
+
+        const newLotData = {
+          lot_number: lotNumber,
+          section: section,
+          block: block || null,
+          position: position || null,
+          status: status,
+          size_sqm: size ? parseFloat(size) : null,
+          price: price ? parseFloat(price) : null
+        };
+
+        const createResult = await createNewLot(newLotData);
+        if (!createResult.success) {
+          alert('Failed to create lot: ' + createResult.message);
+          return;
+        }
+
+        lotId = createResult.id;
+        lotData = {
+          id: lotId,
+          lot_number: lotNumber,
+          section: section,
+          block: block,
+          position: position,
+          status: status,
+          size_sqm: size ? parseFloat(size) : null,
+          price: price ? parseFloat(price) : null
+        };
+      }
+
+      // Update coordinates
+      const updateResult = await updateLotCoordinates(lotId, pendingRect);
+      if (!updateResult.success) {
+        alert('Failed to save coordinates: ' + updateResult.message);
+        return;
+      }
+
+      // Add rectangle to map
       addRectangle(pendingRect.x, pendingRect.y, pendingRect.width, pendingRect.height, lotData);
       
-      closeAssignModal();
-      saveAllLots(true);
-    }
+      // Add to lots data
+      lotsData.push(lotData);
 
-    function showLotDetails(lot) {
-      alert(`Lot: ${lot.lot_number}\nSection: ${lot.section}\nStatus: ${lot.status}\nDeceased: ${lot.deceased_name || 'None'}`);
+      closeAssignModal();
+      alert(mode === 'existing' ? 'Lot assigned successfully!' : 'New lot created and assigned successfully!');
     }
 
     async function saveAllLots(silent = false) {

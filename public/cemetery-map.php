@@ -46,8 +46,8 @@ if ($conn) {
     .map-container {
       background: white;
       border-radius: 12px;
-      padding: 24px;
-      margin-top: 20px;
+      padding: 16px;
+      margin-top: 16px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       position: relative;
     }
@@ -55,10 +55,12 @@ if ($conn) {
     .map-image-wrapper {
       position: relative;
       width: 100%;
+      height: 450px;
       overflow: hidden;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       cursor: grab;
+      background: #f5f5f5;
     }
 
     .map-image-wrapper.grabbing {
@@ -136,29 +138,256 @@ if ($conn) {
       color: var(--text);
     }
     
+    /* Google Maps Style Card */
+    .google-maps-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      overflow: hidden;
+      margin: 0;
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 20px 20px 16px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border-bottom: 1px solid #e8eaed;
+    }
+    
+    .lot-info {
+      flex: 1;
+    }
+    
+    .lot-title {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #202124;
+      line-height: 1.2;
+    }
+    
+    .lot-location {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #5f6368;
+      font-size: 14px;
+    }
+    
+    .lot-location svg {
+      opacity: 0.7;
+    }
+    
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-badge.vacant {
+      background: #e8f5e8;
+      color: #2e7d32;
+    }
+    
+    .status-badge.occupied {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+    
+    .status-badge.reserved {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+    
+    .status-badge.maintenance {
+      background: #fafafa;
+      color: #757575;
+    }
+    
+    .card-content {
+      padding: 20px;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .info-item svg {
+      color: #5f6368;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    .info-label {
+      font-size: 12px;
+      color: #5f6368;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    
+    .info-value {
+      font-size: 14px;
+      color: #202124;
+      font-weight: 500;
+    }
+    
+    .deceased-section {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #202124;
+      margin-bottom: 12px;
+    }
+    
+    .section-title svg {
+      color: #5f6368;
+    }
+    
+    .deceased-name {
+      font-size: 16px;
+      color: #202124;
+      font-weight: 500;
+    }
+    
+    .images-section {
+      margin-bottom: 24px;
+    }
+    
+    .images-section:not(:first-child) {
+      border-top: 1px solid #e8eaed;
+      padding-top: 20px;
+    }
+    
+    .images-section .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .view-images-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .view-images-btn:hover {
+      background: #1557b0;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+    }
+    
+    .images-container {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    
+    .images-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #202124;
+    }
+    
+    .close-images-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #5f6368;
+      cursor: pointer;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s ease;
+    }
+    
+    .close-images-btn:hover {
+      background: #e8eaed;
+    }
+    
+    .images-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+    }
+    
+    .images-grid img {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    
+    .images-grid img:hover {
+      transform: scale(1.05);
+    }
+    
     .map-legend {
       display: flex;
-      gap: 20px;
-      margin-bottom: 20px;
-      padding: 16px;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
       background: rgba(255,255,255,0.95);
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       position: relative;
       z-index: 10;
+      flex-wrap: wrap;
     }
     
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 14px;
+      gap: 6px;
+      font-size: 13px;
       font-weight: 500;
     }
     
     .legend-box {
-      width: 28px;
-      height: 28px;
+      width: 20px;
+      height: 20px;
       border-radius: 3px;
       border: 2px solid rgba(0,0,0,0.2);
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -513,59 +742,266 @@ if ($conn) {
       modalTitle.textContent = 'Lot ' + lot.lot_number;
       
       let html = `
-        <div class="detail-row">
-          <span class="detail-label">Lot Number:</span>
-          <span class="detail-value">${lot.lot_number}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Section:</span>
-          <span class="detail-value">${lot.section}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Block:</span>
-          <span class="detail-value">${lot.block || '—'}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Position:</span>
-          <span class="detail-value">${lot.position || '—'}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Status:</span>
-          <span class="detail-value">
-            <span class="badge ${lot.status.toLowerCase()}">${lot.status}</span>
-          </span>
+        <div class="google-maps-card">
+          <div class="card-header">
+            <div class="lot-info">
+              <h2 class="lot-title">Lot ${lot.lot_number}</h2>
+              <div class="lot-location">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span>${lot.section}${lot.block ? ', ' + lot.block : ''}</span>
+              </div>
+            </div>
+            <div class="status-badge ${lot.status.toLowerCase()}">
+              ${lot.status}
+            </div>
+          </div>
+          
+          <div class="card-content">
+            <div class="images-section">
+              <div class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <span>Grave Images</span>
+              </div>
+              <div id="graveImagesContainer" class="images-container">
+                <div class="images-header">
+                  <span>Grave Photos</span>
+                </div>
+                <div id="graveImagesGrid" class="images-grid"></div>
+              </div>
+            </div>
+            
+            <div class="info-grid">
+              ${lot.position ? `
+                <div class="info-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                  </svg>
+                  <div>
+                    <div class="info-label">Position</div>
+                    <div class="info-value">${lot.position}</div>
+                  </div>
+                </div>
+              ` : ''}
+              
+              ${lot.size_sqm ? `
+                <div class="info-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="9" y1="9" x2="15" y2="9"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                  </svg>
+                  <div>
+                    <div class="info-label">Size</div>
+                    <div class="info-value">${lot.size_sqm} sqm</div>
+                  </div>
+                </div>
+              ` : ''}
+              
+              ${lot.price ? `
+                <div class="info-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                  <div>
+                    <div class="info-label">Price</div>
+                    <div class="info-value">₱${parseFloat(lot.price).toLocaleString()}</div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+            
+            ${lot.deceased_name ? `
+              <div class="deceased-section">
+                <div class="section-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>Deceased Information</span>
+                </div>
+                <div class="deceased-name">${lot.deceased_name}</div>
+              </div>
+            ` : ''}
+          </div>
         </div>
       `;
       
-      if (lot.deceased_name) {
-        html += `
-          <div class="detail-row">
-            <span class="detail-label">Deceased:</span>
-            <span class="detail-value">${lot.deceased_name}</span>
-          </div>
-        `;
-      }
-      
-      if (lot.size_sqm) {
-        html += `
-          <div class="detail-row">
-            <span class="detail-label">Size:</span>
-            <span class="detail-value">${lot.size_sqm} sqm</span>
-          </div>
-        `;
-      }
-      
-      if (lot.price) {
-        html += `
-          <div class="detail-row">
-            <span class="detail-label">Price:</span>
-            <span class="detail-value">₱${parseFloat(lot.price).toLocaleString()}</span>
-          </div>
-        `;
-      }
-      
       modalBody.innerHTML = html;
       modal.style.display = 'flex';
+      
+      // Auto-load grave images when modal opens
+      loadGraveImages(lot.id);
+    }
+    
+    async function loadGraveImages(lotId) {
+      const grid = document.getElementById('graveImagesGrid');
+      
+      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted);">Loading images...</div>';
+      
+      try {
+        // First get the burial record for this lot
+        const burialResponse = await fetch(`../api/burial_records.php`);
+        const burialData = await burialResponse.json();
+        
+        if (burialData.success && burialData.data) {
+          const burialRecord = burialData.data.find(record => record.lot_id == lotId);
+          
+          if (burialRecord) {
+            // Get images for this burial record
+            const imagesResponse = await fetch(`../api/burial_images.php?burial_record_id=${burialRecord.id}`);
+            const imagesData = await imagesResponse.json();
+            
+            if (imagesData.success && imagesData.data && imagesData.data.length > 0) {
+              grid.innerHTML = imagesData.data.map(img => `
+                <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer;" onclick="showImageGallery('${burialRecord.id}', '${img.id}')">
+                  <img src="../${img.image_path}" alt="${img.image_caption || 'Grave image'}" style="width: 100%; height: 120px; object-fit: cover;">
+                  <div style="padding: 8px; font-size: 12px; color: var(--muted); text-align: center;">${img.image_caption || 'No caption'}</div>
+                </div>
+              `).join('');
+            } else {
+              grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px;">No images available</div>';
+            }
+          } else {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px;">No burial record found</div>';
+          }
+        } else {
+          grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px;">Failed to load burial records</div>';
+        }
+      } catch (error) {
+        console.error('Error loading grave images:', error);
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 20px;">Error loading images</div>';
+      }
+    }
+    
+    function showImageGallery(burialRecordId, currentImageId = null) {
+      // Fetch all images for the burial record
+      fetch(`../api/burial_images.php?burial_record_id=${burialRecordId}`)
+        .then(response => response.json())
+        .then(result => {
+          if (result.success && result.data && result.data.length > 0) {
+            const modal = createImageGalleryModal(result.data, currentImageId);
+            document.body.appendChild(modal);
+            modal.style.display = 'flex';
+          } else {
+            alert('No images available for this burial record');
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching images:', error);
+          alert('Error loading images');
+        });
+    }
+    
+    function createImageGalleryModal(images, currentImageId = null) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-map';
+      modal.style.cssText = 'background:rgba(0,0,0,0.95); z-index: 2000;';
+      
+      const currentIndex = currentImageId ? images.findIndex(img => img.id == currentImageId) : 0;
+      const currentImage = images[currentIndex] || images[0];
+      
+      modal.innerHTML = `
+        <div class="modal-map-content" style="max-width:95vw; max-height:95vh; background:transparent; box-shadow:none; border:none;">
+          <div class="modal-map-header" style="border:none; padding:15px 20px;">
+            <h3 style="color:white; margin:0;">Grave Images</h3>
+            <button class="modal-map-close" style="color:white; font-size:28px;" onclick="closeImageGallery(this.closest('.modal-map'))">&times;</button>
+          </div>
+          <div style="padding:0 20px 20px; text-align:center;">
+            <div style="position:relative; display:inline-block; max-width:100%;">
+              <img src="../${currentImage.image_path}" alt="${currentImage.image_caption || 'Grave image'}" style="max-width:100%; max-height:75vh; object-fit:contain; border-radius:8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+              <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.9)); color:white; padding:25px; border-radius:0 0 8px 8px; text-align:left;">
+                <h4 style="margin:0 0 8px; font-size:18px;">${currentImage.image_caption || 'Grave Image'}</h4>
+                <p style="margin:0; opacity:0.8; font-size:14px;">${currentImage.image_type || 'grave_photo'}</p>
+              </div>
+            </div>
+            
+            ${images.length > 1 ? `
+            <div style="display:flex; justify-content:center; gap:12px; margin-top:25px; flex-wrap:wrap; max-height:120px; overflow-y:auto;">
+              ${images.map((img, index) => `
+                <img src="../${img.image_path}" alt="${img.image_caption || 'Grave image'}" 
+                     style="width:90px; height:70px; object-fit:cover; border:3px solid ${index === currentIndex ? 'white' : 'transparent'}; border-radius:6px; cursor:pointer; opacity:${index === currentIndex ? '1' : '0.7'}; transition:all 0.2s;"
+                     onclick="updateGalleryImage(${index})"
+                     onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity=${index === currentIndex ? '1' : '0.7'}">
+              `).join('')}
+            </div>
+            
+            <button onclick="navigateGallery(-1)" style="position:absolute; left:25px; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:60px; height:60px; cursor:pointer; font-size:24px; backdrop-filter:blur(10px); transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">‹</button>
+            <button onclick="navigateGallery(1)" style="position:absolute; right:25px; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:60px; height:60px; cursor:pointer; font-size:24px; backdrop-filter:blur(10px); transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">›</button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      
+      // Store images and current index for navigation
+      modal.galleryImages = images;
+      modal.galleryIndex = currentIndex;
+      
+      modal.onclick = (e) => { 
+        if (e.target === modal) closeImageGallery(modal); 
+      };
+      
+      // Add navigation functions to global scope
+      window.updateGalleryImage = function(index) {
+        modal.galleryIndex = index;
+        updateGalleryDisplay(modal);
+      };
+      
+      window.navigateGallery = function(direction) {
+        modal.galleryIndex = (modal.galleryIndex + direction + modal.galleryImages.length) % modal.galleryImages.length;
+        updateGalleryDisplay(modal);
+      };
+      
+      // Keyboard navigation
+      const handleKeydown = (e) => {
+        if (e.key === 'ArrowLeft') window.navigateGallery(-1);
+        if (e.key === 'ArrowRight') window.navigateGallery(1);
+        if (e.key === 'Escape') closeImageGallery(modal);
+      };
+      
+      document.addEventListener('keydown', handleKeydown);
+      modal.addEventListener('close', () => document.removeEventListener('keydown', handleKeydown));
+      
+      return modal;
+    }
+    
+    function updateGalleryDisplay(modal) {
+      const images = modal.galleryImages;
+      const index = modal.galleryIndex;
+      const currentImage = images[index];
+      
+      const mainImg = modal.querySelector('.modal-map-content img');
+      const caption = modal.querySelector('.modal-map-content h4');
+      const type = modal.querySelector('.modal-map-content p');
+      
+      mainImg.src = `../${currentImage.image_path}`;
+      mainImg.alt = currentImage.image_caption || 'Grave image';
+      caption.textContent = currentImage.image_caption || 'Grave Image';
+      type.textContent = currentImage.image_type || 'grave_photo';
+      
+      // Update thumbnails
+      const thumbnails = modal.querySelectorAll('.modal-map-content div[style*="flex-wrap"] img');
+      thumbnails.forEach((thumb, i) => {
+        thumb.style.borderColor = i === index ? 'white' : 'transparent';
+        thumb.style.opacity = i === index ? '1' : '0.7';
+      });
+    }
+    
+    function closeImageGallery(modal) {
+      modal.style.display = 'none';
+      modal.remove();
+      
+      // Clean up global functions
+      delete window.updateGalleryImage;
+      delete window.navigateGallery;
     }
     
     function closeLotModal() {

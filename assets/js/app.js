@@ -21,11 +21,11 @@
     }
 
     if(action === "edit"){
-      alert(`Edit lot ${lot}`);
+      console.log(`Edit lot ${lot}`);
     }
 
     if(action === "add"){
-      alert("Add New Cemetery Lot");
+      console.log("Add New Cemetery Lot");
     }
   });
 })();
