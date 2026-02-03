@@ -128,16 +128,37 @@ function handlePost($conn, $input) {
             return;
         }
         
+        // Get the layer number (default to 1 if not provided)
+        $layer = isset($input['layer']) ? intval($input['layer']) : 1;
+        
+        // Check if the specified layer is available
+        $stmt = $conn->prepare("SELECT is_occupied, burial_record_id FROM lot_layers WHERE lot_id = :lot_id AND layer_number = :layer");
+        $stmt->bindParam(':lot_id', $input['lot_id']);
+        $stmt->bindParam(':layer', $layer);
+        $stmt->execute();
+        $lotLayer = $stmt->fetch();
+        
+        if (!$lotLayer) {
+            echo json_encode(['success' => false, 'message' => 'Layer ' . $layer . ' does not exist for this lot']);
+            return;
+        }
+        
+        if ($lotLayer['is_occupied']) {
+            echo json_encode(['success' => false, 'message' => 'Layer ' . $layer . ' is already occupied']);
+            return;
+        }
+        
         $stmt = $conn->prepare("
             INSERT INTO deceased_records 
-            (lot_id, full_name, date_of_birth, date_of_death, date_of_burial, age, 
+            (lot_id, layer, full_name, date_of_birth, date_of_death, date_of_burial, age, 
              cause_of_death, next_of_kin, next_of_kin_contact, remarks) 
             VALUES 
-            (:lot_id, :full_name, :date_of_birth, :date_of_death, :date_of_burial, :age,
+            (:lot_id, :layer, :full_name, :date_of_birth, :date_of_death, :date_of_burial, :age,
              :cause_of_death, :next_of_kin, :next_of_kin_contact, :remarks)
         ");
         
         $stmt->bindParam(':lot_id', $input['lot_id']);
+        $stmt->bindParam(':layer', $layer);
         $stmt->bindParam(':full_name', $input['full_name']);
         $stmt->bindParam(':date_of_birth', $input['date_of_birth']);
         $stmt->bindParam(':date_of_death', $input['date_of_death']);
@@ -151,7 +172,25 @@ function handlePost($conn, $input) {
         if ($stmt->execute()) {
             $lastId = $conn->lastInsertId();
             
-            $conn->exec("UPDATE cemetery_lots SET status = 'Occupied' WHERE id = " . intval($input['lot_id']));
+            // Update the lot layer to mark it as occupied
+            $updateStmt = $conn->prepare("
+                UPDATE lot_layers 
+                SET is_occupied = 1, burial_record_id = :burial_record_id 
+                WHERE lot_id = :lot_id AND layer_number = :layer
+            ");
+            $updateStmt->bindParam(':burial_record_id', $lastId);
+            $updateStmt->bindParam(':lot_id', $input['lot_id']);
+            $updateStmt->bindParam(':layer', $layer);
+            $updateStmt->execute();
+            
+            // Update lot status based on layer occupancy
+            $checkStmt = $conn->prepare("SELECT COUNT(*) as occupied_count FROM lot_layers WHERE lot_id = :lot_id AND is_occupied = 1");
+            $checkStmt->bindParam(':lot_id', $input['lot_id']);
+            $checkStmt->execute();
+            $result = $checkStmt->fetch();
+            
+            $status = $result['occupied_count'] > 0 ? 'Occupied' : 'Vacant';
+            $conn->exec("UPDATE cemetery_lots SET status = '{$status}' WHERE id = " . intval($input['lot_id']));
             
             echo json_encode(['success' => true, 'message' => 'Record created successfully', 'id' => $lastId]);
         } else {
@@ -216,24 +255,40 @@ function handleDelete($conn, $input) {
             return;
         }
         
-        $stmt = $conn->prepare("SELECT lot_id FROM deceased_records WHERE id = :id");
+        // Get the burial record info before deletion
+        $stmt = $conn->prepare("SELECT lot_id, layer FROM deceased_records WHERE id = :id");
         $stmt->bindParam(':id', $id);
         $stmt->execute();
         $record = $stmt->fetch();
+        
+        if (!$record) {
+            echo json_encode(['success' => false, 'message' => 'Record not found']);
+            return;
+        }
         
         $stmt = $conn->prepare("DELETE FROM deceased_records WHERE id = :id");
         $stmt->bindParam(':id', $id);
         
         if ($stmt->execute()) {
+            // Update the lot layer to mark it as vacant
             if ($record && $record['lot_id']) {
-                $checkStmt = $conn->prepare("SELECT COUNT(*) FROM deceased_records WHERE lot_id = :lot_id");
+                $updateStmt = $conn->prepare("
+                    UPDATE lot_layers 
+                    SET is_occupied = 0, burial_record_id = NULL 
+                    WHERE lot_id = :lot_id AND layer_number = :layer
+                ");
+                $updateStmt->bindParam(':lot_id', $record['lot_id']);
+                $updateStmt->bindParam(':layer', $record['layer']);
+                $updateStmt->execute();
+                
+                // Update lot status based on remaining occupied layers
+                $checkStmt = $conn->prepare("SELECT COUNT(*) as occupied_count FROM lot_layers WHERE lot_id = :lot_id AND is_occupied = 1");
                 $checkStmt->bindParam(':lot_id', $record['lot_id']);
                 $checkStmt->execute();
-                $count = $checkStmt->fetchColumn();
+                $count = $checkStmt->fetch();
                 
-                if ($count == 0) {
-                    $conn->exec("UPDATE cemetery_lots SET status = 'Vacant' WHERE id = " . intval($record['lot_id']));
-                }
+                $status = $count['occupied_count'] > 0 ? 'Occupied' : 'Vacant';
+                $conn->exec("UPDATE cemetery_lots SET status = '{$status}' WHERE id = " . intval($record['lot_id']));
             }
             
             echo json_encode(['success' => true, 'message' => 'Record deleted successfully']);

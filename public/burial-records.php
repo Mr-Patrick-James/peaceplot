@@ -99,6 +99,7 @@ if ($conn) {
               <tr>
                 <th align="left">Full Name</th>
                 <th align="left">Lot Number</th>
+                <th align="left">Layer</th>
                 <th align="left">Section</th>
                 <th align="left">Date of Death</th>
                 <th align="left">Date of Burial</th>
@@ -109,13 +110,13 @@ if ($conn) {
             <tbody>
               <?php if (isset($error)): ?>
                 <tr>
-                  <td colspan="7" style="text-align:center; color:#ef4444;">
+                  <td colspan="8" style="text-align:center; color:#ef4444;">
                     Error loading data: <?php echo htmlspecialchars($error); ?>
                   </td>
                 </tr>
               <?php elseif (empty($records)): ?>
                 <tr>
-                  <td colspan="7" style="text-align:center; color:#6b7280;">
+                  <td colspan="8" style="text-align:center; color:#6b7280;">
                     No burial records found. Click "Add New Burial Record" to create one.
                   </td>
                 </tr>
@@ -124,6 +125,15 @@ if ($conn) {
                   <tr data-record-id="<?php echo $record['id']; ?>">
                     <td><?php echo htmlspecialchars($record['full_name']); ?></td>
                     <td><?php echo htmlspecialchars($record['lot_number'] ?: '—'); ?></td>
+                    <td>
+                      <?php if ($record['layer']): ?>
+                        <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                          Layer <?php echo htmlspecialchars($record['layer']); ?>
+                        </span>
+                      <?php else: ?>
+                        —
+                      <?php endif; ?>
+                    </td>
                     <td><?php echo htmlspecialchars($record['section'] ?: '—'); ?></td>
                     <td><?php echo $record['date_of_death'] ? date('M d, Y', strtotime($record['date_of_death'])) : '—'; ?></td>
                     <td><?php echo $record['date_of_burial'] ? date('M d, Y', strtotime($record['date_of_burial'])) : '—'; ?></td>

@@ -129,6 +129,60 @@ const BurialAPI = {
 let currentRecords = [];
 let editingRecordId = null;
 
+// Add layer loading function
+async function loadLotLayers(lotId, layerSelect, preselectedLayer = null) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/lot_layers.php?lot_id=${lotId}`);
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            const layers = data.data;
+            
+            if (layers.length > 0) {
+                // Show layer selection
+                layerSelect.parentElement.style.display = 'block';
+                
+                // Clear existing options
+                layerSelect.innerHTML = '<option value="">Select a layer...</option>';
+                
+                // Add layer options
+                layers.forEach(layer => {
+                    const isOccupied = layer.is_occupied;
+                    const option = document.createElement('option');
+                    option.value = layer.layer_number;
+                    option.textContent = `Layer ${layer.layer_number} - ${isOccupied ? `Occupied by ${layer.deceased_name || 'Unknown'}` : 'Vacant'}`;
+                    
+                    if (isOccupied) {
+                        option.disabled = true;
+                        option.style.color = '#f97316';
+                    } else {
+                        option.style.color = '#16a34a';
+                    }
+                    
+                    if (preselectedLayer && preselectedLayer == layer.layer_number) {
+                        option.selected = true;
+                    }
+                    
+                    layerSelect.appendChild(option);
+                });
+                
+            } else {
+                // No layers available
+                layerSelect.parentElement.style.display = 'none';
+                layerSelect.innerHTML = '<option value="">No layers available</option>';
+            }
+        } else {
+            layerSelect.parentElement.style.display = 'none';
+            layerSelect.innerHTML = '<option value="">Error loading layers</option>';
+        }
+    } catch (error) {
+        console.error('Error loading layers:', error);
+        layerSelect.parentElement.style.display = 'none';
+        layerSelect.innerHTML = '<option value="">Error loading layers</option>';
+    }
+}
+
+
 async function loadBurialRecords() {
     console.log('loadBurialRecords() called');
     const tbody = document.querySelector('.table tbody');
@@ -146,11 +200,11 @@ async function loadBurialRecords() {
             renderRecords(result.data);
         } else {
             console.log('API returned error:', result.message);
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#ef4444;">Failed to load burial records: ' + (result.message || 'Unknown error') + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#ef4444;">Failed to load burial records: ' + (result.message || 'Unknown error') + '</td></tr>';
         }
     } catch (error) {
         console.error('Error loading records:', error);
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#ef4444;">Error loading data: ' + error.message + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#ef4444;">Error loading data: ' + error.message + '</td></tr>';
     }
 }
 
@@ -162,7 +216,7 @@ function renderRecords(records) {
 
     if (records.length === 0) {
         console.log('No records to render');
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#6b7280;">No burial records found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#6b7280;">No burial records found</td></tr>';
         return;
     }
 
@@ -175,6 +229,13 @@ function renderRecords(records) {
         <tr data-record-id="${record.id}">
             <td>${record.full_name}</td>
             <td>${record.lot_number || '—'}</td>
+            <td>
+                ${record.layer ? `
+                    <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                        Layer ${record.layer}
+                    </span>
+                ` : '—'}
+            </td>
             <td>${record.section || '—'}</td>
             <td>${deathDate}</td>
             <td>${burialDate}</td>
@@ -588,6 +649,83 @@ function createViewModal(record) {
             align-items: center;
             gap: 6px;
         }
+        
+        /* Layer Selection Styles */
+        .layer-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .layer-option {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: white;
+        }
+        
+        .layer-option:hover {
+            border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .layer-option.vacant {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.05);
+        }
+        
+        .layer-option.vacant:hover {
+            border-color: #16a34a;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .layer-option.occupied {
+            border-color: #f97316;
+            background: rgba(249, 115, 22, 0.05);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .layer-option.selected {
+            border-color: var(--primary);
+            background: rgba(47, 109, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.2);
+        }
+        
+        .layer-number {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        
+        .layer-status {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.3;
+        }
+        
+        .layer-locked {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 16px;
+            opacity: 0.6;
+        }
+        
+        .layer-option.vacant .layer-status {
+            color: #16a34a;
+            font-weight: 500;
+        }
+        
+        .layer-option.occupied .layer-status {
+            color: #ea580c;
+        }
     `;
     document.head.appendChild(style);
 
@@ -621,7 +759,14 @@ function createRecordModal(record = null) {
                     <div class="form-group">
                         <label>Cemetery Lot *</label>
                         <select name="lot_id" required>
-                            <option value="">Loading lots...</option>
+                            <option value="">Select a lot</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="layerSelectionGroup" style="display: none;">
+                        <label>Burial Layer *</label>
+                        <select name="layer" id="selectedLayer" required>
+                            <option value="">Select a layer...</option>
                         </select>
                     </div>
                     
@@ -699,6 +844,22 @@ function createRecordModal(record = null) {
     
     // Fetch lots and populate dropdown
     const lotSelect = modal.querySelector('select[name="lot_id"]');
+    const layerSelect = modal.querySelector('#selectedLayer');
+    
+    // Add lot selection change handler
+    lotSelect.addEventListener('change', async (e) => {
+        const lotId = e.target.value;
+        
+        if (lotId) {
+            // Load layers for this lot
+            await loadLotLayers(lotId, layerSelect, record?.layer);
+        } else {
+            // Hide layer selection
+            layerSelect.parentElement.style.display = 'none';
+            layerSelect.value = '';
+        }
+    });
+    
     BurialAPI.fetchLots().then(result => {
         if (result.success && result.data) {
             lotSelect.innerHTML = '<option value="">Select a lot</option>' + 
@@ -707,6 +868,11 @@ function createRecordModal(record = null) {
                         ${lot.lot_number} - ${lot.section}${lot.block ? ' - ' + lot.block : ''} (${lot.status})
                     </option>
                 `).join('');
+            
+            // If editing, load layers for the selected lot
+            if (isEdit && record?.lot_id) {
+                loadLotLayers(record.lot_id, layerSelect, record?.layer);
+            }
         } else {
             lotSelect.innerHTML = '<option value="">No lots available</option>';
             console.error('Failed to load lots:', result.message);
@@ -797,6 +963,12 @@ function createRecordModal(record = null) {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
+        
+        // Validate layer selection for new records
+        if (!isEdit && !data.layer) {
+            alert('Please select a burial layer for the deceased.');
+            return;
+        }
         
         console.log('Form submitted with data:', data);
         

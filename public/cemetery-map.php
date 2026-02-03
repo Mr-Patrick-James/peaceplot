@@ -21,11 +21,22 @@ if (!file_exists($mapPath)) {
 
 if ($conn) {
     try {
-        // Get all lots with their map coordinates
+        // Get all lots with their map coordinates and layer information
         $stmt = $conn->query("
-            SELECT cl.*, dr.full_name as deceased_name 
+            SELECT cl.*, 
+                   COUNT(DISTINCT ll.layer_number) as total_layers,
+                   SUM(CASE WHEN ll.is_occupied = 1 THEN 1 ELSE 0 END) as occupied_layers,
+                   COUNT(DISTINCT dr.id) as burial_count,
+                   GROUP_CONCAT(DISTINCT dr.full_name || '|' || COALESCE(dr.layer, 1)) as burial_info,
+                   CASE 
+                       WHEN COUNT(DISTINCT dr.id) > 0 THEN 'Occupied'
+                       WHEN COUNT(DISTINCT ll.id) > 0 AND SUM(CASE WHEN ll.is_occupied = 1 THEN 1 ELSE 0 END) > 0 THEN 'Occupied'
+                       ELSE cl.status
+                   END as actual_status
             FROM cemetery_lots cl 
-            LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
+            LEFT JOIN lot_layers ll ON cl.id = ll.lot_id
+            LEFT JOIN deceased_records dr ON cl.id = dr.lot_id
+            GROUP BY cl.id
             ORDER BY cl.lot_number
         ");
         $lots = $stmt->fetchAll();
@@ -147,25 +158,52 @@ if ($conn) {
       margin: 0;
     }
     
+    .google-maps-card {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: white;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    @media (max-width: 768px) {
+      .google-maps-card {
+        border-radius: 8px;
+      }
+    }
+    
     .card-header {
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-bottom: 1px solid #e9ecef;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      padding: 20px 20px 16px;
-      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      border-bottom: 1px solid #e8eaed;
+      align-items: center;
+      flex-shrink: 0;
     }
     
-    .lot-info {
-      flex: 1;
+    @media (max-width: 768px) {
+      .card-header {
+        padding: 12px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
     }
     
-    .lot-title {
-      margin: 0 0 8px 0;
-      font-size: 20px;
-      font-weight: 600;
+    .lot-info h2 {
+      margin: 0;
+      font-size: 18px;
       color: #202124;
-      line-height: 1.2;
+      font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+      .lot-info h2 {
+        font-size: 16px;
+      }
     }
     
     .lot-location {
@@ -174,10 +212,13 @@ if ($conn) {
       gap: 6px;
       color: #5f6368;
       font-size: 14px;
+      margin-top: 4px;
     }
     
-    .lot-location svg {
-      opacity: 0.7;
+    @media (max-width: 768px) {
+      .lot-location {
+        font-size: 13px;
+      }
     }
     
     .status-badge {
@@ -200,8 +241,8 @@ if ($conn) {
     }
     
     .status-badge.reserved {
-      background: #f3e5f5;
-      color: #7b1fa2;
+      background: #fff8e1;
+      color: #f9a825;
     }
     
     .status-badge.maintenance {
@@ -211,6 +252,20 @@ if ($conn) {
     
     .card-content {
       padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    @media (max-width: 768px) {
+      .card-content {
+        padding: 16px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .card-content {
+        padding: 12px;
+      }
     }
     
     .info-grid {
@@ -425,7 +480,29 @@ if ($conn) {
       border-radius: 12px;
       width: 90%;
       max-width: 500px;
+      max-height: 90vh;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    @media (max-width: 768px) {
+      .modal-map-content {
+        width: 95%;
+        max-width: none;
+        max-height: 95vh;
+        border-radius: 12px 12px 0 0;
+        margin: 0;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .modal-map-content {
+        width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+      }
     }
     
     .modal-map-header {
@@ -465,6 +542,41 @@ if ($conn) {
     
     .modal-map-body {
       padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(47, 109, 246, 0.3) transparent;
+    }
+    
+    /* Modern transparent scrollbar for Webkit browsers */
+    .modal-map-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .modal-map-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .modal-map-body::-webkit-scrollbar-thumb {
+      background: rgba(47, 109, 246, 0.3);
+      border-radius: 3px;
+      transition: background 0.3s ease;
+    }
+    
+    .modal-map-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(47, 109, 246, 0.5);
+    }
+    
+    @media (max-width: 768px) {
+      .modal-map-body {
+        padding: 16px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .modal-map-body {
+        padding: 12px;
+      }
     }
     
     .detail-row {
@@ -486,6 +598,183 @@ if ($conn) {
     .detail-value {
       font-weight: 600;
       color: var(--text);
+    }
+    
+    /* Layer Management Styles */
+    .layer-info {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .layer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .layer-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #202124;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .layer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+    }
+    
+    @media (max-width: 768px) {
+      .layer-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 6px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .layer-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 4px;
+      }
+    }
+    
+    .layer-item {
+      border: 2px solid #e8eaed;
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    
+    .layer-item:hover {
+      border-color: #1a73e8;
+      transform: translateY(-1px);
+    }
+    
+    .layer-item.occupied .layer-status {
+      color: #ea580c;
+    }
+    
+    .view-details-btn {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      background: rgba(47, 109, 246, 0.9);
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .layer-item:hover .view-details-btn {
+      opacity: 1;
+    }
+    
+    .layer-item.occupied {
+      background: #fff3e0;
+      border-color: #f57c00;
+    }
+    
+    .layer-item.vacant {
+      background: #e8f5e8;
+      border-color: #2e7d32;
+    }
+    
+    .layer-number {
+      font-weight: 600;
+      font-size: 14px;
+      color: #202124;
+    }
+    
+    .layer-status {
+      font-size: 11px;
+      color: #5f6368;
+      margin-top: 2px;
+    }
+    
+    .layer-indicator {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .layer-indicator.occupied {
+      background: #f57c00;
+    }
+    .layer-indicator.vacant {
+      background: #2e7d32;
+    }
+    
+    .layer-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .add-layer-btn, .remove-layer-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .add-layer-btn {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .add-layer-btn:hover {
+      background: #0056b3;
+      transform: translateY(-1px);
+    }
+    
+    .remove-layer-btn {
+      background: #dc3545;
+      color: white;
+    }
+    
+    .remove-layer-btn:hover {
+      background: #c82333;
+      transform: translateY(-1px);
+    }
+    
+    .remove-layer-btn:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .lot-layer-indicator {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      font-size: 9px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -564,14 +853,22 @@ if ($conn) {
             
             <?php foreach ($lots as $lot): ?>
               <?php if ($lot['map_x'] !== null && $lot['map_y'] !== null && $lot['map_width'] !== null && $lot['map_height'] !== null): ?>
-                <div class="lot-marker <?php echo strtolower($lot['status']); ?>"
+                <?php 
+                $totalLayers = $lot['total_layers'] ?: 1;
+                $occupiedLayers = $lot['occupied_layers'] ?: 0;
+                $actualStatus = $lot['actual_status'] ?: $lot['status'];
+                ?>
+                <div class="lot-marker <?php echo strtolower($actualStatus); ?>"
                      style="left: <?php echo $lot['map_x']; ?>%; 
                             top: <?php echo $lot['map_y']; ?>%;
                             width: <?php echo $lot['map_width']; ?>%;
                             height: <?php echo $lot['map_height']; ?>%;"
                      onclick="showLotDetails(<?php echo htmlspecialchars(json_encode($lot)); ?>)"
-                     title="<?php echo htmlspecialchars($lot['lot_number']); ?>">
+                     title="<?php echo htmlspecialchars($lot['lot_number']); ?> - <?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?> layers occupied">
                   <div class="lot-label"><?php echo htmlspecialchars($lot['lot_number']); ?></div>
+                  <?php if ($totalLayers > 1): ?>
+                    <div class="lot-layer-indicator" title="<?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?> layers occupied"><?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?></div>
+                  <?php endif; ?>
                 </div>
               <?php endif; ?>
             <?php endforeach; ?>
@@ -741,6 +1038,15 @@ if ($conn) {
       
       modalTitle.textContent = 'Lot ' + lot.lot_number;
       
+      // Parse burial info if available
+      let burialInfo = [];
+      if (lot.burial_info) {
+        burialInfo = lot.burial_info.split(',').map(info => {
+          const [name, layer] = info.split('|');
+          return { name, layer: parseInt(layer) || 1 };
+        });
+      }
+      
       let html = `
         <div class="google-maps-card">
           <div class="card-header">
@@ -760,6 +1066,30 @@ if ($conn) {
           </div>
           
           <div class="card-content">
+            <!-- Layer Management Section -->
+            <div class="layer-info">
+              <div class="layer-header">
+                <div class="layer-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <span>Burial Layers</span>
+                </div>
+                <div class="layer-actions">
+                  <button class="add-layer-btn" onclick="addNewLayer(${lot.id})">
+                    + Add Layer
+                  </button>
+                  <button class="remove-layer-btn" onclick="removeLayer(${lot.id})" title="Remove highest layer">
+                    ✕ Remove Layer
+                  </button>
+                </div>
+              </div>
+              <div id="layerGrid" class="layer-grid">
+                <!-- Layers will be populated by JavaScript -->
+              </div>
+            </div>
+            
             <div class="images-section">
               <div class="section-title">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -819,7 +1149,7 @@ if ($conn) {
               ` : ''}
             </div>
             
-            ${lot.deceased_name ? `
+            ${burialInfo.length > 0 ? `
               <div class="deceased-section">
                 <div class="section-title">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -828,7 +1158,11 @@ if ($conn) {
                   </svg>
                   <span>Deceased Information</span>
                 </div>
-                <div class="deceased-name">${lot.deceased_name}</div>
+                ${burialInfo.map(burial => `
+                  <div style="margin-bottom: 8px; padding: 8px; background: white; border-radius: 4px;">
+                    <strong>${burial.name}</strong> - Layer ${burial.layer}
+                  </div>
+                `).join('')}
               </div>
             ` : ''}
           </div>
@@ -837,6 +1171,9 @@ if ($conn) {
       
       modalBody.innerHTML = html;
       modal.style.display = 'flex';
+      
+      // Load layer information
+      loadLotLayers(lot.id);
       
       // Auto-load grave images when modal opens
       loadGraveImages(lot.id);
@@ -1004,8 +1341,463 @@ if ($conn) {
       delete window.navigateGallery;
     }
     
+    async function removeLayer(lotId) {
+      try {
+        // Get current layers to find the highest one
+        const response = await fetch(`../api/lot_layers.php?lot_id=${lotId}`);
+        const data = await response.json();
+        
+        if (!data.success || !data.data || data.data.length === 0) {
+          alert('No layers found for this lot');
+          return;
+        }
+        
+        // Find the highest layer number
+        const layers = data.data;
+        const highestLayer = Math.max(...layers.map(l => l.layer_number));
+        
+        // Check if the highest layer is occupied
+        const highestLayerData = layers.find(l => l.layer_number === highestLayer);
+        if (highestLayerData.is_occupied) {
+          alert(`Cannot remove Layer ${highestLayer} - it is occupied by ${highestLayerData.deceased_name || 'someone'}`);
+          return;
+        }
+        
+        if (!confirm(`Are you sure you want to remove Layer ${highestLayer}? This action cannot be undone.`)) {
+          return;
+        }
+        
+        // Delete the highest layer
+        const deleteResponse = await fetch(`../api/lot_layers.php`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            lot_id: lotId,
+            layer_number: highestLayer
+          })
+        });
+        
+        const deleteResult = await deleteResponse.json();
+        
+        if (deleteResult.success) {
+          alert(`Layer ${highestLayer} has been removed successfully`);
+          // Reload layers and lot details
+          loadLotLayers(lotId);
+          // Refresh the map to update lot indicators
+          location.reload();
+        } else {
+          alert('Failed to remove layer: ' + deleteResult.message);
+        }
+        
+      } catch (error) {
+        console.error('Error removing layer:', error);
+        alert('Error removing layer: ' + error.message);
+      }
+    }
+    
+    
+    function showLayerDetails(lotId, layerNumber, isOccupied, deceasedName) {
+      if (isOccupied === 'false') {
+        // For vacant layers, redirect to burial records with pre-selected lot and layer
+        window.location.href = `burial-records.php?lot_id=${lotId}&layer=${layerNumber}`;
+        return;
+      }
+      
+      // For occupied layers, show detailed modal with burial information and images
+      showLayerBurialDetails(lotId, layerNumber, deceasedName);
+    }
+    
+    async function showLayerBurialDetails(lotId, layerNumber, deceasedName) {
+      try {
+        // Fetch burial records for this specific lot and layer
+        const response = await fetch(`../api/burial_records.php`);
+        const data = await response.json();
+        
+        if (!data.success || !data.data) {
+          alert('Error loading burial records');
+          return;
+        }
+        
+        // Find the burial record for this specific layer
+        const burialRecord = data.data.find(record => 
+          record.lot_id == lotId && record.layer == layerNumber
+        );
+        
+        if (!burialRecord) {
+          alert('Burial record not found for this layer');
+          return;
+        }
+        
+        // Create a new modal for layer-specific details
+        const layerModal = document.createElement('div');
+        layerModal.className = 'modal-map';
+        layerModal.style.zIndex = '2000';
+        
+        layerModal.innerHTML = `
+          <div class="modal-map-content" style="max-width: 600px;">
+            <div class="modal-map-header">
+              <h3>Layer ${layerNumber} - Burial Details</h3>
+              <button class="modal-map-close" onclick="closeLayerModal()">&times;</button>
+            </div>
+            <div class="modal-map-body">
+              <div class="google-maps-card">
+                <div class="card-header">
+                  <div class="lot-info">
+                    <h2>${burialRecord.full_name}</h2>
+                    <div class="lot-location">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                      </svg>
+                      <span>Lot ${burialRecord.lot_number} - Layer ${layerNumber}</span>
+                    </div>
+                  </div>
+                  <div class="status-badge occupied">Occupied</div>
+                </div>
+                
+                <div class="card-content">
+                  <div class="info-grid">
+                    ${burialRecord.age ? `
+                      <div class="info-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <div>
+                          <div class="info-label">Age</div>
+                          <div class="info-value">${burialRecord.age} years old</div>
+                        </div>
+                      </div>
+                    ` : ''}
+                    
+                    ${burialRecord.date_of_birth ? `
+                      <div class="info-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                          <line x1="16" y1="2" x2="16" y2="6"/>
+                          <line x1="8" y1="2" x2="8" y2="6"/>
+                          <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <div>
+                          <div class="info-label">Date of Birth</div>
+                          <div class="info-value">${new Date(burialRecord.date_of_birth).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    ` : ''}
+                    
+                    ${burialRecord.date_of_death ? `
+                      <div class="info-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        </svg>
+                        <div>
+                          <div class="info-label">Date of Death</div>
+                          <div class="info-value">${new Date(burialRecord.date_of_death).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    ` : ''}
+                    
+                    ${burialRecord.date_of_burial ? `
+                      <div class="info-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        <div>
+                          <div class="info-label">Date of Burial</div>
+                          <div class="info-value">${new Date(burialRecord.date_of_burial).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    ` : ''}
+                    
+                    ${burialRecord.cause_of_death ? `
+                      <div class="info-item" style="grid-column: 1 / -1;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                          <line x1="12" y1="9" x2="12" y2="13"/>
+                          <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <div>
+                          <div class="info-label">Cause of Death</div>
+                          <div class="info-value">${burialRecord.cause_of_death}</div>
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+                  
+                  ${burialRecord.next_of_kin ? `
+                    <div class="deceased-section">
+                      <div class="section-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                          <circle cx="8.5" cy="7" r="4"/>
+                          <line x1="20" y1="8" x2="20" y2="14"/>
+                          <line x1="23" y1="11" x2="17" y2="11"/>
+                        </svg>
+                        <span>Next of Kin Information</span>
+                      </div>
+                      <div style="padding: 12px; background: white; border-radius: 6px;">
+                        <div style="font-weight: 600; margin-bottom: 4px;">${burialRecord.next_of_kin}</div>
+                        ${burialRecord.next_of_kin_contact ? `
+                          <div style="font-size: 14px; color: var(--muted);">Contact: ${burialRecord.next_of_kin_contact}</div>
+                        ` : ''}
+                      </div>
+                    </div>
+                  ` : ''}
+                  
+                  ${burialRecord.remarks ? `
+                    <div class="deceased-section">
+                      <div class="section-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        <span>Remarks</span>
+                      </div>
+                      <div style="padding: 12px; background: white; border-radius: 6px; font-style: italic;">
+                        ${burialRecord.remarks}
+                      </div>
+                    </div>
+                  ` : ''}
+                  
+                  <div class="images-section">
+                    <div class="section-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <span>Grave Images</span>
+                    </div>
+                    <div id="layerGraveImagesContainer" class="images-container">
+                      <div class="images-header">
+                        <span>Grave Photos</span>
+                      </div>
+                      <div id="layerGraveImagesGrid" class="images-grid"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(layerModal);
+        layerModal.style.display = 'flex';
+        
+        // Load grave images for this burial record
+        loadLayerGraveImages(burialRecord.id);
+        
+        // Close modal when clicking outside
+        layerModal.onclick = (e) => { 
+          if (e.target === layerModal) closeLayerModal(); 
+        };
+        
+      } catch (error) {
+        console.error('Error loading layer details:', error);
+        alert('Error loading layer details: ' + error.message);
+      }
+    }
+    
+    function closeLayerModal() {
+      const layerModal = document.querySelector('.modal-map[style*="z-index: 2000"]');
+      if (layerModal) {
+        layerModal.remove();
+      }
+    }
+    
+    async function loadLayerGraveImages(burialRecordId) {
+      const grid = document.getElementById('layerGraveImagesGrid');
+      
+      if (!grid) return;
+      
+      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted);">Loading images...</div>';
+      
+      try {
+        const imagesResponse = await fetch(`../api/burial_images.php?burial_record_id=${burialRecordId}`);
+        const imagesData = await imagesResponse.json();
+        
+        if (imagesData.success && imagesData.data && imagesData.data.length > 0) {
+          grid.innerHTML = imagesData.data.map(img => `
+            <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer;" onclick="showImageGallery('${burialRecordId}', '${img.id}')">
+              <img src="../${img.image_path}" alt="${img.image_caption || 'Grave image'}" style="width: 100%; height: 120px; object-fit: cover;">
+              <div style="padding: 8px; font-size: 12px; color: var(--muted); text-align: center;">${img.image_caption || 'No caption'}</div>
+            </div>
+          `).join('');
+        } else {
+          grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px;">No images available</div>';
+        }
+      } catch (error) {
+        console.error('Error loading grave images:', error);
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 20px;">Error loading images</div>';
+      }
+    }
+    
     function closeLotModal() {
       document.getElementById('lotModal').style.display = 'none';
+    }
+    
+    // Layer Management Functions
+    async function loadLotLayers(lotId) {
+      const layerGrid = document.getElementById('layerGrid');
+      
+      try {
+        // Get both layers and burial records for this lot
+        const [layersResponse, burialsResponse] = await Promise.all([
+          fetch(`../api/lot_layers.php?lot_id=${lotId}`),
+          fetch(`../api/burial_records.php`)
+        ]);
+        
+        const layersData = await layersResponse.json();
+        const burialsData = await burialsResponse.json();
+        
+        if (!layersData.success) {
+          layerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444;">Error loading layers</div>';
+          return;
+        }
+        
+        // Get burial records for this lot
+        const lotBurials = burialsData.success && burialsData.data ? 
+          burialsData.data.filter(record => record.lot_id == lotId) : [];
+        
+        // Create a map of occupied layers from burial records
+        const occupiedLayers = {};
+        lotBurials.forEach(burial => {
+          if (burial.layer) {
+            occupiedLayers[burial.layer] = burial.full_name;
+          }
+        });
+        
+        // Update lot_layers table to match burial records
+        await syncLayersWithBurials(lotId, layersData.data || [], occupiedLayers);
+        
+        // Get updated layers after sync
+        const updatedLayersResponse = await fetch(`../api/lot_layers.php?lot_id=${lotId}`);
+        const updatedLayersData = await updatedLayersResponse.json();
+        
+        const layers = updatedLayersData.success ? updatedLayersData.data : [];
+        
+        if (layers.length === 0) {
+          layerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #6b7280;">No layers available</div>';
+          return;
+        }
+        
+        layerGrid.innerHTML = layers.map(layer => {
+          const isOccupied = occupiedLayers[layer.layer_number] || layer.is_occupied;
+          const deceasedName = occupiedLayers[layer.layer_number] || layer.deceased_name || '';
+          
+          return `
+            <div class="layer-item ${isOccupied ? 'occupied' : 'vacant'}" 
+                 onclick="showLayerDetails(${lotId}, ${layer.layer_number}, '${isOccupied}', '${deceasedName.replace(/'/g, "\\'")}')"
+                 style="cursor: pointer;">
+              <div class="layer-number">Layer ${layer.layer_number}</div>
+              <div class="layer-status">
+                ${isOccupied ? `Occupied by ${deceasedName}` : 'Vacant'}
+              </div>
+              <div class="layer-indicator ${isOccupied ? 'occupied' : 'vacant'}"></div>
+              ${isOccupied ? '<div class="view-details-btn">📋 View Details</div>' : ''}
+            </div>
+          `;
+        }).join('');
+        
+      } catch (error) {
+        console.error('Error loading layers:', error);
+        layerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444;">Error loading layers</div>';
+      }
+    }
+    
+    // Function to sync layers with burial records
+    async function syncLayersWithBurials(lotId, layers, occupiedLayers) {
+      try {
+        for (const layer of layers) {
+          const shouldBeOccupied = occupiedLayers[layer.layer_number];
+          const currentlyOccupied = layer.is_occupied;
+          
+          // Update layer if occupation status doesn't match
+          if (shouldBeOccupied && !currentlyOccupied) {
+            // Find the burial record for this layer
+            const burialResponse = await fetch(`../api/burial_records.php`);
+            const burialsData = await burialResponse.json();
+            
+            if (burialsData.success) {
+              const burial = burialsData.data.find(record => 
+                record.lot_id == lotId && record.layer == layer.layer_number
+              );
+              
+              if (burial) {
+                // Update the layer to mark it as occupied
+                await fetch(`../api/lot_layers.php`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    id: layer.id,
+                    is_occupied: 1,
+                    burial_record_id: burial.id
+                  })
+                });
+              }
+            }
+          } else if (!shouldBeOccupied && currentlyOccupied) {
+            // Update the layer to mark it as vacant
+            await fetch(`../api/lot_layers.php`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: layer.id,
+                is_occupied: 0,
+                burial_record_id: null
+              })
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error syncing layers:', error);
+      }
+    }
+    
+    function selectLayer(lotId, layerNumber) {
+      // Redirect to burial records page with pre-selected lot and layer
+      window.location.href = `burial-records.php?lot_id=${lotId}&layer=${layerNumber}`;
+    }
+    
+    async function addNewLayer(lotId) {
+      if (!confirm('Add a new burial layer to this lot? This will allow additional burials in the same location.')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('../api/lot_layers.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lot_id: lotId,
+            action: 'add_layer'
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert('New layer added successfully!');
+          loadLotLayers(lotId); // Reload the layer display
+          // Optionally refresh the map to update the layer indicator
+          location.reload();
+        } else {
+          alert('Error adding layer: ' + data.message);
+        }
+      } catch (error) {
+        console.error('Error adding layer:', error);
+        alert('Error adding layer');
+      }
     }
     
     // Close modal when clicking outside
