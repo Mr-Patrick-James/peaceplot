@@ -47,6 +47,16 @@ function renderLots(lots) {
                         </span>
                         <span>Edit</span>
                     </button>
+                    <button class="btn-action btn-map" data-action="map" data-lot-id="${lot.id}" data-lot-number="${lot.lot_number}">
+                        <span class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="currentColor" fill-opacity="0.2"/>
+                                <circle cx="12" cy="10" r="3" fill="currentColor"/>
+                                <path d="M12 2v20" stroke-width="1" opacity="0.3"/>
+                            </svg>
+                        </span>
+                        <span>View on Map</span>
+                    </button>
                     <button class="btn-action btn-delete" data-action="delete" data-lot-id="${lot.id}">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -181,6 +191,15 @@ function closeModal(modal) {
     modal.remove();
 }
 
+function handleMapRedirect(lotId, lotNumber) {
+    // Store the lot to highlight in sessionStorage
+    sessionStorage.setItem('highlightLot', lotId);
+    sessionStorage.setItem('highlightLotNumber', lotNumber);
+    
+    // Redirect to cemetery map page
+    window.location.href = 'cemetery-map.php';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     if (path.includes('index.html') || path.includes('index.php')) {
@@ -199,6 +218,8 @@ document.addEventListener('click', (e) => {
         handleDelete(lotId);
     } else if (action === 'edit' && lotId) {
         showEditModal(lotId);
+    } else if (action === 'map' && lotId) {
+        handleMapRedirect(lotId, btn.getAttribute('data-lot-number'));
     } else if (action === 'add') {
         showAddModal();
     }

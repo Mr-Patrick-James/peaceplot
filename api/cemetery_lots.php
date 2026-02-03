@@ -9,10 +9,7 @@ require_once __DIR__ . '/../config/database.php';
 $database = new Database();
 $conn = $database->getConnection();
 
-if (!$conn) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
-    exit;
-}
+// Check if connection failed, but don't exit - handle gracefully in functions
 
 $method = $_SERVER['REQUEST_METHOD'];
 $input = json_decode(file_get_contents('php://input'), true);
@@ -40,30 +37,63 @@ function handleGet($conn) {
         $id = isset($_GET['id']) ? intval($_GET['id']) : null;
         
         if ($id) {
-            $stmt = $conn->prepare("
-                SELECT cl.*, dr.full_name as deceased_name 
-                FROM cemetery_lots cl 
-                LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
-                WHERE cl.id = :id
-            ");
-            $stmt->bindParam(':id', $id);
-            $stmt->execute();
-            $result = $stmt->fetch();
-            
-            if ($result) {
-                echo json_encode(['success' => true, 'data' => $result]);
+            if ($conn) {
+                $stmt = $conn->prepare("
+                    SELECT cl.*, dr.full_name as deceased_name 
+                    FROM cemetery_lots cl 
+                    LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
+                    WHERE cl.id = :id
+                ");
+                $stmt->bindParam(':id', $id);
+                $stmt->execute();
+                $result = $stmt->fetch();
+                
+                if ($result) {
+                    echo json_encode(['success' => true, 'data' => $result]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Lot not found']);
+                }
             } else {
-                echo json_encode(['success' => false, 'message' => 'Lot not found']);
+                // Use sample data if database connection fails
+                $sampleFile = __DIR__ . '/../database/sample_lots.json';
+                if (file_exists($sampleFile)) {
+                    $lots = json_decode(file_get_contents($sampleFile), true);
+                    $lot = null;
+                    foreach ($lots as $sampleLot) {
+                        if ($sampleLot['id'] == $id) {
+                            $lot = $sampleLot;
+                            break;
+                        }
+                    }
+                    if ($lot) {
+                        echo json_encode(['success' => true, 'data' => $lot]);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Lot not found in sample data']);
+                    }
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No database connection and no sample data available']);
+                }
             }
         } else {
-            $stmt = $conn->query("
-                SELECT cl.*, dr.full_name as deceased_name 
-                FROM cemetery_lots cl 
-                LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
-                ORDER BY cl.lot_number
-            ");
-            $results = $stmt->fetchAll();
-            echo json_encode(['success' => true, 'data' => $results]);
+            if ($conn) {
+                $stmt = $conn->query("
+                    SELECT cl.*, dr.full_name as deceased_name 
+                    FROM cemetery_lots cl 
+                    LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
+                    ORDER BY cl.lot_number
+                ");
+                $results = $stmt->fetchAll();
+                echo json_encode(['success' => true, 'data' => $results]);
+            } else {
+                // Use sample data if database connection fails
+                $sampleFile = __DIR__ . '/../database/sample_lots.json';
+                if (file_exists($sampleFile)) {
+                    $lots = json_decode(file_get_contents($sampleFile), true);
+                    echo json_encode(['success' => true, 'data' => $lots]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No database connection and no sample data available']);
+                }
+            }
         }
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);

@@ -179,12 +179,13 @@ if ($conn) {
                 <?php endif; ?>
                 <th align="left">Size (sqm)</th>
                 <th align="left">Price</th>
+                <th align="right">Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($filteredLots)): ?>
                 <tr>
-                  <td colspan="<?php echo $filterStatus === 'Occupied' ? '8' : '7'; ?>" style="text-align:center; color:#6b7280;">
+                  <td colspan="<?php echo $filterStatus === 'Occupied' ? '9' : '8'; ?>" style="text-align:center; color:#6b7280;">
                     No <?php echo strtolower($filterStatus); ?> lots found
                   </td>
                 </tr>
@@ -201,6 +202,20 @@ if ($conn) {
                     <?php endif; ?>
                     <td><?php echo $lot['size_sqm'] ? number_format($lot['size_sqm'], 2) : '—'; ?></td>
                     <td><?php echo $lot['price'] ? '₱' . number_format($lot['price'], 2) : '—'; ?></td>
+                    <td>
+                      <div class="actions">
+                        <button class="btn-action btn-map" onclick="handleMapRedirect(<?php echo $lot['id']; ?>, '<?php echo htmlspecialchars($lot['lot_number']); ?>')">
+                          <span class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="currentColor" fill-opacity="0.2"/>
+                              <circle cx="12" cy="10" r="3" fill="currentColor"/>
+                              <path d="M12 2v20" stroke-width="1" opacity="0.3"/>
+                            </svg>
+                          </span>
+                          <span>View on Map</span>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -214,6 +229,15 @@ if ($conn) {
   </div>
 
   <script>
+    function handleMapRedirect(lotId, lotNumber) {
+      // Store the lot to highlight in sessionStorage
+      sessionStorage.setItem('highlightLot', lotId);
+      sessionStorage.setItem('highlightLotNumber', lotNumber);
+      
+      // Redirect to cemetery map page
+      window.location.href = 'cemetery-map.php';
+    }
+    
     document.getElementById('sectionFilter')?.addEventListener('change', function() {
       const section = this.value;
       const status = '<?php echo $filterStatus; ?>';

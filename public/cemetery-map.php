@@ -44,6 +44,16 @@ if ($conn) {
     } catch (PDOException $e) {
         $error = $e->getMessage();
     }
+} else {
+    // Use sample data if database connection fails
+    $sampleFile = __DIR__ . '/../database/sample_lots.json';
+    if (file_exists($sampleFile)) {
+        $lots = json_decode(file_get_contents($sampleFile), true);
+        $error = "Using sample data - database connection failed";
+    } else {
+        $lots = [];
+        $error = "No database connection and no sample data available";
+    }
 }
 ?>
 <!doctype html>
@@ -66,7 +76,9 @@ if ($conn) {
     .map-image-wrapper {
       position: relative;
       width: 100%;
-      height: 450px;
+      height: 40vh;
+      min-height: 300px;
+      max-height: 500px;
       overflow: hidden;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -169,8 +181,46 @@ if ($conn) {
     }
     
     @media (max-width: 768px) {
-      .google-maps-card {
-        border-radius: 8px;
+      .map-image-wrapper {
+        height: 35vh;
+        min-height: 250px;
+        max-height: 400px;
+        border-radius: 6px;
+      }
+      
+      .map-legend {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      
+      .legend-item {
+        gap: 4px;
+      }
+      
+      .legend-box {
+        width: 16px;
+        height: 16px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .map-image-wrapper {
+        height: 30vh;
+        min-height: 200px;
+        max-height: 300px;
+        border-radius: 4px;
+      }
+      
+      .map-legend {
+        padding: 6px 8px;
+        font-size: 11px;
+      }
+      
+      .legend-box {
+        width: 14px;
+        height: 14px;
       }
     }
     
@@ -814,6 +864,7 @@ if ($conn) {
     <main class="main">
       <div class="page-header">
         <h1 class="page-title">Cemetery Map</h1>
+        <button onclick="testPinHighlight()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">📍 Test Pin Highlight (A-001)</button>
       </div>
 
       <?php if (isset($error)): ?>
@@ -852,11 +903,20 @@ if ($conn) {
                    draggable="false">
             
             <?php foreach ($lots as $lot): ?>
-              <?php if ($lot['map_x'] !== null && $lot['map_y'] !== null && $lot['map_width'] !== null && $lot['map_height'] !== null): ?>
+              <?php 
+              // Check if lot has map coordinates (works for both DB and sample data)
+              $hasCoords = isset($lot['map_x']) && isset($lot['map_y']) && 
+                          isset($lot['map_width']) && isset($lot['map_height']) &&
+                          $lot['map_x'] !== null && $lot['map_y'] !== null && 
+                          $lot['map_width'] !== null && $lot['map_height'] !== null;
+              ?>
+              <?php if ($hasCoords): ?>
                 <?php 
-                $totalLayers = $lot['total_layers'] ?: 1;
-                $occupiedLayers = $lot['occupied_layers'] ?: 0;
-                $actualStatus = $lot['actual_status'] ?: $lot['status'];
+                // Handle different data structures
+                $totalLayers = isset($lot['total_layers']) ? $lot['total_layers'] : 1;
+                $occupiedLayers = isset($lot['occupied_layers']) ? $lot['occupied_layers'] : 0;
+                $actualStatus = isset($lot['actual_status']) ? $lot['actual_status'] : $lot['status'];
+                $deceasedName = isset($lot['deceased_name']) ? $lot['deceased_name'] : null;
                 ?>
                 <div class="lot-marker <?php echo strtolower($actualStatus); ?>"
                      style="left: <?php echo $lot['map_x']; ?>%; 
@@ -864,7 +924,7 @@ if ($conn) {
                             width: <?php echo $lot['map_width']; ?>%;
                             height: <?php echo $lot['map_height']; ?>%;"
                      onclick="showLotDetails(<?php echo htmlspecialchars(json_encode($lot)); ?>)"
-                     title="<?php echo htmlspecialchars($lot['lot_number']); ?> - <?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?> layers occupied">
+                     title="<?php echo htmlspecialchars($lot['lot_number']); ?> - <?php echo $actualStatus; ?>">
                   <div class="lot-label"><?php echo htmlspecialchars($lot['lot_number']); ?></div>
                   <?php if ($totalLayers > 1): ?>
                     <div class="lot-layer-indicator" title="<?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?> layers occupied"><?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?></div>
@@ -1806,6 +1866,291 @@ if ($conn) {
         closeLotModal();
       }
     };
+
+    // Test function for pin highlight
+    function testPinHighlight() {
+      console.log('Testing pin highlight...');
+      sessionStorage.setItem('highlightLot', '1');
+      sessionStorage.setItem('highlightLotNumber', 'A-001');
+      highlightLotOnMap();
+    }
+    
+    // Highlight lot functionality
+    function highlightLotOnMap() {
+      console.log('highlightLotOnMap called'); // Debug log
+      
+      const highlightLotId = sessionStorage.getItem('highlightLot');
+      const highlightLotNumber = sessionStorage.getItem('highlightLotNumber');
+      
+      console.log('Highlight data:', { highlightLotId, highlightLotNumber }); // Debug log
+      
+      if (highlightLotId && highlightLotNumber) {
+        // Clear the session storage
+        sessionStorage.removeItem('highlightLot');
+        sessionStorage.removeItem('highlightLotNumber');
+        
+        // Find the lot marker on the map
+        const lotMarkers = document.querySelectorAll('.lot-marker');
+        console.log('Found markers:', lotMarkers.length); // Debug log
+        
+        let targetMarker = null;
+        
+        lotMarkers.forEach(marker => {
+          const label = marker.querySelector('.lot-label');
+          console.log('Checking marker:', label ? label.textContent : 'no label'); // Debug log
+          if (label && label.textContent === highlightLotNumber) {
+            targetMarker = marker;
+            console.log('Found target marker!'); // Debug log
+          }
+        });
+        
+        if (targetMarker) {
+          console.log('Creating pin overlay'); // Debug log
+          
+          // Get screen size for responsive pin
+          const isMobile = window.innerWidth <= 768;
+          const isSmallMobile = window.innerWidth <= 480;
+          
+          // Create smaller responsive pin overlay
+          const pinOverlay = document.createElement('div');
+          const pinSize = isSmallMobile ? 25 : (isMobile ? 30 : 40);
+          const fontSize = isSmallMobile ? 18 : (isMobile ? 22 : 28);
+          
+          pinOverlay.style.cssText = `
+            position: absolute;
+            top: -${pinSize - 20}px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: ${pinSize}px;
+            height: ${pinSize}px;
+            z-index: 1001;
+            pointer-events: none;
+            animation: pinDrop 0.5s ease-out, pinBounce 2s infinite;
+            font-size: ${fontSize}px;
+            text-align: center;
+            line-height: 1;
+            filter: drop-shadow(0 ${isSmallMobile ? 4 : 6}px ${isSmallMobile ? 8 : 12}px rgba(239, 68, 68, 0.6));
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            border: ${isSmallMobile ? 2 : 3}px solid #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          `;
+          
+          // Use emoji pin with responsive styling
+          pinOverlay.innerHTML = '📍';
+          pinOverlay.style.color = '#ef4444';
+          
+          console.log('Pin overlay created with size:', pinSize); // Debug log
+          
+          // Add the pin overlay to the map canvas instead of the marker
+          const mapCanvas = document.getElementById('mapCanvas');
+          if (mapCanvas) {
+            // Position relative to the map canvas
+            const markerRect = targetMarker.getBoundingClientRect();
+            const canvasRect = mapCanvas.getBoundingClientRect();
+            
+            const relativeLeft = markerRect.left - canvasRect.left + (markerRect.width / 2) - (pinSize / 2);
+            const relativeTop = markerRect.top - canvasRect.top - pinSize + 20;
+            
+            pinOverlay.style.left = relativeLeft + 'px';
+            pinOverlay.style.top = relativeTop + 'px';
+            pinOverlay.style.transform = 'none';
+            
+            mapCanvas.appendChild(pinOverlay);
+            console.log('Pin overlay added to map canvas'); // Debug log
+          } else {
+            // Fallback to adding to marker
+            targetMarker.style.position = 'relative';
+            targetMarker.appendChild(pinOverlay);
+            console.log('Pin overlay added to marker (fallback)'); // Debug log
+          }
+          
+          // Add highlight effect to the lot marker
+          targetMarker.style.transition = 'all 0.5s ease';
+          targetMarker.style.boxShadow = '0 0 30px rgba(239, 68, 68, 0.6), 0 0 60px rgba(239, 68, 68, 0.3)';
+          targetMarker.style.zIndex = '1000';
+          targetMarker.style.transform = 'scale(1.05)';
+          
+          // Center the map on the highlighted lot
+          setTimeout(() => {
+            const mapWrapper = document.querySelector('.map-image-wrapper');
+            const mapCanvas = document.getElementById('mapCanvas');
+            
+            console.log('Centering map...'); // Debug log
+            
+            if (mapWrapper && mapCanvas) {
+              const markerRect = targetMarker.getBoundingClientRect();
+              const wrapperRect = mapWrapper.getBoundingClientRect();
+              
+              console.log('Marker rect:', markerRect); // Debug log
+              console.log('Wrapper rect:', wrapperRect); // Debug log
+              
+              // Reset zoom and pan first
+              zoom = 1;
+              panX = 0;
+              panY = 0;
+              updateTransform();
+              
+              // Calculate the center position for the marker (accounting for pin height)
+              const markerCenterX = markerRect.left + markerRect.width / 2 - wrapperRect.left;
+              const markerCenterY = markerRect.top + markerRect.height / 2 - wrapperRect.top - 30; // Adjust for pin height
+              
+              console.log('Marker center:', { markerCenterX, markerCenterY }); // Debug log
+              
+              // Calculate required pan to center the marker
+              const wrapperCenterX = wrapperRect.width / 2;
+              const wrapperCenterY = wrapperRect.height / 2;
+              
+              const targetPanX = wrapperCenterX - markerCenterX;
+              const targetPanY = wrapperCenterY - markerCenterY;
+              
+              console.log('Target pan:', { targetPanX, targetPanY }); // Debug log
+              
+              // Apply pan and zoom
+              panX = targetPanX;
+              panY = targetPanY;
+              zoom = 1.8; // Set a reasonable zoom level
+              updateTransform();
+              
+              console.log('Map centered and zoomed'); // Debug log
+            }
+          }, 200); // Increased delay
+          
+          // Remove highlight and pin after 5 seconds
+          setTimeout(() => {
+            console.log('Cleaning up pin and highlight'); // Debug log
+            
+            // Remove pin from map canvas or marker
+            const mapCanvas = document.getElementById('mapCanvas');
+            if (mapCanvas && mapCanvas.contains(pinOverlay)) {
+              mapCanvas.removeChild(pinOverlay);
+              console.log('Pin removed from map canvas'); // Debug log
+            } else if (targetMarker && targetMarker.contains(pinOverlay)) {
+              targetMarker.removeChild(pinOverlay);
+              console.log('Pin removed from marker'); // Debug log
+            } else if (pinOverlay.parentNode) {
+              pinOverlay.parentNode.removeChild(pinOverlay);
+              console.log('Pin removed from parent'); // Debug log
+            }
+            
+            // Remove highlight effects
+            targetMarker.style.boxShadow = '';
+            targetMarker.style.zIndex = '';
+            targetMarker.style.transform = '';
+            
+            console.log('Cleanup completed'); // Debug log
+          }, 5000);
+          
+          // Show notification
+          showNotification(`Lot ${highlightLotNumber} highlighted on map`, 'success');
+        } else {
+          // Lot doesn't have map coordinates
+          showNotification(`Lot ${highlightLotNumber} doesn't have map coordinates assigned yet`, 'warning');
+        }
+      }
+    }
+    
+    function showNotification(message, type = 'info') {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+      `;
+      
+      // Set background color based on type
+      switch(type) {
+        case 'success':
+          notification.style.background = '#22c55e';
+          break;
+        case 'warning':
+          notification.style.background = '#f59e0b';
+          break;
+        case 'error':
+          notification.style.background = '#ef4444';
+          break;
+        default:
+          notification.style.background = '#3b82f6';
+      }
+      
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      // Slide in
+      setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+      }, 100);
+      
+      // Remove after 4 seconds
+      setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }, 4000);
+    }
+    
+    // Add CSS animation for pin effects
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pinDrop {
+        0% {
+          transform: translateX(-50%) translateY(-100px) scale(0.5);
+          opacity: 0;
+        }
+        50% {
+          transform: translateX(-50%) translateY(-10px) scale(1.1);
+          opacity: 1;
+        }
+        75% {
+          transform: translateX(-50%) translateY(5px) scale(0.95);
+        }
+        100% {
+          transform: translateX(-50%) translateY(0) scale(1);
+        }
+      }
+      
+      @keyframes pinBounce {
+        0%, 100% {
+          transform: translateX(-50%) translateY(0) scale(1);
+        }
+        50% {
+          transform: translateX(-50%) translateY(-8px) scale(1.05);
+        }
+      }
+      
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 30px rgba(59, 130, 246, 1), 0 0 60px rgba(59, 130, 246, 0.6);
+        }
+        100% {
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Initialize highlighting when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(highlightLotOnMap, 500); // Small delay to ensure map is loaded
+    });
   </script>
   <script src="../assets/js/app.js"></script>
 </body>
