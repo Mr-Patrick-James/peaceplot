@@ -129,6 +129,28 @@ const BurialAPI = {
 let currentRecords = [];
 let editingRecordId = null;
 
+function filterRecords(query) {
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return currentRecords.slice();
+    return currentRecords.filter(record => {
+        const fields = [
+            record.full_name,
+            record.lot_number,
+            record.section,
+            record.block,
+            record.layer,
+            record.age,
+            record.date_of_death,
+            record.date_of_burial,
+            record.next_of_kin,
+            record.next_of_kin_contact,
+            record.cause_of_death,
+            record.remarks
+        ];
+        return fields.some(val => (val || '').toString().toLowerCase().includes(q));
+    });
+}
+
 // Add layer loading function
 async function loadLotLayers(lotId, layerSelect, preselectedLayer = null) {
     try {
@@ -215,8 +237,9 @@ function renderRecords(records) {
     if (!tbody) return;
 
     if (records.length === 0) {
-        console.log('No records to render');
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#6b7280;">No burial records found</td></tr>';
+        const q = (document.getElementById('recordSearch')?.value || '').trim();
+        const msg = q ? 'No matching records found' : 'No burial records found';
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#6b7280;">${msg}</td></tr>`;
         return;
     }
 
@@ -1201,6 +1224,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     if (path.includes('burial-records')) {
         loadBurialRecords();
+        const searchInput = document.getElementById('recordSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const filtered = filterRecords(e.target.value);
+                renderRecords(filtered);
+            });
+        }
     }
 });
 

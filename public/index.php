@@ -152,9 +152,18 @@ if ($conn) {
       </div>
 
       <section class="card">
-        <div class="card-head">
-          <h2 class="card-title">All Cemetery Lots</h2>
-          <p class="card-sub">Manage and update cemetery lot information</p>
+        <div class="card-head" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <div>
+            <h2 class="card-title">All Cemetery Lots</h2>
+            <p class="card-sub">Manage and update cemetery lot information</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input 
+              id="lotSearch" 
+              type="text" 
+              placeholder="Search lots…" 
+              style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; width:240px;">
+          </div>
         </div>
 
         <div class="table-wrap">

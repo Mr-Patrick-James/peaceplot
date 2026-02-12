@@ -20,12 +20,30 @@ async function loadCemeteryLots() {
     }
 }
 
+function filterLots(query) {
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return currentLots.slice();
+    return currentLots.filter(lot => {
+        const fields = [
+            lot.lot_number,
+            lot.section,
+            lot.block,
+            lot.position,
+            lot.status,
+            lot.deceased_name
+        ];
+        return fields.some(val => (val || '').toString().toLowerCase().includes(q));
+    });
+}
+
 function renderLots(lots) {
     const tbody = document.querySelector('.table tbody');
     if (!tbody) return;
 
     if (lots.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#6b7280;">No cemetery lots found</td></tr>';
+        const q = (document.getElementById('lotSearch')?.value || '').trim();
+        const msg = q ? 'No matching lots found' : 'No cemetery lots found';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#6b7280;">${msg}</td></tr>`;
         return;
     }
 
@@ -204,6 +222,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     if (path.includes('index.html') || path.includes('index.php')) {
         loadCemeteryLots();
+        const searchInput = document.getElementById('lotSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const filtered = filterLots(e.target.value);
+                renderLots(filtered);
+            });
+        }
     }
 });
 
