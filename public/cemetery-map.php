@@ -67,23 +67,26 @@ if ($conn) {
     .map-container {
       background: white;
       border-radius: 12px;
-      padding: 16px;
+      padding: 24px;
       margin-top: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 95%;
+      max-width: 1400px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
       position: relative;
     }
     
     .map-image-wrapper {
       position: relative;
       width: 100%;
-      height: 40vh;
-      min-height: 300px;
-      max-height: 500px;
+      height: 70vh;
+      min-height: 500px;
+      max-height: 850px;
       overflow: hidden;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
       cursor: grab;
-      background: #f5f5f5;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
     }
 
     .map-image-wrapper.grabbing {
@@ -181,11 +184,16 @@ if ($conn) {
     }
     
     @media (max-width: 768px) {
+      .map-container {
+        width: 100%;
+        padding: 16px;
+      }
+      
       .map-image-wrapper {
-        height: 35vh;
-        min-height: 250px;
-        max-height: 400px;
-        border-radius: 6px;
+        height: 50vh;
+        min-height: 350px;
+        max-height: 600px;
+        border-radius: 8px;
       }
       
       .map-legend {
@@ -207,10 +215,10 @@ if ($conn) {
     
     @media (max-width: 480px) {
       .map-image-wrapper {
-        height: 30vh;
-        min-height: 200px;
-        max-height: 300px;
-        border-radius: 4px;
+        height: 40vh;
+        min-height: 300px;
+        max-height: 500px;
+        border-radius: 6px;
       }
       
       .map-legend {
@@ -942,11 +950,14 @@ if ($conn) {
           ?>
           
           <?php if (!empty($lotsWithoutCoordinates)): ?>
-            <div style="margin-top: 20px; padding: 16px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-              <strong>Note:</strong> <?php echo count($lotsWithoutCoordinates); ?> lot(s) don't have map coordinates assigned yet.
-              <a href="map-editor.php" style="color: var(--primary); text-decoration: underline; font-weight: 600;">
-                Open Map Editor to mark lots on the map
-              </a>
+            <div style="margin-top: 24px; padding: 16px 20px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; color: #92400e; font-size: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <span style="font-size: 20px;">⚠️</span>
+              <div>
+                <strong>Note:</strong> <?php echo count($lotsWithoutCoordinates); ?> lot(s) don't have map coordinates assigned yet.
+                <a href="map-editor.php" style="color: #2563eb; text-decoration: underline; font-weight: 600; margin-left: 4px;">
+                  Open Map Editor to mark lots on the map
+                </a>
+              </div>
             </div>
           <?php endif; ?>
           
