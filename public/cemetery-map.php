@@ -1256,21 +1256,26 @@ if ($conn) {
       grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted);">Loading images...</div>';
       
       try {
-        // First get the burial record for this lot
         const burialResponse = await fetch(`../api/burial_records.php`);
         const burialData = await burialResponse.json();
         
         if (burialData.success && burialData.data) {
-          const burialRecord = burialData.data.find(record => record.lot_id == lotId);
-          
-          if (burialRecord) {
-            // Get images for this burial record
-            const imagesResponse = await fetch(`../api/burial_images.php?burial_record_id=${burialRecord.id}`);
-            const imagesData = await imagesResponse.json();
-            
-            if (imagesData.success && imagesData.data && imagesData.data.length > 0) {
-              grid.innerHTML = imagesData.data.map(img => `
-                <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer;" onclick="showImageGallery('${burialRecord.id}', '${img.id}')">
+          const lotBurials = burialData.data.filter(record => record.lot_id == lotId);
+          if (lotBurials.length > 0) {
+            const imageFetches = lotBurials.map(record => 
+              fetch(`../api/burial_images.php?burial_record_id=${record.id}`)
+                .then(res => res.json())
+                .then(data => ({
+                  recordId: record.id,
+                  images: (data.success && data.data) ? data.data : []
+                }))
+                .catch(() => ({ recordId: record.id, images: [] }))
+            );
+            const results = await Promise.all(imageFetches);
+            const allImages = results.flatMap(r => r.images.map(img => ({ ...img, burial_record_id: r.recordId })));
+            if (allImages.length > 0) {
+              grid.innerHTML = allImages.map(img => `
+                <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer;" onclick="showImageGallery('${img.burial_record_id}', '${img.id}')">
                   <img src="../${img.image_path}" alt="${img.image_caption || 'Grave image'}" style="width: 100%; height: 120px; object-fit: cover;">
                   <div style="padding: 8px; font-size: 12px; color: var(--muted); text-align: center;">${img.image_caption || 'No caption'}</div>
                 </div>
