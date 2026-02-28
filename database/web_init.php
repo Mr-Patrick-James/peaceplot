@@ -123,7 +123,6 @@
     echo "<li><a href='../public/dashboard.html'>Go to Dashboard</a></li>";
     echo "<li><a href='../public/index.html'>Manage Cemetery Lots</a></li>";
     echo "</ul>";
-    echo "<p class='info'><strong>Default Login:</strong> Username: <code>admin</code> | Password: <code>admin123</code></p>";
     echo "</div>";
     ?>
 </body>

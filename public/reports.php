@@ -302,9 +302,19 @@ if ($conn) {
       </section>
 
       <section class="card" style="margin-top:24px">
-        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border)">
-          <h2 class="card-title">Recent Burials</h2>
-          <p class="card-sub">Last 10 burial records</p>
+        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 class="card-title">Recent Burials</h2>
+            <p class="card-sub">Last 10 burial records</p>
+          </div>
+          <button class="report-btn report-btn-export" onclick="exportToCSV('recent_burials')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Export CSV</span>
+          </button>
         </div>
 
         <div class="table-wrap">
@@ -345,7 +355,7 @@ if ($conn) {
 
   <script>
     function exportToCSV(reportType) {
-      alert('CSV Export for ' + reportType + ' will be implemented. This will download a CSV file with the report data.');
+      window.location.href = '../api/export_csv.php?type=' + reportType;
     }
   </script>
   <script src="../assets/js/app.js"></script>

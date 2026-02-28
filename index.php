@@ -214,31 +214,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 13px;
             color: var(--muted);
         }
-        
-        .default-credentials {
-            margin-top: 20px;
-            padding: 16px;
-            background: #f0f9ff;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .default-credentials-title {
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-        
-        .default-credentials-info {
-            font-size: 13px;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-        
-        .default-credentials-info strong {
-            color: var(--text);
-        }
     </style>
 </head>
 <body>
@@ -287,14 +262,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <button type="submit" class="btn-login">Sign In</button>
         </form>
-        
-        <div class="default-credentials">
-            <div class="default-credentials-title">Default Login Credentials</div>
-            <div class="default-credentials-info">
-                <strong>Username:</strong> admin<br>
-                <strong>Password:</strong> admin123
-            </div>
-        </div>
         
         <div class="login-footer">
             &copy; <?php echo date('Y'); ?> PeacePlot. All rights reserved.

@@ -814,3 +814,158 @@ body{
   background:var(--page);
   border-color:var(--muted);
 }
+
+/* Print Styles */
+@media print {
+  @page {
+    margin: 1cm;
+    size: auto;
+  }
+
+  /* Hide navigation and sidebars */
+  .sidebar,
+  .nav,
+  .sidebar-footer,
+  .logout,
+  .page-header button,
+  .report-actions,
+  .btn-primary,
+  .btn-success,
+  .btn-action,
+  .actions,
+  .modal,
+  .logo-icon,
+  .logo-subtitle {
+    display: none !important;
+  }
+
+  /* Reset main layout */
+  .app {
+    display: block !important;
+    min-height: auto !important;
+  }
+
+  .main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Typography and spacing */
+  .page-title {
+    font-size: 24pt !important;
+    margin-bottom: 20px !important;
+    color: black !important;
+    text-align: center;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #eee !important;
+    margin-bottom: 20px !important;
+    break-inside: avoid;
+  }
+
+  .card-head {
+    border-bottom: 1px solid #eee !important;
+    padding: 10px 0 !important;
+  }
+
+  .card-title {
+    font-size: 16pt !important;
+    color: black !important;
+  }
+
+  /* Table formatting */
+  .table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .table th {
+    background: #f8f9fa !important;
+    color: black !important;
+    border-bottom: 2pt solid #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .table td {
+    border-bottom: 1pt solid #eee !important;
+    padding: 8pt !important;
+  }
+
+  /* Badges and colors */
+  .badge {
+    border: 1px solid #ccc !important;
+    padding: 2pt 6pt !important;
+    font-weight: bold !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .badge.occupied { background-color: #ffe9cf !important; color: #9a5a13 !important; }
+  .badge.vacant { background-color: #dcf7e5 !important; color: #1f7a3c !important; }
+  .badge.reserved { background-color: #eee4ff !important; color: #6a3fb7 !important; }
+
+  /* Map specifics */
+  .map-container {
+    border: 1px solid #ccc !important;
+    padding: 10px !important;
+  }
+
+  .map-legend {
+    display: flex !important;
+    gap: 20px !important;
+    margin-bottom: 15px !important;
+    justify-content: center !important;
+  }
+
+  .legend-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+  }
+
+  .legend-box {
+    width: 15px !important;
+    height: 15px !important;
+    border: 1px solid #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .legend-box.vacant { background-color: #dcf7e5 !important; }
+  .legend-box.occupied { background-color: #ffe9cf !important; }
+  .legend-box.reserved { background-color: #eee4ff !important; }
+
+  /* Ensure images print */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Hide charts if they don't print well, or ensure they do */
+  .chart-placeholder {
+    border: 1px solid #eee !important;
+  }
+
+  .chart-bar {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page breaks */
+  section, .card {
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+}

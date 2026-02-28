@@ -872,7 +872,17 @@ if ($conn) {
     <main class="main">
       <div class="page-header">
         <h1 class="page-title">Cemetery Map</h1>
-        <button onclick="testPinHighlight()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">📍 Test Pin Highlight (A-001)</button>
+        <div class="actions">
+          <button onclick="window.print()" class="btn-primary" style="background: #6b7a90;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
+              <path d="M6 9V2h12v7" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <path d="M6 14h12v8H6z" />
+            </svg>
+            Print Map
+          </button>
+          <button onclick="testPinHighlight()" class="btn-primary" style="background: #ef4444;">📍 Test Pin Highlight (A-001)</button>
+        </div>
       </div>
 
       <?php if (isset($error)): ?>
