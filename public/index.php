@@ -64,7 +64,7 @@ if ($conn) {
               <path d="M16 7v10" />
             </svg>
           </span>
-          <span>Cemetery Lot Management</span>
+          <span>Lot Management</span>
         </a>
 
         <a href="lot-availability.php">
@@ -75,7 +75,7 @@ if ($conn) {
               <path d="M4 4l16 16" />
             </svg>
           </span>
-          <span>Lot Availability</span>
+          <span>Lots</span>
         </a>
 
         <a href="cemetery-map.php">
@@ -139,7 +139,7 @@ if ($conn) {
 
     <main class="main">
       <div class="page-header">
-        <h1 class="page-title">Cemetery Lot Management</h1>
+        <h1 class="page-title">Lot Management</h1>
         <button class="btn-primary" data-action="add">
           <span class="icon" style="color:#fff">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
