@@ -20,19 +20,41 @@ $stats = [
 
 if ($conn) {
     try {
+        // Use subquery to get actual status for each lot first
+        $statusQuery = "
+            SELECT 
+                cl.id,
+                cl.section,
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM deceased_records dr WHERE dr.lot_id = cl.id) > 0 THEN 'Occupied'
+                    WHEN (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) > 0 THEN 'Occupied'
+                    ELSE cl.status
+                END as actual_status
+            FROM cemetery_lots cl
+        ";
+
         $stats['total_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
-        $stats['available_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Vacant'")->fetchColumn();
-        $stats['occupied_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Occupied'")->fetchColumn();
-        $stats['reserved_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Reserved'")->fetchColumn();
+        
+        $stats['available_lots'] = $conn->query("
+            SELECT COUNT(*) FROM ($statusQuery) as lots WHERE actual_status = 'Vacant'
+        ")->fetchColumn();
+        
+        $stats['occupied_lots'] = $conn->query("
+            SELECT COUNT(*) FROM ($statusQuery) as lots WHERE actual_status = 'Occupied'
+        ")->fetchColumn();
+        
+        $stats['reserved_lots'] = $conn->query("
+            SELECT COUNT(*) FROM ($statusQuery) as lots WHERE actual_status = 'Reserved'
+        ")->fetchColumn();
         
         $stmt = $conn->query("
             SELECT 
                 section,
                 COUNT(*) as total,
-                SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
-                SUM(CASE WHEN status = 'Vacant' THEN 1 ELSE 0 END) as vacant,
-                SUM(CASE WHEN status = 'Reserved' THEN 1 ELSE 0 END) as reserved
-            FROM cemetery_lots
+                SUM(CASE WHEN actual_status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
+                SUM(CASE WHEN actual_status = 'Vacant' THEN 1 ELSE 0 END) as vacant,
+                SUM(CASE WHEN actual_status = 'Reserved' THEN 1 ELSE 0 END) as reserved
+            FROM ($statusQuery) as lots
             GROUP BY section
             ORDER BY section
         ");
@@ -204,25 +226,37 @@ if ($conn) {
 
       <section class="card" style="margin-top:20px">
         <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border)">
-          <h2 class="card-title">Cemetery Usage by Section</h2>
+          <h2 class="card-title">Cemetery Status by Section</h2>
+          <p class="card-sub">Comparison of Vacant vs Occupied/Reserved lots</p>
         </div>
         <div class="chart-placeholder">
           <div class="chart-bar-container">
             <div class="chart-y-axis">
-              <span>16</span>
-              <span>12</span>
-              <span>8</span>
-              <span>4</span>
+              <span>20</span>
+              <span>15</span>
+              <span>10</span>
+              <span>5</span>
               <span>0</span>
             </div>
             <div class="chart-bars">
               <?php foreach ($stats['sections'] as $section): ?>
                 <div class="chart-bar-group">
-                  <div class="chart-bar" style="height:<?php echo min($section['vacant'] * 15, 200); ?>px; background:#22c55e"></div>
+                  <div style="display:flex; gap:4px; align-items:flex-end; height:200px; width:100%; justify-content:center;">
+                    <div class="chart-bar" style="height:<?php echo min($section['vacant'] * 10, 200); ?>px; background:#22c55e; width:20px;" title="Vacant: <?php echo $section['vacant']; ?>"></div>
+                    <div class="chart-bar" style="height:<?php echo min(($section['occupied'] + $section['reserved']) * 10, 200); ?>px; background:#ff8c42; width:20px;" title="Occupied/Reserved: <?php echo $section['occupied'] + $section['reserved']; ?>"></div>
+                  </div>
                   <span class="chart-label"><?php echo htmlspecialchars($section['section']); ?></span>
+                  <div style="display:flex; flex-direction:column; gap:2px;">
+                    <span class="chart-label" style="font-size:10px; color:#22c55e"><?php echo $section['vacant']; ?> V</span>
+                    <span class="chart-label" style="font-size:10px; color:#ff8c42"><?php echo $section['occupied'] + $section['reserved']; ?> O/R</span>
+                  </div>
                 </div>
               <?php endforeach; ?>
             </div>
+          </div>
+          <div style="display:flex; justify-content:center; gap:20px; margin-top:20px; font-size:12px;">
+            <div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; background:#22c55e; border-radius:2px;"></div> Vacant</div>
+            <div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; background:#ff8c42; border-radius:2px;"></div> Occupied/Reserved</div>
           </div>
         </div>
       </section>
