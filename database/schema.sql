@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS deceased_records (
     cause_of_death TEXT,
     next_of_kin VARCHAR(255),
     next_of_kin_contact VARCHAR(100),
+    deceased_info TEXT,
     remarks TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,

@@ -13,7 +13,7 @@ if ($conn) {
             SELECT dr.*, cl.lot_number, cl.section, cl.block 
             FROM deceased_records dr 
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
-            ORDER BY dr.date_of_death DESC
+            ORDER BY dr.date_of_burial DESC
         ");
         $records = $stmt->fetchAll();
         
@@ -113,19 +113,21 @@ if ($conn) {
                 <th align="left">Date of Death</th>
                 <th align="left">Date of Burial</th>
                 <th align="left">Age</th>
+                <th align="left">Deceased Info</th>
+                <th align="left">Relationship</th>
                 <th align="right">Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php if (isset($error)): ?>
                 <tr>
-                  <td colspan="8" style="text-align:center; color:#ef4444;">
+                  <td colspan="10" style="text-align:center; color:#ef4444;">
                     Error loading data: <?php echo htmlspecialchars($error); ?>
                   </td>
                 </tr>
               <?php elseif (empty($records)): ?>
                 <tr>
-                  <td colspan="8" style="text-align:center; color:#6b7280;">
+                  <td colspan="10" style="text-align:center; color:#6b7280;">
                     No burial records found. Click "Add New Burial Record" to create one.
                   </td>
                 </tr>
@@ -147,6 +149,12 @@ if ($conn) {
                     <td><?php echo $record['date_of_death'] ? date('M d, Y', strtotime($record['date_of_death'])) : '—'; ?></td>
                     <td><?php echo $record['date_of_burial'] ? date('M d, Y', strtotime($record['date_of_burial'])) : '—'; ?></td>
                     <td><?php echo $record['age'] ?: '—'; ?></td>
+                    <td style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
+                      <?php echo htmlspecialchars($record['deceased_info'] ?: '—'); ?>
+                    </td>
+                    <td style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
+                      <?php echo htmlspecialchars($record['remarks'] ?: '—'); ?>
+                    </td>
                     <td>
                       <div class="actions">
                         <button class="btn-action btn-edit" data-action="view" data-record-id="<?php echo $record['id']; ?>">

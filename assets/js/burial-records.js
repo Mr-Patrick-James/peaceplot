@@ -145,6 +145,7 @@ function filterRecords(query) {
             record.next_of_kin,
             record.next_of_kin_contact,
             record.cause_of_death,
+            record.deceased_info,
             record.remarks
         ];
         return fields.some(val => (val || '').toString().toLowerCase().includes(q));
@@ -222,11 +223,11 @@ async function loadBurialRecords() {
             renderRecords(result.data);
         } else {
             console.log('API returned error:', result.message);
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#ef4444;">Failed to load burial records: ' + (result.message || 'Unknown error') + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#ef4444;">Failed to load burial records: ' + (result.message || 'Unknown error') + '</td></tr>';
         }
     } catch (error) {
         console.error('Error loading records:', error);
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#ef4444;">Error loading data: ' + error.message + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#ef4444;">Error loading data: ' + error.message + '</td></tr>';
     }
 }
 
@@ -239,7 +240,7 @@ function renderRecords(records) {
     if (records.length === 0) {
         const q = (document.getElementById('recordSearch')?.value || '').trim();
         const msg = q ? 'No matching records found' : 'No burial records found';
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#6b7280;">${msg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#6b7280;">${msg}</td></tr>`;
         return;
     }
 
@@ -263,6 +264,12 @@ function renderRecords(records) {
             <td>${deathDate}</td>
             <td>${burialDate}</td>
             <td>${record.age || '—'}</td>
+            <td style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
+                ${record.deceased_info || '—'}
+            </td>
+            <td style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
+                ${record.remarks || '—'}
+            </td>
             <td>
                 <div class="actions">
                     <button class="btn-action btn-edit" data-action="view" data-record-id="${record.id}">
@@ -461,23 +468,36 @@ function createViewModal(record) {
                     </div>
                 </div>
                 
-                ${record.remarks ? `
-                <div class="info-section" style="margin-bottom:25px;">
-                    <div class="section-header">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
-                        </svg>
-                        <h3>Remarks</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:25px; margin-bottom:25px;">
+                    <div class="info-section">
+                        <div class="section-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                            </svg>
+                            <h3>Deceased Info</h3>
+                        </div>
+                        <div class="remarks-content">
+                            ${record.deceased_info || 'N/A'}
+                        </div>
                     </div>
-                    <div class="remarks-content">
-                        ${record.remarks}
+                    
+                    <div class="info-section">
+                        <div class="section-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            <h3>Relationship</h3>
+                        </div>
+                        <div class="remarks-content">
+                            ${record.remarks || 'N/A'}
+                        </div>
                     </div>
                 </div>
-                ` : ''}
                 
                 <div class="info-section">
                     <div class="section-header">
@@ -829,8 +849,13 @@ function createRecordModal(record = null) {
                     </div>
                     
                     <div class="form-group" style="grid-column: 1 / -1;">
-                        <label>Remarks</label>
-                        <textarea name="remarks">${record?.remarks || ''}</textarea>
+                        <label>Notes</label>
+                        <textarea name="deceased_info" placeholder="Enter brief info about the deceased person (e.g., 'Family, Relative, Moved with')">${record?.deceased_info || ''}</textarea>
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Relationship / Family Notes</label>
+                        <textarea name="remarks" placeholder="Enter relationship to others in this lot (e.g., 'Juan moved with Martinez')">${record?.remarks || ''}</textarea>
                     </div>
                     
                     <div class="form-group" style="grid-column: 1 / -1;">

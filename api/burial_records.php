@@ -151,10 +151,10 @@ function handlePost($conn, $input) {
         $stmt = $conn->prepare("
             INSERT INTO deceased_records 
             (lot_id, layer, full_name, date_of_birth, date_of_death, date_of_burial, age, 
-             cause_of_death, next_of_kin, next_of_kin_contact, remarks) 
+             cause_of_death, next_of_kin, next_of_kin_contact, deceased_info, remarks) 
             VALUES 
             (:lot_id, :layer, :full_name, :date_of_birth, :date_of_death, :date_of_burial, :age,
-             :cause_of_death, :next_of_kin, :next_of_kin_contact, :remarks)
+             :cause_of_death, :next_of_kin, :next_of_kin_contact, :deceased_info, :remarks)
         ");
         
         $stmt->bindParam(':lot_id', $input['lot_id']);
@@ -167,6 +167,7 @@ function handlePost($conn, $input) {
         $stmt->bindParam(':cause_of_death', $input['cause_of_death']);
         $stmt->bindParam(':next_of_kin', $input['next_of_kin']);
         $stmt->bindParam(':next_of_kin_contact', $input['next_of_kin_contact']);
+        $stmt->bindParam(':deceased_info', $input['deceased_info']);
         $stmt->bindParam(':remarks', $input['remarks']);
         
         if ($stmt->execute()) {
@@ -219,6 +220,7 @@ function handlePut($conn, $input) {
                 cause_of_death = :cause_of_death,
                 next_of_kin = :next_of_kin,
                 next_of_kin_contact = :next_of_kin_contact,
+                deceased_info = :deceased_info,
                 remarks = :remarks,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id
@@ -234,6 +236,7 @@ function handlePut($conn, $input) {
         $stmt->bindParam(':cause_of_death', $input['cause_of_death']);
         $stmt->bindParam(':next_of_kin', $input['next_of_kin']);
         $stmt->bindParam(':next_of_kin_contact', $input['next_of_kin_contact']);
+        $stmt->bindParam(':deceased_info', $input['deceased_info']);
         $stmt->bindParam(':remarks', $input['remarks']);
         
         if ($stmt->execute()) {
