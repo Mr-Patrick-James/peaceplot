@@ -16,8 +16,7 @@ if ($conn) {
                 section,
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'Vacant' THEN 1 ELSE 0 END) as vacant,
-                SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
-                SUM(CASE WHEN status = 'Reserved' THEN 1 ELSE 0 END) as reserved
+                SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied
             FROM cemetery_lots
             GROUP BY section
             ORDER BY section
@@ -118,10 +117,6 @@ if ($conn) {
                 <span class="stat-label">Occupied</span>
                 <span class="stat-value stat-occupied"><?php echo $section['occupied']; ?></span>
               </div>
-              <div class="stat-row">
-                <span class="stat-label">Reserved</span>
-                <span class="stat-value stat-reserved"><?php echo $section['reserved']; ?></span>
-              </div>
               <div class="stat-total">
                 <span class="stat-label">Total</span>
                 <span class="stat-value"><?php echo $section['total']; ?></span>
@@ -140,10 +135,6 @@ if ($conn) {
           <a href="?status=Occupied<?php echo $filterSection ? '&section=' . urlencode($filterSection) : ''; ?>" 
              class="tab <?php echo $filterStatus === 'Occupied' ? 'active' : ''; ?>">
             Occupied Lots
-          </a>
-          <a href="?status=Reserved<?php echo $filterSection ? '&section=' . urlencode($filterSection) : ''; ?>" 
-             class="tab <?php echo $filterStatus === 'Reserved' ? 'active' : ''; ?>">
-            Reserved Lots
           </a>
         </div>
 

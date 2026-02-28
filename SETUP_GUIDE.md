@@ -51,7 +51,7 @@ Once initialization is complete, access these pages:
 - Section (required)
 - Block
 - Position
-- Status: Vacant, Occupied, Reserved, Maintenance (required)
+- Status: Vacant, Occupied, Maintenance (required)
 - Size (sqm)
 - Price
 

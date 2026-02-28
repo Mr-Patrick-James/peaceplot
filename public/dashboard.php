@@ -14,7 +14,7 @@ $stats = [
     'total_lots' => 0,
     'available_lots' => 0,
     'occupied_lots' => 0,
-    'reserved_lots' => 0,
+    'occupied_lots' => 0,
     'sections' => []
 ];
 
@@ -43,17 +43,12 @@ if ($conn) {
             SELECT COUNT(*) FROM ($statusQuery) as lots WHERE actual_status = 'Occupied'
         ")->fetchColumn();
         
-        $stats['reserved_lots'] = $conn->query("
-            SELECT COUNT(*) FROM ($statusQuery) as lots WHERE actual_status = 'Reserved'
-        ")->fetchColumn();
-        
         $stmt = $conn->query("
             SELECT 
                 section,
                 COUNT(*) as total,
                 SUM(CASE WHEN actual_status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
-                SUM(CASE WHEN actual_status = 'Vacant' THEN 1 ELSE 0 END) as vacant,
-                SUM(CASE WHEN actual_status = 'Reserved' THEN 1 ELSE 0 END) as reserved
+                SUM(CASE WHEN actual_status = 'Vacant' THEN 1 ELSE 0 END) as vacant
             FROM ($statusQuery) as lots
             GROUP BY section
             ORDER BY section
@@ -170,21 +165,6 @@ if ($conn) {
             </div>
           </div>
         </div>
-
-        <div class="dash-stat-card">
-          <div class="dash-stat-content">
-            <div class="dash-stat-info">
-              <div class="dash-stat-label">Reserved Lots</div>
-              <div class="dash-stat-number"><?php echo $stats['reserved_lots']; ?></div>
-              <div class="dash-stat-sub">Pre-reserved</div>
-            </div>
-            <div class="dash-stat-icon dash-icon-purple">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-            </div>
-          </div>
-        </div>
       </div>
 
       <section class="card" style="margin-top:20px">
@@ -200,13 +180,12 @@ if ($conn) {
                 <th align="right">Total Lots</th>
                 <th align="right">Occupied</th>
                 <th align="right">Vacant</th>
-                <th align="right">Reserved</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($stats['sections'])): ?>
                 <tr>
-                  <td colspan="5" style="text-align:center; color:#6b7280;">No sections found</td>
+                  <td colspan="4" style="text-align:center; color:#6b7280;">No sections found</td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($stats['sections'] as $section): ?>
@@ -215,7 +194,6 @@ if ($conn) {
                     <td align="right"><?php echo $section['total']; ?></td>
                     <td align="right"><span class="table-number occupied-color"><?php echo $section['occupied']; ?></span></td>
                     <td align="right"><span class="table-number vacant-color"><?php echo $section['vacant']; ?></span></td>
-                    <td align="right"><span class="table-number reserved-color"><?php echo $section['reserved']; ?></span></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -227,7 +205,7 @@ if ($conn) {
       <section class="card" style="margin-top:20px">
         <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border)">
           <h2 class="card-title">Cemetery Status by Section</h2>
-          <p class="card-sub">Comparison of Vacant vs Occupied/Reserved lots</p>
+          <p class="card-sub">Comparison of Vacant vs Occupied lots</p>
         </div>
         <div class="chart-placeholder">
           <div class="chart-bar-container">
@@ -243,12 +221,12 @@ if ($conn) {
                 <div class="chart-bar-group">
                   <div style="display:flex; gap:4px; align-items:flex-end; height:200px; width:100%; justify-content:center;">
                     <div class="chart-bar" style="height:<?php echo min($section['vacant'] * 10, 200); ?>px; background:#22c55e; width:20px;" title="Vacant: <?php echo $section['vacant']; ?>"></div>
-                    <div class="chart-bar" style="height:<?php echo min(($section['occupied'] + $section['reserved']) * 10, 200); ?>px; background:#ff8c42; width:20px;" title="Occupied/Reserved: <?php echo $section['occupied'] + $section['reserved']; ?>"></div>
+                    <div class="chart-bar" style="height:<?php echo min($section['occupied'] * 10, 200); ?>px; background:#ff8c42; width:20px;" title="Occupied: <?php echo $section['occupied']; ?>"></div>
                   </div>
                   <span class="chart-label"><?php echo htmlspecialchars($section['section']); ?></span>
                   <div style="display:flex; flex-direction:column; gap:2px;">
                     <span class="chart-label" style="font-size:10px; color:#22c55e"><?php echo $section['vacant']; ?> V</span>
-                    <span class="chart-label" style="font-size:10px; color:#ff8c42"><?php echo $section['occupied'] + $section['reserved']; ?> O/R</span>
+                    <span class="chart-label" style="font-size:10px; color:#ff8c42"><?php echo $section['occupied']; ?> O</span>
                   </div>
                 </div>
               <?php endforeach; ?>
@@ -256,7 +234,7 @@ if ($conn) {
           </div>
           <div style="display:flex; justify-content:center; gap:20px; margin-top:20px; font-size:12px;">
             <div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; background:#22c55e; border-radius:2px;"></div> Vacant</div>
-            <div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; background:#ff8c42; border-radius:2px;"></div> Occupied/Reserved</div>
+            <div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; background:#ff8c42; border-radius:2px;"></div> Occupied</div>
           </div>
         </div>
       </section>

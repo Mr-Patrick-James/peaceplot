@@ -189,11 +189,6 @@ if ($conn) {
       background: rgba(249, 115, 22, 0.2);
     }
     
-    .lot-rectangle.reserved {
-      border-color: #8b5cf6;
-      background: rgba(139, 92, 246, 0.2);
-    }
-    
     .lot-rectangle.maintenance {
       border-color: #6b7280;
       background: rgba(107, 114, 128, 0.2);
@@ -455,6 +450,10 @@ if ($conn) {
           <select id="lotSelect">
             <option value="">-- Select a lot --</option>
             <?php foreach ($lots as $lot): ?>
+              <?php 
+                // Skip lots that are already marked on the map
+                if ($lot['map_x'] !== null && $lot['map_y'] !== null) continue; 
+              ?>
               <option value="<?php echo $lot['id']; ?>" 
                       data-lot='<?php echo htmlspecialchars(json_encode($lot)); ?>'>
                 <?php echo htmlspecialchars($lot['lot_number']); ?> - 
@@ -493,7 +492,6 @@ if ($conn) {
               <select id="newStatus" required>
                 <option value="Vacant">Vacant</option>
                 <option value="Occupied">Occupied</option>
-                <option value="Reserved">Reserved</option>
                 <option value="Maintenance">Maintenance</option>
               </select>
             </div>
@@ -795,11 +793,13 @@ if ($conn) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            lot_id: lotId,
-            map_x: coordinates.x,
-            map_y: coordinates.y,
-            map_width: coordinates.width,
-            map_height: coordinates.height
+            lots: [{
+              id: lotId,
+              map_x: coordinates.x,
+              map_y: coordinates.y,
+              map_width: coordinates.width,
+              map_height: coordinates.height
+            }]
           })
         });
         
@@ -886,11 +886,19 @@ if ($conn) {
       // Add rectangle to map
       addRectangle(pendingRect.x, pendingRect.y, pendingRect.width, pendingRect.height, lotData);
       
+      // Remove assigned lot from dropdown selection
+      if (mode === 'existing') {
+        const select = document.getElementById('lotSelect');
+        const option = select.querySelector(`option[value="${lotId}"]`);
+        if (option) option.remove();
+      }
+
       // Add to lots data
       lotsData.push(lotData);
 
       closeAssignModal();
       alert(mode === 'existing' ? 'Lot assigned successfully!' : 'New lot created and assigned successfully!');
+      window.location.reload(); // Refresh to update selection dropdown
     }
 
     async function saveAllLots(silent = false) {
@@ -941,7 +949,9 @@ if ($conn) {
         });
 
         const result = await response.json();
-        if (!result.success) {
+        if (result.success) {
+          window.location.reload(); // Refresh to update lot dropdown and markers
+        } else {
           alert('Error removing mark: ' + result.message);
         }
       } catch (error) {

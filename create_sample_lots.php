@@ -18,7 +18,7 @@ try {
         ['A-002', 'Section A', 'Block 1', 'Vacant', 12.0, 25000.00],
         ['A-003', 'Section A', 'Block 1', 'Occupied', 12.0, 25000.00],
         ['A-004', 'Section A', 'Block 1', 'Vacant', 12.0, 25000.00],
-        ['A-005', 'Section A', 'Block 1', 'Reserved', 12.0, 25000.00],
+        ['A-005', 'Section A', 'Block 1', 'Vacant', 12.0, 25000.00],
         ['B-001', 'Section B', 'Block 1', 'Vacant', 15.0, 30000.00],
         ['B-002', 'Section B', 'Block 1', 'Vacant', 15.0, 30000.00],
         ['B-003', 'Section B', 'Block 1', 'Occupied', 15.0, 30000.00],

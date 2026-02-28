@@ -13,7 +13,7 @@
 
 2. **dashboard.php** (Dashboard)
    - **Status**: ✅ Real-time statistics
-   - Live counts: Total, Available, Occupied, Reserved lots
+   - Live counts: Total, Available, Occupied lots
    - Calculates percentages dynamically
    - Section summary with real data
    - Dynamic chart heights based on actual data
@@ -62,7 +62,7 @@
 - Cemetery lot listings
 - Lot counts and statistics
 - Section summaries
-- Status badges (Vacant/Occupied/Reserved)
+- Status badges (Vacant/Occupied)
 - Deceased names
 
 ### 🔄 CRUD Operations:

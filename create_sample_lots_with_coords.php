@@ -48,7 +48,7 @@ $sampleLots = [
         'map_y' => 25.0,
         'map_width' => 8.0,
         'map_height' => 6.0,
-        'status' => 'Reserved',
+        'status' => 'Vacant',
         'deceased_name' => null
     ],
     [
@@ -119,7 +119,6 @@ $testMapHtml = '<!DOCTYPE html>
         }
         .lot-marker.occupied { border-color: #f97316; background: rgba(249,115,22,0.3); }
         .lot-marker.vacant { border-color: #22c55e; background: rgba(34,197,94,0.3); }
-        .lot-marker.reserved { border-color: #8b5cf6; background: rgba(139,92,246,0.3); }
     </style>
 </head>
 <body>

@@ -130,11 +130,6 @@ if ($conn) {
       background: rgba(249, 115, 22, 0.3);
     }
     
-    .lot-marker.reserved {
-      border-color: #8b5cf6;
-      background: rgba(139, 92, 246, 0.3);
-    }
-    
     .lot-marker.maintenance {
       border-color: #6b7280;
       background: rgba(107, 114, 128, 0.3);
@@ -296,11 +291,6 @@ if ($conn) {
     .status-badge.occupied {
       background: #fff3e0;
       color: #f57c00;
-    }
-    
-    .status-badge.reserved {
-      background: #fff8e1;
-      color: #f9a825;
     }
     
     .status-badge.maintenance {
@@ -511,9 +501,6 @@ if ($conn) {
     }
     .legend-box.occupied { 
       background: linear-gradient(135deg, #e8e8e8 0%, #c5c5c5 100%);
-    }
-    .legend-box.reserved { 
-      background: linear-gradient(135deg, #ffd9a8 0%, #ffb366 100%);
     }
     .legend-box.maintenance { 
       background: linear-gradient(135deg, #b8b8b8 0%, #8a8a8a 100%);
@@ -900,10 +887,6 @@ if ($conn) {
           <div class="legend-item">
             <div class="legend-box occupied"></div>
             <span>Occupied</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-box reserved"></div>
-            <span>Reserved</span>
           </div>
           <div class="legend-item">
             <div class="legend-box maintenance"></div>

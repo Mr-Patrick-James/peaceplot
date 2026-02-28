@@ -30,11 +30,10 @@ peaceplot/
 
 - **Dashboard**: Overview of cemetery statistics and section summaries
 - **Cemetery Lot Management**: CRUD operations for cemetery lots
-- **Lot Availability**: Track available, occupied, and reserved lots
+- **Lot Availability**: Track available and occupied lots
 - **Burial Records**: Maintain deceased person records
 - **Cemetery Map**: Visual representation of cemetery layout
 - **Reports**: Generate various reports and analytics
-- **Reservations**: Manage lot reservations and payments
 - **User Management**: Admin and staff access control
 - **Activity Logs**: Track all system activities
 

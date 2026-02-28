@@ -159,7 +159,6 @@ function createLotModal(lot = null) {
                     <select name="status" required>
                         <option value="Vacant" ${lot?.status === 'Vacant' ? 'selected' : ''}>Vacant</option>
                         <option value="Occupied" ${lot?.status === 'Occupied' ? 'selected' : ''}>Occupied</option>
-                        <option value="Reserved" ${lot?.status === 'Reserved' ? 'selected' : ''}>Reserved</option>
                         <option value="Maintenance" ${lot?.status === 'Maintenance' ? 'selected' : ''}>Maintenance</option>
                     </select>
                 </div>

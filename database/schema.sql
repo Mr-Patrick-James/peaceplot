@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS cemetery_lots (
     section VARCHAR(50) NOT NULL,
     block VARCHAR(50),
     position VARCHAR(50),
-    status VARCHAR(20) NOT NULL CHECK(status IN ('Vacant', 'Occupied', 'Reserved', 'Maintenance')),
+    status VARCHAR(20) NOT NULL CHECK(status IN ('Vacant', 'Occupied', 'Maintenance')),
     size_sqm DECIMAL(10,2),
     price DECIMAL(10,2),
     map_x DECIMAL(10,4),
@@ -37,28 +37,9 @@ CREATE TABLE IF NOT EXISTS deceased_records (
     FOREIGN KEY (lot_id) REFERENCES cemetery_lots(id) ON DELETE CASCADE
 );
 
--- Reservations Table
-CREATE TABLE IF NOT EXISTS reservations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lot_id INTEGER NOT NULL,
-    customer_name VARCHAR(255) NOT NULL,
-    customer_contact VARCHAR(100),
-    customer_email VARCHAR(255),
-    customer_address TEXT,
-    reservation_date DATE NOT NULL,
-    expiry_date DATE,
-    amount_paid DECIMAL(10,2),
-    payment_status VARCHAR(20) CHECK(payment_status IN ('Pending', 'Partial', 'Paid', 'Refunded')),
-    remarks TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (lot_id) REFERENCES cemetery_lots(id) ON DELETE CASCADE
-);
-
 -- Payments Table
 CREATE TABLE IF NOT EXISTS payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    reservation_id INTEGER,
     lot_id INTEGER,
     payment_date DATE NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
@@ -66,7 +47,6 @@ CREATE TABLE IF NOT EXISTS payments (
     reference_number VARCHAR(100),
     remarks TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL,
     FOREIGN KEY (lot_id) REFERENCES cemetery_lots(id) ON DELETE SET NULL
 );
 
@@ -115,8 +95,6 @@ CREATE INDEX IF NOT EXISTS idx_lots_status ON cemetery_lots(status);
 CREATE INDEX IF NOT EXISTS idx_lots_section ON cemetery_lots(section);
 CREATE INDEX IF NOT EXISTS idx_lots_number ON cemetery_lots(lot_number);
 CREATE INDEX IF NOT EXISTS idx_deceased_lot ON deceased_records(lot_id);
-CREATE INDEX IF NOT EXISTS idx_reservations_lot ON reservations(lot_id);
-CREATE INDEX IF NOT EXISTS idx_payments_reservation ON payments(reservation_id);
 CREATE INDEX IF NOT EXISTS idx_maintenance_lot ON maintenance_records(lot_id);
 CREATE INDEX IF NOT EXISTS idx_logs_user ON activity_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_logs_created ON activity_logs(created_at);

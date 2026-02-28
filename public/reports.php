@@ -8,7 +8,7 @@ $stats = [
     'total_lots' => 0,
     'vacant_lots' => 0,
     'occupied_lots' => 0,
-    'reserved_lots' => 0,
+    'occupied_lots' => 0,
     'sections' => [],
     'recent_burials' => []
 ];
@@ -19,7 +19,6 @@ if ($conn) {
         $stats['total_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
         $stats['vacant_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Vacant'")->fetchColumn();
         $stats['occupied_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Occupied'")->fetchColumn();
-        $stats['reserved_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Reserved'")->fetchColumn();
         
         // Get section-wise summary
         $stmt = $conn->query("
@@ -27,8 +26,7 @@ if ($conn) {
                 section,
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
-                SUM(CASE WHEN status = 'Vacant' THEN 1 ELSE 0 END) as vacant,
-                SUM(CASE WHEN status = 'Reserved' THEN 1 ELSE 0 END) as reserved
+                SUM(CASE WHEN status = 'Vacant' THEN 1 ELSE 0 END) as vacant
             FROM cemetery_lots
             GROUP BY section
             ORDER BY section
@@ -222,46 +220,6 @@ if ($conn) {
             </button>
           </div>
         </div>
-
-        <div class="report-card report-purple">
-          <div class="report-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6" />
-              <path d="M16 13H8" />
-              <path d="M16 17H8" />
-              <path d="M10 9H8" />
-            </svg>
-          </div>
-          <div class="report-number"><?php echo $stats['reserved_lots']; ?></div>
-          <div class="report-title">Reserved Lots Report</div>
-          <div class="report-desc">List of pre-reserved cemetery lots</div>
-          <div class="report-actions">
-            <a href="lot-availability.php?status=Reserved" class="report-btn report-btn-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              <span>View Report</span>
-            </a>
-            <button class="report-btn report-btn-print" onclick="window.print()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9V2h12v7" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <path d="M6 14h12v8H6z" />
-              </svg>
-              <span>Print</span>
-            </button>
-            <button class="report-btn report-btn-export" onclick="exportToCSV('reserved_lots')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              <span>Export CSV</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       <section class="card" style="margin-top:24px">
@@ -277,13 +235,12 @@ if ($conn) {
                 <th align="right">Total Lots</th>
                 <th align="right">Occupied</th>
                 <th align="right">Vacant</th>
-                <th align="right">Reserved</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($stats['sections'])): ?>
                 <tr>
-                  <td colspan="5" style="text-align:center; color:#6b7280;">No sections found</td>
+                  <td colspan="4" style="text-align:center; color:#6b7280;">No sections found</td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($stats['sections'] as $section): ?>
@@ -292,7 +249,6 @@ if ($conn) {
                     <td align="right"><?php echo $section['total']; ?></td>
                     <td align="right"><span class="table-number occupied-color"><?php echo $section['occupied']; ?></span></td>
                     <td align="right"><span class="table-number vacant-color"><?php echo $section['vacant']; ?></span></td>
-                    <td align="right"><span class="table-number reserved-color"><?php echo $section['reserved']; ?></span></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>

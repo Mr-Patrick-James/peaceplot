@@ -6,7 +6,7 @@ INSERT OR IGNORE INTO cemetery_lots (lot_number, section, block, position, statu
 ('A-002', 'Section A', 'Block 1', 'Row 1, Plot 2', 'Vacant', 4.00, 50000.00),
 ('A-003', 'Section A', 'Block 1', 'Row 1, Plot 3', 'Occupied', 4.00, 50000.00),
 ('A-004', 'Section A', 'Block 1', 'Row 1, Plot 4', 'Vacant', 4.00, 50000.00),
-('A-005', 'Section A', 'Block 1', 'Row 1, Plot 5', 'Reserved', 4.00, 50000.00),
+('A-005', 'Section A', 'Block 1', 'Row 1, Plot 5', 'Vacant', 4.00, 50000.00),
 ('B-001', 'Section B', 'Block 2', 'Row 1, Plot 1', 'Occupied', 6.00, 75000.00),
 ('B-002', 'Section B', 'Block 2', 'Row 1, Plot 2', 'Vacant', 6.00, 75000.00),
 ('B-003', 'Section B', 'Block 2', 'Row 1, Plot 3', 'Occupied', 6.00, 75000.00);
@@ -17,14 +17,6 @@ INSERT OR IGNORE INTO deceased_records (lot_id, full_name, date_of_birth, date_o
 (3, 'Mary Johnson', '1950-08-22', '2023-09-10', '2023-09-15', 73, 'Robert Johnson', '+1-555-0102'),
 (6, 'Robert Williams', '1938-12-05', '2023-04-18', '2023-04-23', 85, 'Sarah Williams', '+1-555-0103'),
 (8, 'Patricia Brown', '1955-07-30', '2023-11-02', '2023-11-07', 68, 'Michael Brown', '+1-555-0104');
-
--- Insert sample reservations (skip if already exists)
-INSERT OR IGNORE INTO reservations (lot_id, customer_name, customer_contact, customer_email, reservation_date, expiry_date, amount_paid, payment_status) VALUES
-(5, 'David Miller', '+1-555-0105', 'david.miller@email.com', '2024-01-15', '2024-07-15', 25000.00, 'Partial');
-
--- Insert sample payments (skip if already exists)
-INSERT OR IGNORE INTO payments (reservation_id, lot_id, payment_date, amount, payment_method, reference_number) VALUES
-(1, 5, '2024-01-15', 25000.00, 'Bank Transfer', 'REF-2024-001');
 
 -- Insert default admin user (password: admin123 - should be changed in production)
 -- Note: In production, use proper password hashing

@@ -56,17 +56,6 @@ try {
             $headers = ['Lot Number', 'Section', 'Block', 'Deceased Name', 'Date of Birth', 'Date of Death', 'Date of Burial'];
             break;
 
-        case 'reserved_lots':
-            $stmt = $conn->query("
-                SELECT cl.lot_number, cl.section, cl.block, cl.position, cl.status, cl.size_sqm, cl.price
-                FROM cemetery_lots cl 
-                WHERE cl.status = 'Reserved'
-                ORDER BY cl.lot_number
-            ");
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $headers = ['Lot Number', 'Section', 'Block', 'Position', 'Status', 'Size (sqm)', 'Price'];
-            break;
-
         case 'recent_burials':
             $stmt = $conn->query("
                 SELECT dr.full_name, cl.lot_number, cl.section, dr.date_of_birth, dr.date_of_death, dr.date_of_burial, dr.age 

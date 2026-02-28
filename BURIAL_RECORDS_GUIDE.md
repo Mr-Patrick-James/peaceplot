@@ -17,7 +17,7 @@ http://localhost/peaceplot/public/burial-records.php
 
 **Form Fields:**
 - **Full Name*** (required)
-- **Cemetery Lot*** (required) - Dropdown shows available/reserved lots
+- **Cemetery Lot*** (required) - Dropdown shows available lots
 - **Age** - Numeric field
 - **Date of Birth** - Date picker
 - **Date of Death** - Date picker
@@ -76,7 +76,7 @@ Shows complete information:
 ### Automatic Lot Status Management
 - **Add burial record** → Lot becomes "Occupied"
 - **Delete last burial** → Lot becomes "Vacant"
-- Only available/reserved lots shown in dropdown
+- Only available lots shown in dropdown
 
 ### Data Validation
 - Required fields must be filled
