@@ -166,10 +166,6 @@ function createLotModal(lot = null) {
                     <label>Size (sqm)</label>
                     <input type="number" step="0.01" name="size_sqm" value="${lot?.size_sqm || ''}">
                 </div>
-                <div class="form-group">
-                    <label>Price</label>
-                    <input type="number" step="0.01" name="price" value="${lot?.price || ''}">
-                </div>
             </form>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary modal-cancel">Cancel</button>

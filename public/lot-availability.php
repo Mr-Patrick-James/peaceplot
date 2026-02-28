@@ -169,7 +169,6 @@ if ($conn) {
                   <th align="left">Deceased Name</th>
                 <?php endif; ?>
                 <th align="left">Size (sqm)</th>
-                <th align="left">Price</th>
                 <th align="right">Actions</th>
               </tr>
             </thead>
@@ -192,7 +191,6 @@ if ($conn) {
                       <td><?php echo htmlspecialchars($lot['deceased_name'] ?: '—'); ?></td>
                     <?php endif; ?>
                     <td><?php echo $lot['size_sqm'] ? number_format($lot['size_sqm'], 2) : '—'; ?></td>
-                    <td><?php echo $lot['price'] ? '₱' . number_format($lot['price'], 2) : '—'; ?></td>
                     <td>
                       <div class="actions">
                         <button class="btn-action btn-map" onclick="handleMapRedirect(<?php echo $lot['id']; ?>, '<?php echo htmlspecialchars($lot['lot_number']); ?>')">
