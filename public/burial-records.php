@@ -113,7 +113,7 @@ if ($conn) {
                 <th align="left">Date of Death</th>
                 <th align="left">Date of Burial</th>
                 <th align="left">Age</th>
-                <th align="left">Deceased Info</th>
+                <th align="left">Notes</th>
                 <th align="left">Relationship</th>
                 <th align="right">Actions</th>
               </tr>

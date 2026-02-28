@@ -472,10 +472,10 @@ function createViewModal(record) {
                     <div class="info-section">
                         <div class="section-header">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
-                            <h3>Deceased Info</h3>
+                            <h3>Notes</h3>
                         </div>
                         <div class="remarks-content">
                             ${record.deceased_info || 'N/A'}
@@ -850,11 +850,11 @@ function createRecordModal(record = null) {
                     
                     <div class="form-group" style="grid-column: 1 / -1;">
                         <label>Notes</label>
-                        <textarea name="deceased_info" placeholder="Enter brief info about the deceased person (e.g., 'Family, Relative, Moved with')">${record?.deceased_info || ''}</textarea>
+                        <textarea name="deceased_info" placeholder="Enter brief info/notes about the deceased person (e.g., 'Farewell notes')">${record?.deceased_info || ''}</textarea>
                     </div>
                     
                     <div class="form-group" style="grid-column: 1 / -1;">
-                        <label>Relationship / Family Notes</label>
+                        <label>Relationship</label>
                         <textarea name="remarks" placeholder="Enter relationship to others in this lot (e.g., 'Juan moved with Martinez')">${record?.remarks || ''}</textarea>
                     </div>
                     
