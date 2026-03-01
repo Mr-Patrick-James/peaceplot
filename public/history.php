@@ -101,18 +101,19 @@ if ($conn) {
                 <th align="left">Section</th>
                 <th align="left">Relationship</th>
                 <th align="left">Notes</th>
+                <th align="center" style="text-align:center;">Action</th>
               </tr>
             </thead>
             <tbody id="historyTableBody">
               <?php if (isset($error)): ?>
                 <tr>
-                  <td colspan="7" style="text-align:center; color:#ef4444;">
+                  <td colspan="8" style="text-align:center; color:#ef4444;">
                     Error loading data: <?php echo htmlspecialchars($error); ?>
                   </td>
                 </tr>
               <?php elseif (empty($records)): ?>
                 <tr>
-                  <td colspan="7" style="text-align:center; color:#6b7280;">
+                  <td colspan="8" style="text-align:center; color:#6b7280;">
                     No burial records found.
                   </td>
                 </tr>
@@ -139,6 +140,24 @@ if ($conn) {
                     <td style="color: #4b5563; font-style: italic; font-size: 13px;"><?php echo htmlspecialchars($record['remarks'] ?: '—'); ?></td>
                     <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
                       <?php echo htmlspecialchars($record['deceased_info'] ?: '—'); ?>
+                    </td>
+                    <td>
+                      <?php if ($record['lot_id']): ?>
+                        <div class="actions" style="justify-content: center;">
+                            <button class="btn-action btn-map" onclick="window.location.href='cemetery-map.php?highlight_lot=<?php echo htmlspecialchars($record['lot_id']); ?>'">
+                                <span class="icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="currentColor" fill-opacity="0.2"/>
+                                        <circle cx="12" cy="10" r="3" fill="currentColor"/>
+                                        <path d="M12 2v20" stroke-width="1" opacity="0.3"/>
+                                    </svg>
+                                </span>
+                                <span>View on Map</span>
+                            </button>
+                        </div>
+                      <?php else: ?>
+                        <div style="text-align: center; color: #9ca3af;">—</div>
+                      <?php endif; ?>
                     </td>
                   </tr>
                 <?php endforeach; ?>
