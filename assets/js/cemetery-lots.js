@@ -205,12 +205,8 @@ function closeModal(modal) {
 }
 
 function handleMapRedirect(lotId, lotNumber) {
-    // Store the lot to highlight in sessionStorage
-    sessionStorage.setItem('highlightLot', lotId);
-    sessionStorage.setItem('highlightLotNumber', lotNumber);
-    
-    // Redirect to cemetery map page
-    window.location.href = 'cemetery-map.php';
+    // Redirect to cemetery map page with highlighted lot parameter
+    window.location.href = `cemetery-map.php?highlight_lot=${lotId}`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

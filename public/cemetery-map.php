@@ -148,6 +148,23 @@ if ($conn) {
       pointer-events: none;
     }
     
+    .hidden-marker {
+      display: none !important;
+    }
+    
+    .highlighted-marker {
+      z-index: 105 !important;
+      border-width: 4px !important;
+      box-shadow: 0 0 0 4px white, 0 0 0 8px #3b82f6, 0 4px 20px rgba(0,0,0,0.5) !important;
+      animation: pulse-ring 2s infinite;
+    }
+    
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 4px white, 0 0 0 8px rgba(59, 130, 246, 0.8), 0 4px 20px rgba(0,0,0,0.5); }
+      50% { box-shadow: 0 0 0 4px white, 0 0 0 12px rgba(59, 130, 246, 0.4), 0 4px 20px rgba(0,0,0,0.5); }
+      100% { box-shadow: 0 0 0 4px white, 0 0 0 8px rgba(59, 130, 246, 0.8), 0 4px 20px rgba(0,0,0,0.5); }
+    }
+    
     .no-map-message {
       text-align: center;
       padding: 60px 20px;
@@ -868,7 +885,6 @@ if ($conn) {
             </svg>
             Print Map
           </button>
-          <button onclick="testPinHighlight()" class="btn-primary" style="background: #ef4444;">📍 Test Pin Highlight (A-001)</button>
         </div>
       </div>
 
@@ -920,6 +936,7 @@ if ($conn) {
                 $deceasedName = isset($lot['deceased_name']) ? $lot['deceased_name'] : null;
                 ?>
                 <div class="lot-marker <?php echo strtolower($actualStatus); ?>"
+                     data-lot-id="<?php echo $lot['id']; ?>"
                      style="left: <?php echo $lot['map_x']; ?>%; 
                             top: <?php echo $lot['map_y']; ?>%;
                             width: <?php echo $lot['map_width']; ?>%;
@@ -1880,28 +1897,18 @@ if ($conn) {
       }
     };
 
-    // Test function for pin highlight
-    function testPinHighlight() {
-      console.log('Testing pin highlight...');
-      sessionStorage.setItem('highlightLot', '1');
-      sessionStorage.setItem('highlightLotNumber', 'A-001');
-      highlightLotOnMap();
-    }
+
     
     // Highlight lot functionality
     function highlightLotOnMap() {
       console.log('highlightLotOnMap called'); // Debug log
       
-      const highlightLotId = sessionStorage.getItem('highlightLot');
-      const highlightLotNumber = sessionStorage.getItem('highlightLotNumber');
+      const urlParams = new URLSearchParams(window.location.search);
+      const highlightLotId = urlParams.get('highlight_lot');
       
-      console.log('Highlight data:', { highlightLotId, highlightLotNumber }); // Debug log
+      console.log('Highlight data:', { highlightLotId }); // Debug log
       
-      if (highlightLotId && highlightLotNumber) {
-        // Clear the session storage
-        sessionStorage.removeItem('highlightLot');
-        sessionStorage.removeItem('highlightLotNumber');
-        
+      if (highlightLotId) {
         // Find the lot marker on the map
         const lotMarkers = document.querySelectorAll('.lot-marker');
         console.log('Found markers:', lotMarkers.length); // Debug log
@@ -1909,83 +1916,16 @@ if ($conn) {
         let targetMarker = null;
         
         lotMarkers.forEach(marker => {
-          const label = marker.querySelector('.lot-label');
-          console.log('Checking marker:', label ? label.textContent : 'no label'); // Debug log
-          if (label && label.textContent === highlightLotNumber) {
+          if (marker.getAttribute('data-lot-id') === highlightLotId) {
             targetMarker = marker;
+            marker.classList.add('highlighted-marker');
             console.log('Found target marker!'); // Debug log
+          } else {
+            marker.classList.add('hidden-marker');
           }
         });
         
         if (targetMarker) {
-          console.log('Creating pin overlay'); // Debug log
-          
-          // Get screen size for responsive pin
-          const isMobile = window.innerWidth <= 768;
-          const isSmallMobile = window.innerWidth <= 480;
-          
-          // Create smaller responsive pin overlay
-          const pinOverlay = document.createElement('div');
-          const pinSize = isSmallMobile ? 25 : (isMobile ? 30 : 40);
-          const fontSize = isSmallMobile ? 18 : (isMobile ? 22 : 28);
-          
-          pinOverlay.style.cssText = `
-            position: absolute;
-            top: -${pinSize - 20}px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: ${pinSize}px;
-            height: ${pinSize}px;
-            z-index: 1001;
-            pointer-events: none;
-            animation: pinDrop 0.5s ease-out, pinBounce 2s infinite;
-            font-size: ${fontSize}px;
-            text-align: center;
-            line-height: 1;
-            filter: drop-shadow(0 ${isSmallMobile ? 4 : 6}px ${isSmallMobile ? 8 : 12}px rgba(239, 68, 68, 0.6));
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            border: ${isSmallMobile ? 2 : 3}px solid #ef4444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          `;
-          
-          // Use emoji pin with responsive styling
-          pinOverlay.innerHTML = '📍';
-          pinOverlay.style.color = '#ef4444';
-          
-          console.log('Pin overlay created with size:', pinSize); // Debug log
-          
-          // Add the pin overlay to the map canvas instead of the marker
-          const mapCanvas = document.getElementById('mapCanvas');
-          if (mapCanvas) {
-            // Position relative to the map canvas
-            const markerRect = targetMarker.getBoundingClientRect();
-            const canvasRect = mapCanvas.getBoundingClientRect();
-            
-            const relativeLeft = markerRect.left - canvasRect.left + (markerRect.width / 2) - (pinSize / 2);
-            const relativeTop = markerRect.top - canvasRect.top - pinSize + 20;
-            
-            pinOverlay.style.left = relativeLeft + 'px';
-            pinOverlay.style.top = relativeTop + 'px';
-            pinOverlay.style.transform = 'none';
-            
-            mapCanvas.appendChild(pinOverlay);
-            console.log('Pin overlay added to map canvas'); // Debug log
-          } else {
-            // Fallback to adding to marker
-            targetMarker.style.position = 'relative';
-            targetMarker.appendChild(pinOverlay);
-            console.log('Pin overlay added to marker (fallback)'); // Debug log
-          }
-          
-          // Add highlight effect to the lot marker
-          targetMarker.style.transition = 'all 0.5s ease';
-          targetMarker.style.boxShadow = '0 0 30px rgba(239, 68, 68, 0.6), 0 0 60px rgba(239, 68, 68, 0.3)';
-          targetMarker.style.zIndex = '1000';
-          targetMarker.style.transform = 'scale(1.05)';
-          
           // Center the map on the highlighted lot
           setTimeout(() => {
             const mapWrapper = document.querySelector('.map-image-wrapper');
@@ -2006,9 +1946,9 @@ if ($conn) {
               panY = 0;
               updateTransform();
               
-              // Calculate the center position for the marker (accounting for pin height)
+              // Calculate the center position for the marker
               const markerCenterX = markerRect.left + markerRect.width / 2 - wrapperRect.left;
-              const markerCenterY = markerRect.top + markerRect.height / 2 - wrapperRect.top - 30; // Adjust for pin height
+              const markerCenterY = markerRect.top + markerRect.height / 2 - wrapperRect.top;
               
               console.log('Marker center:', { markerCenterX, markerCenterY }); // Debug log
               
@@ -2029,38 +1969,25 @@ if ($conn) {
               
               console.log('Map centered and zoomed'); // Debug log
             }
-          }, 200); // Increased delay
+          }, 200);
           
-          // Remove highlight and pin after 5 seconds
-          setTimeout(() => {
-            console.log('Cleaning up pin and highlight'); // Debug log
-            
-            // Remove pin from map canvas or marker
-            const mapCanvas = document.getElementById('mapCanvas');
-            if (mapCanvas && mapCanvas.contains(pinOverlay)) {
-              mapCanvas.removeChild(pinOverlay);
-              console.log('Pin removed from map canvas'); // Debug log
-            } else if (targetMarker && targetMarker.contains(pinOverlay)) {
-              targetMarker.removeChild(pinOverlay);
-              console.log('Pin removed from marker'); // Debug log
-            } else if (pinOverlay.parentNode) {
-              pinOverlay.parentNode.removeChild(pinOverlay);
-              console.log('Pin removed from parent'); // Debug log
-            }
-            
-            // Remove highlight effects
-            targetMarker.style.boxShadow = '';
-            targetMarker.style.zIndex = '';
-            targetMarker.style.transform = '';
-            
-            console.log('Cleanup completed'); // Debug log
-          }, 5000);
+          // Add clear highlight button to the header
+          const actionsContainer = document.querySelector('.page-header .actions');
+          if (actionsContainer) {
+             const clearBtn = document.createElement('button');
+             clearBtn.className = 'btn-primary';
+             clearBtn.style.background = '#6b7280';
+             clearBtn.innerHTML = '✕ Clear Highlight';
+             clearBtn.onclick = function() {
+                 window.location.href = 'cemetery-map.php';
+             };
+             actionsContainer.appendChild(clearBtn);
+          }
           
           // Show notification
-          showNotification(`Lot ${highlightLotNumber} highlighted on map`, 'success');
+          showNotification(`Showing only selected lot. Click "Clear Highlight" to show all.`, 'success');
         } else {
-          // Lot doesn't have map coordinates
-          showNotification(`Lot ${highlightLotNumber} doesn't have map coordinates assigned yet`, 'warning');
+          showNotification(`Lot not found on map`, 'warning');
         }
       }
     }
