@@ -1926,6 +1926,63 @@ if ($conn) {
         });
         
         if (targetMarker) {
+          console.log('Creating pin overlay'); // Debug log
+          
+          // Get screen size for responsive pin
+          const isMobile = window.innerWidth <= 768;
+          const isSmallMobile = window.innerWidth <= 480;
+          
+          // Create smaller responsive pin overlay
+          const pinOverlay = document.createElement('div');
+          const pinSize = isSmallMobile ? 25 : (isMobile ? 30 : 40);
+          const fontSize = isSmallMobile ? 18 : (isMobile ? 22 : 28);
+          
+          pinOverlay.style.cssText = `
+            position: absolute;
+            z-index: 1006;
+            pointer-events: none;
+            animation: pinDrop 0.5s ease-out, pinBounce 2s infinite;
+            font-size: ${fontSize}px;
+            text-align: center;
+            line-height: 1;
+            filter: drop-shadow(0 ${isSmallMobile ? 4 : 6}px ${isSmallMobile ? 8 : 12}px rgba(239, 68, 68, 0.6));
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            border: ${isSmallMobile ? 2 : 3}px solid #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: ${pinSize}px;
+            height: ${pinSize}px;
+          `;
+          
+          // Use emoji pin with responsive styling
+          pinOverlay.innerHTML = '📍';
+          pinOverlay.style.color = '#ef4444';
+          
+          // Add the pin overlay to the map canvas instead of the marker
+          const mapCanvas = document.getElementById('mapCanvas');
+          if (mapCanvas) {
+            // Position relative to the map canvas
+            const markerRect = targetMarker.getBoundingClientRect();
+            const canvasRect = mapCanvas.getBoundingClientRect();
+            
+            const relativeLeft = markerRect.left - canvasRect.left + (markerRect.width / 2) - (pinSize / 2);
+            const relativeTop = markerRect.top - canvasRect.top - pinSize + 20;
+            
+            pinOverlay.style.left = relativeLeft + 'px';
+            pinOverlay.style.top = relativeTop + 'px';
+            
+            mapCanvas.appendChild(pinOverlay);
+          } else {
+            // Fallback to adding to marker
+            pinOverlay.style.top = `-${pinSize - 20}px`;
+            pinOverlay.style.left = '50%';
+            pinOverlay.style.transform = 'translateX(-50%)';
+            targetMarker.style.position = 'relative';
+            targetMarker.appendChild(pinOverlay);
+          }
+          
           // Center the map on the highlighted lot
           setTimeout(() => {
             const mapWrapper = document.querySelector('.map-image-wrapper');
