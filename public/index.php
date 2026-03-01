@@ -161,8 +161,10 @@ if ($conn) {
             <input 
               id="lotSearch" 
               type="text" 
-              placeholder="Search lots…" 
-              style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; width:240px;">
+              placeholder="🔍 Search lots…" 
+              style="padding:12px 20px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; width:380px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.2s ease; outline: none;"
+              onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 6px -1px rgba(0,0,0,0.1)';"
+              onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)';">
           </div>
         </div>
 
