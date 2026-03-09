@@ -84,10 +84,17 @@ peaceplot/
 
 ## Technology Stack
 
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Backend**: PHP 7.4+
-- **Database**: SQLite3
-- **Server**: Apache (WAMP)
+- **Backend**: PHP 7.4+ (Core programming language)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript (Client-side interactivity)
+- **Database**: SQLite3 (Data persistence)
+- **Server**: Apache (WAMP Environment)
+
+## Programming Languages & Tools
+
+- **PHP**: Handles all server-side logic, API endpoints, and database interactions.
+- **JavaScript**: Manages client-side behavior and asynchronous API calls.
+- **SQL**: Used for database schema definitions and data manipulation (SQLite).
+- **CSS**: Defines the visual presentation and layout of the system.
 
 ## Development Status
 

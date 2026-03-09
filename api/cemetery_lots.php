@@ -122,6 +122,26 @@ function handlePost($conn, $input) {
         
         if ($stmt->execute()) {
             $lastId = $conn->lastInsertId();
+            
+            // Create default layer 1 for the new lot
+            try {
+                // Initialize with 1 layer
+                $updateStmt = $conn->prepare("UPDATE cemetery_lots SET layers = 1 WHERE id = :id");
+                $updateStmt->bindParam(':id', $lastId);
+                $updateStmt->execute();
+                
+                // Add entry to lot_layers
+                $layerStmt = $conn->prepare("
+                    INSERT INTO lot_layers (lot_id, layer_number, is_occupied) 
+                    VALUES (:lot_id, 1, 0)
+                ");
+                $layerStmt->bindParam(':lot_id', $lastId);
+                $layerStmt->execute();
+            } catch (Exception $e) {
+                // Ignore layer creation errors, just log them
+                error_log("Failed to create default layer for lot $lastId: " . $e->getMessage());
+            }
+            
             echo json_encode(['success' => true, 'message' => 'Lot created successfully', 'id' => $lastId]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to create lot']);

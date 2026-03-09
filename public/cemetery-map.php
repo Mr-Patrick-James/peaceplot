@@ -11,7 +11,7 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $lots = [];
-$mapImage = 'cemetery-map.jpg'; // Default map image name
+$mapImage = 'cemetery.png'; // Default map image name
 
 // Check if map image exists
 $mapPath = __DIR__ . '/../assets/images/' . $mapImage;
@@ -108,16 +108,16 @@ if ($conn) {
     
     .lot-marker {
       position: absolute;
-      border: 3px solid;
+      border: calc(3px / var(--current-zoom, 1)) solid;
       cursor: pointer;
       transition: all 0.3s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 calc(2px / var(--current-zoom, 1)) calc(8px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
     }
     
     .lot-marker:hover {
-      border-width: 4px;
+      border-width: calc(4px / var(--current-zoom, 1));
       z-index: 100;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      box-shadow: 0 calc(4px / var(--current-zoom, 1)) calc(16px / var(--current-zoom, 1)) rgba(0,0,0,0.5);
     }
     
     .lot-marker.vacant {
@@ -137,13 +137,13 @@ if ($conn) {
     
     .lot-label {
       position: absolute;
-      top: 4px;
-      left: 4px;
+      top: calc(4px / var(--current-zoom, 1));
+      left: calc(4px / var(--current-zoom, 1));
       background: rgba(0,0,0,0.8);
       color: white;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 11px;
+      padding: calc(2px / var(--current-zoom, 1)) calc(6px / var(--current-zoom, 1));
+      border-radius: calc(4px / var(--current-zoom, 1));
+      font-size: calc(11px / var(--current-zoom, 1));
       font-weight: 700;
       pointer-events: none;
     }
@@ -154,15 +154,15 @@ if ($conn) {
     
     .highlighted-marker {
       z-index: 105 !important;
-      border-width: 4px !important;
-      box-shadow: 0 0 0 4px white, 0 0 0 8px #3b82f6, 0 4px 20px rgba(0,0,0,0.5) !important;
+      border-width: calc(4px / var(--current-zoom, 1)) !important;
+      box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) #3b82f6, 0 calc(4px / var(--current-zoom, 1)) calc(20px / var(--current-zoom, 1)) rgba(0,0,0,0.5) !important;
       animation: pulse-ring 2s infinite;
     }
     
     @keyframes pulse-ring {
-      0% { box-shadow: 0 0 0 4px white, 0 0 0 8px rgba(59, 130, 246, 0.8), 0 4px 20px rgba(0,0,0,0.5); }
-      50% { box-shadow: 0 0 0 4px white, 0 0 0 12px rgba(59, 130, 246, 0.4), 0 4px 20px rgba(0,0,0,0.5); }
-      100% { box-shadow: 0 0 0 4px white, 0 0 0 8px rgba(59, 130, 246, 0.8), 0 4px 20px rgba(0,0,0,0.5); }
+      0% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) rgba(59, 130, 246, 0.8), 0 calc(4px / var(--current-zoom, 1)) calc(20px / var(--current-zoom, 1)) rgba(0,0,0,0.5); }
+      50% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(12px / var(--current-zoom, 1)) rgba(59, 130, 246, 0.4), 0 calc(4px / var(--current-zoom, 1)) calc(20px / var(--current-zoom, 1)) rgba(0,0,0,0.5); }
+      100% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) rgba(59, 130, 246, 0.8), 0 calc(4px / var(--current-zoom, 1)) calc(20px / var(--current-zoom, 1)) rgba(0,0,0,0.5); }
     }
     
     .no-map-message {
@@ -853,6 +853,7 @@ if ($conn) {
         <a href="index.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /><path d="M8 7v10" /><path d="M16 7v10" /></svg></span><span>Lot Management</span></a>
         <a href="lot-availability.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20" /><path d="M2 12h20" /><path d="M4 4l16 16" /></svg></span><span>Lots</span></a>
         <a href="cemetery-map.php" class="active"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" /><path d="M9 4v14" /><path d="M15 6v14" /></svg></span><span>Cemetery Map</span></a>
+        <a href="map-editor.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg></span><span>Map Editor</span></a>
         <a href="burial-records.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M8 6h8" /><path d="M8 10h8" /></svg></span><span>Burial Records</span></a>
         <a href="reports.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18" /><path d="M7 14v4" /><path d="M11 10v8" /><path d="M15 6v12" /><path d="M19 12v6" /></svg></span><span>Reports</span></a>
         <a href="history.php"><span class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span>History</span></a>
@@ -1008,6 +1009,42 @@ if ($conn) {
 
     const mapWrapper = document.querySelector('.map-image-wrapper');
     const mapCanvas = document.getElementById('mapCanvas');
+    const mapImage = document.getElementById('cemeteryMapImage');
+
+    // Initialize map view
+    if (mapImage) {
+        const initMap = () => {
+            const containerWidth = mapWrapper.clientWidth;
+            const containerHeight = mapWrapper.clientHeight;
+            const imgWidth = mapImage.naturalWidth;
+            const imgHeight = mapImage.naturalHeight;
+
+            // Calculate zoom to fit width or height (whichever is smaller)
+            // Or set a fixed initial zoom for large images
+            if (imgWidth > 3000 || imgHeight > 3000) {
+                zoom = 0.2; // Start zoomed out for large maps
+            } else {
+                const scaleX = containerWidth / imgWidth;
+                const scaleY = containerHeight / imgHeight;
+                zoom = Math.min(scaleX, scaleY, 1);
+            }
+
+            // Center the map
+            const displayedWidth = imgWidth * zoom;
+            const displayedHeight = imgHeight * zoom;
+
+            panX = (containerWidth - displayedWidth) / 2;
+            panY = (containerHeight - displayedHeight) / 2;
+
+            updateTransform();
+        };
+
+        if (mapImage.complete) {
+            initMap();
+        } else {
+            mapImage.onload = initMap;
+        }
+    }
 
     function clampPan() {
       if (!mapWrapper || !mapCanvas) return;
@@ -1038,6 +1075,9 @@ if ($conn) {
       if (!mapCanvas) return;
       clampPan();
       mapCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+      if (mapWrapper) {
+        mapWrapper.style.setProperty('--current-zoom', zoom);
+      }
     }
 
     function setZoomAt(newZoom, clientX, clientY) {
@@ -1065,7 +1105,7 @@ if ($conn) {
 
         const step = 0.15;
         const direction = e.deltaY > 0 ? -1 : 1;
-        const newZoom = Math.min(3, Math.max(0.5, zoom + direction * step));
+        const newZoom = Math.min(3, Math.max(0.05, zoom + direction * step));
 
         if (newZoom !== zoom) {
           setZoomAt(newZoom, e.clientX, e.clientY);

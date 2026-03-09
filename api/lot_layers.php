@@ -52,6 +52,33 @@ function handleGet($conn) {
             $stmt->execute();
             $layers = $stmt->fetchAll();
             
+            // If no layers found, automatically create default layer 1
+            if (empty($layers)) {
+                // Check if lot exists
+                $checkLot = $conn->prepare("SELECT id FROM cemetery_lots WHERE id = :lot_id");
+                $checkLot->bindParam(':lot_id', $lotId);
+                $checkLot->execute();
+                
+                if ($checkLot->fetch()) {
+                    // Create default layer
+                    $insertStmt = $conn->prepare("
+                        INSERT INTO lot_layers (lot_id, layer_number, is_occupied) 
+                        VALUES (:lot_id, 1, 0)
+                    ");
+                    $insertStmt->bindParam(':lot_id', $lotId);
+                    $insertStmt->execute();
+                    
+                    // Update lot layers count
+                    $updateStmt = $conn->prepare("UPDATE cemetery_lots SET layers = 1 WHERE id = :lot_id");
+                    $updateStmt->bindParam(':lot_id', $lotId);
+                    $updateStmt->execute();
+                    
+                    // Fetch the newly created layer
+                    $stmt->execute();
+                    $layers = $stmt->fetchAll();
+                }
+            }
+            
             echo json_encode(['success' => true, 'data' => $layers]);
         } else {
             // Get all layers

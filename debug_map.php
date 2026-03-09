@@ -61,12 +61,12 @@ try {
     
     // Check map image
     echo "<h3>Map Image:</h3>";
-    $mapPath = __DIR__ . '/assets/images/cemetery-map.jpg';
+    $mapPath = __DIR__ . '/assets/images/cemetery.png';
     if (file_exists($mapPath)) {
-        echo "✅ Map image found: assets/images/cemetery-map.jpg<br>";
+        echo "✅ Map image found: assets/images/cemetery.png<br>";
         echo "Size: " . filesize($mapPath) . " bytes<br>";
     } else {
-        echo "❌ Map image not found: assets/images/cemetery-map.jpg<br>";
+        echo "❌ Map image not found: assets/images/cemetery.png<br>";
         echo "Please add a cemetery map image to see lots on the map.<br>";
     }
     

@@ -11,7 +11,7 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $lots = [];
-$mapImage = 'cemetery-map.jpg';
+$mapImage = 'cemetery.png';
 
 if ($conn) {
     try {
@@ -140,26 +140,26 @@ if ($conn) {
     
     .lot-rectangle {
       position: absolute;
-      border: 3px solid;
+      border: calc(3px / var(--current-zoom, 1)) solid;
       box-sizing: border-box;
       pointer-events: all;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background-color 0.2s;
     }
 
     .lot-remove-btn {
       position: absolute;
-      top: -10px;
-      right: -10px;
-      width: 22px;
-      height: 22px;
+      top: calc(-10px / var(--current-zoom, 1));
+      right: calc(-10px / var(--current-zoom, 1));
+      width: calc(22px / var(--current-zoom, 1));
+      height: calc(22px / var(--current-zoom, 1));
       border-radius: 999px;
-      border: 2px solid rgba(0,0,0,0.2);
+      border: calc(2px / var(--current-zoom, 1)) solid rgba(0,0,0,0.2);
       background: rgba(255,255,255,0.95);
       color: #111827;
       font-weight: 900;
-      font-size: 14px;
-      line-height: 16px;
+      font-size: calc(14px / var(--current-zoom, 1));
+      line-height: calc(16px / var(--current-zoom, 1));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -174,8 +174,8 @@ if ($conn) {
     }
     
     .lot-rectangle:hover {
-      border-width: 4px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.3);
+      border-width: calc(4px / var(--current-zoom, 1));
+      box-shadow: 0 0 calc(12px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
       z-index: 100;
     }
     
@@ -196,20 +196,20 @@ if ($conn) {
     
     .lot-label {
       position: absolute;
-      top: 4px;
-      left: 4px;
+      top: calc(4px / var(--current-zoom, 1));
+      left: calc(4px / var(--current-zoom, 1));
       background: rgba(0,0,0,0.8);
       color: white;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 11px;
+      padding: calc(2px / var(--current-zoom, 1)) calc(6px / var(--current-zoom, 1));
+      border-radius: calc(4px / var(--current-zoom, 1));
+      font-size: calc(11px / var(--current-zoom, 1));
       font-weight: 700;
       pointer-events: none;
     }
     
     .drawing-rect {
       position: absolute;
-      border: 3px dashed var(--primary);
+      border: calc(3px / var(--current-zoom, 1)) dashed var(--primary);
       background: rgba(47, 109, 246, 0.1);
       pointer-events: none;
     }
@@ -542,6 +542,37 @@ if ($conn) {
       }
     });
 
+    // Initialize map view
+    mapImage.onload = () => {
+        const containerWidth = mapWrapper.clientWidth;
+        const containerHeight = mapWrapper.clientHeight;
+        const imgWidth = mapImage.naturalWidth;
+        const imgHeight = mapImage.naturalHeight;
+
+        // Calculate zoom to fit width or height (whichever is smaller)
+        // Or set a fixed initial zoom for large images
+        if (imgWidth > 3000 || imgHeight > 3000) {
+            zoom = 0.2; // Start zoomed out for large maps
+        } else {
+            const scaleX = containerWidth / imgWidth;
+            const scaleY = containerHeight / imgHeight;
+            zoom = Math.min(scaleX, scaleY, 1);
+        }
+
+        // Center the map
+        const displayedWidth = imgWidth * zoom;
+        const displayedHeight = imgHeight * zoom;
+
+        panX = (containerWidth - displayedWidth) / 2;
+        panY = (containerHeight - displayedHeight) / 2;
+
+        updateTransform();
+    };
+    // Trigger onload if image is already cached
+    if (mapImage.complete) {
+        mapImage.onload();
+    }
+
     function setTool(tool) {
       currentTool = tool;
       document.getElementById('drawBtn').classList.toggle('active', tool === 'draw');
@@ -561,7 +592,7 @@ if ($conn) {
     }
 
     function zoomOut() {
-      zoom = Math.max(zoom - 0.25, 0.5);
+      zoom = Math.max(zoom - 0.25, 0.05);
       updateTransform();
     }
 
@@ -582,6 +613,7 @@ if ($conn) {
     function updateTransform() {
       mapCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
       document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+      mapWrapper.style.setProperty('--current-zoom', zoom);
     }
 
     mapWrapper.addEventListener('wheel', (e) => {
@@ -589,7 +621,7 @@ if ($conn) {
 
       const step = 0.15;
       const direction = e.deltaY > 0 ? -1 : 1;
-      const newZoom = Math.min(3, Math.max(0.5, zoom + direction * step));
+      const newZoom = Math.min(3, Math.max(0.05, zoom + direction * step));
 
       if (newZoom !== zoom) {
         setZoomAt(newZoom, e.clientX, e.clientY);
@@ -597,6 +629,9 @@ if ($conn) {
     }, { passive: false });
 
     mapWrapper.addEventListener('mousedown', (e) => {
+      // Ignore right clicks
+      if (e.button !== 0) return;
+      
       const rect = mapWrapper.getBoundingClientRect();
       const x = (e.clientX - rect.left - panX) / zoom;
       const y = (e.clientY - rect.top - panY) / zoom;
@@ -619,7 +654,7 @@ if ($conn) {
       }
     });
 
-    mapWrapper.addEventListener('mousemove', (e) => {
+    window.addEventListener('mousemove', (e) => {
       if (isPanning) {
         panX = e.clientX - startPanX;
         panY = e.clientY - startPanY;
@@ -641,7 +676,7 @@ if ($conn) {
       }
     });
 
-    mapWrapper.addEventListener('mouseup', (e) => {
+    window.addEventListener('mouseup', (e) => {
       if (isPanning) {
         isPanning = false;
         mapWrapper.classList.remove('grabbing');
@@ -664,7 +699,7 @@ if ($conn) {
         currentRect.remove();
         currentRect = null;
         
-        if (width > 0.5 && height > 0.5) {
+        if (width > 0.05 && height > 0.05) { // Adjusted threshold for zoom
           pendingRect = { x, y, width, height };
           showAssignModal();
         }
