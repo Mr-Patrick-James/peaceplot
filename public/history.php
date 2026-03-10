@@ -13,12 +13,12 @@ $conn = $database->getConnection();
 $records = [];
 if ($conn) {
     try {
-        // Fetch all deceased records ordered by their date of burial (most recent first)
+        // Fetch all deceased records ordered by their addition date (most recent first)
         $stmt = $conn->query("
             SELECT dr.*, cl.lot_number, cl.section, cl.block 
             FROM deceased_records dr 
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
-            ORDER BY dr.date_of_burial DESC, dr.created_at DESC
+            ORDER BY dr.created_at DESC
         ");
         $records = $stmt->fetchAll();
     } catch (PDOException $e) {
@@ -95,7 +95,6 @@ if ($conn) {
           <table class="table">
             <thead>
               <tr>
-                <th align="left">Date of Burial</th>
                 <th align="left">Full Name</th>
                 <th align="left">Lot Number</th>
                 <th align="left">Layer</th>
@@ -108,13 +107,13 @@ if ($conn) {
             <tbody id="historyTableBody">
               <?php if (isset($error)): ?>
                 <tr>
-                  <td colspan="8" style="text-align:center; color:#ef4444;">
+                  <td colspan="7" style="text-align:center; color:#ef4444;">
                     Error loading data: <?php echo htmlspecialchars($error); ?>
                   </td>
                 </tr>
               <?php elseif (empty($records)): ?>
                 <tr>
-                  <td colspan="8" style="text-align:center; color:#6b7280;">
+                  <td colspan="7" style="text-align:center; color:#6b7280;">
                     No burial records found.
                   </td>
                 </tr>
@@ -123,9 +122,7 @@ if ($conn) {
                   <tr class="history-row" 
                       data-name="<?php echo strtolower(htmlspecialchars($record['full_name'])); ?>"
                       data-lot="<?php echo strtolower(htmlspecialchars($record['lot_number'] ?: '')); ?>"
-                      data-section="<?php echo strtolower(htmlspecialchars($record['section'] ?: '')); ?>"
-                      data-dateadded="<?php echo strtolower($record['date_of_burial'] ? date('M d, Y', strtotime($record['date_of_burial'])) : 'Unknown Date'); ?>">
-                    <td><span style="font-weight: 500; color: #1f2937;"><?php echo $record['date_of_burial'] ? date('M d, Y', strtotime($record['date_of_burial'])) : 'Unknown Date'; ?></span></td>
+                      data-section="<?php echo strtolower(htmlspecialchars($record['section'] ?: '')); ?>">
                     <td><strong style="color: #3b82f6;"><?php echo htmlspecialchars($record['full_name']); ?></strong></td>
                     <td><?php echo htmlspecialchars($record['lot_number'] ?: '—'); ?></td>
                     <td>
@@ -184,12 +181,10 @@ if ($conn) {
             const name = row.getAttribute('data-name');
             const lot = row.getAttribute('data-lot');
             const section = row.getAttribute('data-section');
-            const dateAdded = row.getAttribute('data-dateadded');
             
             if (name.includes(searchTerm) || 
                 lot.includes(searchTerm) || 
-                section.includes(searchTerm) ||
-                dateAdded.includes(searchTerm)) {
+                section.includes(searchTerm)) {
               row.style.display = '';
             } else {
               row.style.display = 'none';
