@@ -98,11 +98,11 @@ if ($lotsWithoutCoords > 0) {
 }
 
 // Check if map image exists
-$mapPath = __DIR__ . '/assets/images/cemetery.png';
+$mapPath = __DIR__ . '/assets/images/cemetery.jpg';
 if (file_exists($mapPath)) {
-    echo "\n✅ Map image found: assets/images/cemetery.png\n";
+    echo "\n✅ Map image found: assets/images/cemetery.jpg\n";
 } else {
-    echo "\n❌ Map image not found: assets/images/cemetery.png\n";
+    echo "\n❌ Map image not found: assets/images/cemetery.jpg\n";
     echo "Please add a cemetery map image to see lots on the map.\n";
 }
 ?>

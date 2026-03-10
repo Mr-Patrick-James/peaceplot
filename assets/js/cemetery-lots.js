@@ -27,7 +27,7 @@ function filterLots(query) {
         const fields = [
             lot.lot_number,
             lot.section,
-            lot.block,
+
             lot.position,
             lot.status,
             lot.deceased_name
@@ -51,7 +51,7 @@ function renderLots(lots) {
         <tr data-lot-id="${lot.id}">
             <td>${lot.lot_number}</td>
             <td>${lot.section}</td>
-            <td>${lot.block || lot.position || '—'}</td>
+            <td>${lot.position || '—'}</td>
             <td><span class="badge ${lot.status.toLowerCase()}">${lot.status}</span></td>
             <td class="${lot.deceased_name ? '' : 'muted'}">${lot.deceased_name || '—'}</td>
             <td>

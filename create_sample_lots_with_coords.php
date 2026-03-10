@@ -104,7 +104,7 @@ $testMapHtml = '<!DOCTYPE html>
             height: 600px; 
             border: 2px solid #ccc; 
             background: #f5f5f5;
-            background-image: url("assets/images/cemetery.png");
+            background-image: url("assets/images/cemetery.jpg");
             background-size: cover;
             background-position: center;
         }

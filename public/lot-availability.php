@@ -186,7 +186,7 @@ if ($conn) {
                   <tr>
                     <td><strong><?php echo htmlspecialchars($lot['lot_number']); ?></strong></td>
                     <td><?php echo htmlspecialchars($lot['section']); ?></td>
-                    <td><?php echo htmlspecialchars($lot['block'] ?: '—'); ?></td>
+
                     <td><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></td>
                     <td><span class="badge <?php echo strtolower($lot['status']); ?>"><?php echo htmlspecialchars($lot['status']); ?></span></td>
                     <?php if ($filterStatus === 'Occupied'): ?>

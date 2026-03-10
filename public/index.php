@@ -215,7 +215,7 @@ if ($conn) {
                   <tr data-lot-id="<?php echo $lot['id']; ?>">
                     <td><?php echo htmlspecialchars($lot['lot_number']); ?></td>
                     <td><?php echo htmlspecialchars($lot['section']); ?></td>
-                    <td><?php echo htmlspecialchars($lot['block'] ?: $lot['position'] ?: '—'); ?></td>
+                    <td><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></td>
                     <td><span class="badge <?php echo strtolower($lot['status']); ?>"><?php echo htmlspecialchars($lot['status']); ?></span></td>
                     <td class="<?php echo $lot['deceased_name'] ? '' : 'muted'; ?>">
                       <?php echo $lot['deceased_name'] ? htmlspecialchars($lot['deceased_name']) : '—'; ?>

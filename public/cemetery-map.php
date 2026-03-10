@@ -11,7 +11,7 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $lots = [];
-$mapImage = 'cemetery.png'; // Default map image name
+$mapImage = 'cemetery.jpg'; // Default map image name
 
 // Check if map image exists
 $mapPath = __DIR__ . '/../assets/images/' . $mapImage;
@@ -1179,7 +1179,7 @@ if ($conn) {
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
-                <span>${lot.section}${lot.block ? ', ' + lot.block : ''}</span>
+                <span>${lot.section}</span>
               </div>
             </div>
             <div class="status-badge ${lot.status.toLowerCase()}">

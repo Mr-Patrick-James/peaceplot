@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS cemetery_lots (
 -- Deceased Records Table
 CREATE TABLE IF NOT EXISTS deceased_records (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lot_id INTEGER NOT NULL,
+    lot_id INTEGER,
     full_name VARCHAR(255) NOT NULL,
     date_of_birth DATE,
     date_of_death DATE,
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS deceased_records (
     remarks TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (lot_id) REFERENCES cemetery_lots(id) ON DELETE CASCADE
+    FOREIGN KEY (lot_id) REFERENCES cemetery_lots(id) ON DELETE SET NULL
 );
 
 -- Payments Table

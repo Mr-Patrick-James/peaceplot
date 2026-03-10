@@ -11,7 +11,7 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $lots = [];
-$mapImage = 'cemetery.png';
+$mapImage = 'cemetery.jpg';
 
 if ($conn) {
     try {
@@ -478,10 +478,7 @@ if ($conn) {
               <input type="text" id="newSection" placeholder="e.g., Section A" required>
             </div>
             
-            <div class="form-group">
-              <label>Block</label>
-              <input type="text" id="newBlock" placeholder="e.g., Block 1">
-            </div>
+
             
             <div class="form-group">
               <label>Position</label>
@@ -502,10 +499,7 @@ if ($conn) {
               <input type="number" id="newSize" placeholder="e.g., 12" step="0.01" min="0">
             </div>
             
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label>Price (₱)</label>
-              <input type="number" id="newPrice" placeholder="e.g., 25000" step="0.01" min="0">
-            </div>
+
           </div>
         </div>
       </div>
@@ -784,7 +778,7 @@ if ($conn) {
       document.getElementById('newPosition').value = '';
       document.getElementById('newStatus').value = 'Vacant';
       document.getElementById('newSize').value = '';
-      document.getElementById('newPrice').value = '';
+
       
       // Remove event listeners
       modal.removeEventListener('click', handleModalClick);
@@ -872,11 +866,9 @@ if ($conn) {
         // Create new lot
         const lotNumber = document.getElementById('newLotNumber').value.trim();
         const section = document.getElementById('newSection').value.trim();
-        const block = document.getElementById('newBlock').value.trim();
         const position = document.getElementById('newPosition').value.trim();
         const status = document.getElementById('newStatus').value;
         const size = document.getElementById('newSize').value;
-        const price = document.getElementById('newPrice').value;
 
         if (!lotNumber || !section) {
           alert('Please fill in required fields (Lot Number and Section)');
@@ -886,11 +878,9 @@ if ($conn) {
         const newLotData = {
           lot_number: lotNumber,
           section: section,
-          block: block || null,
           position: position || null,
           status: status,
-          size_sqm: size ? parseFloat(size) : null,
-          price: price ? parseFloat(price) : null
+          size_sqm: size ? parseFloat(size) : null
         };
 
         const createResult = await createNewLot(newLotData);
@@ -904,11 +894,9 @@ if ($conn) {
           id: lotId,
           lot_number: lotNumber,
           section: section,
-          block: block,
           position: position,
           status: status,
-          size_sqm: size ? parseFloat(size) : null,
-          price: price ? parseFloat(price) : null
+          size_sqm: size ? parseFloat(size) : null
         };
       }
 
@@ -934,7 +922,7 @@ if ($conn) {
 
       closeAssignModal();
       alert(mode === 'existing' ? 'Lot assigned successfully!' : 'New lot created and assigned successfully!');
-      window.location.reload(); // Refresh to update selection dropdown
+      // window.location.reload(); // Refresh to update selection dropdown
     }
 
     async function saveAllLots(silent = false) {
@@ -986,7 +974,27 @@ if ($conn) {
 
         const result = await response.json();
         if (result.success) {
-          window.location.reload(); // Refresh to update lot dropdown and markers
+          // Restore to dropdown
+          const select = document.getElementById('lotSelect');
+          const option = document.createElement('option');
+          option.value = target.lotData.id;
+          option.textContent = `${target.lotData.lot_number} - ${target.lotData.section} (${target.lotData.status})`;
+          
+          const resetLotData = { ...target.lotData, map_x: null, map_y: null, map_width: null, map_height: null };
+          option.setAttribute('data-lot', JSON.stringify(resetLotData));
+          
+          select.appendChild(option);
+          
+          // Sort options
+          const options = Array.from(select.options);
+          options.sort((a, b) => {
+              if (a.value === "") return -1;
+              if (b.value === "") return 1;
+              return a.text.localeCompare(b.text, undefined, { numeric: true, sensitivity: 'base' });
+          });
+          select.innerHTML = '';
+          options.forEach(opt => select.appendChild(opt));
+          
         } else {
           alert('Error removing mark: ' + result.message);
         }

@@ -137,7 +137,7 @@ function filterRecords(query) {
             record.full_name,
             record.lot_number,
             record.section,
-            record.block,
+
             record.layer,
             record.age,
             record.date_of_death,
@@ -438,10 +438,7 @@ function createViewModal(record) {
                                 <label>Section</label>
                                 <span>${record.section || 'N/A'}</span>
                             </div>
-                            <div class="info-item">
-                                <label>Block</label>
-                                <span>${record.block || 'N/A'}</span>
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -800,15 +797,15 @@ function createRecordModal(record = null) {
                     </div>
                     
                     <div class="form-group">
-                        <label>Cemetery Lot *</label>
-                        <select name="lot_id" required>
-                            <option value="">Select a lot</option>
+                        <label>Cemetery Lot</label>
+                        <select name="lot_id">
+                            <option value="">Unassigned</option>
                         </select>
                     </div>
                     
                     <div class="form-group" id="layerSelectionGroup" style="display: none;">
-                        <label>Burial Layer *</label>
-                        <select name="layer" id="selectedLayer" required>
+                        <label>Burial Layer</label>
+                        <select name="layer" id="selectedLayer">
                             <option value="">Select a layer...</option>
                         </select>
                     </div>
@@ -910,7 +907,7 @@ function createRecordModal(record = null) {
     
     BurialAPI.fetchLots().then(result => {
         if (result.success && result.data) {
-            lotSelect.innerHTML = '<option value="">Select a lot</option>' + 
+            lotSelect.innerHTML = '<option value="">Unassigned</option>' + 
                 result.data.map(lot => `
                     <option value="${lot.id}" ${record?.lot_id == lot.id ? 'selected' : ''}>
                         ${lot.lot_number} - ${lot.section}${lot.block ? ' - ' + lot.block : ''} (${lot.status})
@@ -1012,8 +1009,7 @@ function createRecordModal(record = null) {
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
         
-        // Validate layer selection for new records
-        if (!isEdit && !data.layer) {
+        if (data.lot_id && !data.layer) {
             alert('Please select a burial layer for the deceased.');
             return;
         }
