@@ -16,9 +16,14 @@ $mapImage = 'cemetery.jpg';
 if ($conn) {
     try {
         $stmt = $conn->query("
-            SELECT cl.*, dr.full_name as deceased_name 
+            SELECT cl.*, 
+                   COUNT(DISTINCT ll.layer_number) as total_layers,
+                   SUM(CASE WHEN ll.is_occupied = 1 THEN 1 ELSE 0 END) as occupied_layers,
+                   dr.full_name as deceased_name 
             FROM cemetery_lots cl 
+            LEFT JOIN lot_layers ll ON cl.id = ll.lot_id
             LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
+            GROUP BY cl.id
             ORDER BY cl.lot_number
         ");
         $lots = $stmt->fetchAll();
@@ -204,6 +209,23 @@ if ($conn) {
       border-radius: calc(0.5px + 0.5px / var(--current-zoom, 1));
       font-size: calc(3.5px + 3.5px / var(--current-zoom, 1));
       font-weight: 700;
+      pointer-events: none;
+    }
+
+    .lot-layer-indicator {
+      position: absolute;
+      top: calc(0.5px + 0.5px / var(--current-zoom, 1));
+      right: calc(0.5px + 0.5px / var(--current-zoom, 1));
+      background: rgba(0,0,0,0.8);
+      color: white;
+      border-radius: 50%;
+      width: calc(5px + 3px / var(--current-zoom, 1));
+      height: calc(5px + 3px / var(--current-zoom, 1));
+      font-size: calc(2.5px + 2.5px / var(--current-zoom, 1));
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       pointer-events: none;
     }
     
@@ -714,6 +736,17 @@ if ($conn) {
       label.className = 'lot-label';
       label.textContent = lotData.lot_number;
       rect.appendChild(label);
+
+      // Add layer indicator if multiple layers exist
+      const totalLayers = parseInt(lotData.total_layers) || 1;
+      const occupiedLayers = parseInt(lotData.occupied_layers) || 0;
+      if (totalLayers > 1) {
+        const layerIndicator = document.createElement('div');
+        layerIndicator.className = 'lot-layer-indicator';
+        layerIndicator.textContent = `${occupiedLayers}/${totalLayers}`;
+        layerIndicator.title = `${occupiedLayers}/${totalLayers} layers occupied`;
+        rect.appendChild(layerIndicator);
+      }
 
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';

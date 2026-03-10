@@ -855,14 +855,14 @@ if ($conn) {
     
     .lot-layer-indicator {
       position: absolute;
-      top: 2px;
-      right: 2px;
+      top: 1px;
+      right: 1px;
       background: rgba(0,0,0,0.8);
       color: white;
       border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      font-size: 9px;
+      width: 8px;
+      height: 8px;
+      font-size: 5px;
       font-weight: 700;
       display: flex;
       align-items: center;
