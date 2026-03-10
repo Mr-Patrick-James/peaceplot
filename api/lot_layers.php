@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/logger.php';
 
 $database = new Database();
 $conn = $database->getConnection();
@@ -132,6 +133,14 @@ function handlePost($conn, $input) {
                 $stmt->bindParam(':lot_id', $lotId);
                 $stmt->execute();
                 
+                // Get lot number for description
+                $lotStmt = $conn->prepare("SELECT lot_number FROM cemetery_lots WHERE id = :id");
+                $lotStmt->bindParam(':id', $lotId);
+                $lotStmt->execute();
+                $lotNum = $lotStmt->fetchColumn() ?: 'ID ' . $lotId;
+                
+                logActivity($conn, 'ADD_LAYER', 'lot_layers', null, "Added layer $nextLayer to Lot $lotNum");
+                
                 echo json_encode(['success' => true, 'message' => 'Layer added successfully', 'layer_number' => $nextLayer]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to add layer']);
@@ -220,6 +229,14 @@ function handleDelete($conn, $input) {
             $stmt->bindParam(':layers', $count['count']);
             $stmt->bindParam(':lot_id', $lotId);
             $stmt->execute();
+            
+            // Get lot number for description
+            $lotStmt = $conn->prepare("SELECT lot_number FROM cemetery_lots WHERE id = :id");
+            $lotStmt->bindParam(':id', $lotId);
+            $lotStmt->execute();
+            $lotNum = $lotStmt->fetchColumn() ?: 'ID ' . $lotId;
+            
+            logActivity($conn, 'DELETE_LAYER', 'lot_layers', null, "Deleted layer $layerNumber from Lot $lotNum");
             
             echo json_encode(['success' => true, 'message' => 'Layer deleted successfully']);
         } else {

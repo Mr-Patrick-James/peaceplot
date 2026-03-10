@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/logger.php';
 
 $database = new Database();
 $conn = $database->getConnection();
@@ -154,6 +155,7 @@ function handlePost($conn, $input) {
 
             if ($stmt->execute()) {
                 $lastId = $conn->lastInsertId();
+                logActivity($conn, 'ADD_RECORD', 'deceased_records', $lastId, "New burial record for " . $input['full_name'] . " is added");
                 echo json_encode(['success' => true, 'message' => 'Record created successfully', 'id' => $lastId]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to create record']);
@@ -221,6 +223,14 @@ function handlePost($conn, $input) {
 
             updateLotStatus($conn, $lotId);
 
+            // Get lot number for description
+            $lotStmt = $conn->prepare("SELECT lot_number FROM cemetery_lots WHERE id = :id");
+            $lotStmt->bindParam(':id', $lotId);
+            $lotStmt->execute();
+            $lotNum = $lotStmt->fetchColumn() ?: 'Unknown';
+
+            logActivity($conn, 'ADD_RECORD', 'deceased_records', $lastId, $input['full_name'] . " assigned on $lotNum ($lotNum occupied)");
+
             echo json_encode(['success' => true, 'message' => 'Record created successfully', 'id' => $lastId]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to create record']);
@@ -286,6 +296,12 @@ function handlePut($conn, $input) {
 
             if ($stmt->execute()) {
                 if ($oldLotId !== null && $oldLayer !== null) {
+                    // Get old lot number for description
+                    $oldLotStmt = $conn->prepare("SELECT lot_number FROM cemetery_lots WHERE id = :id");
+                    $oldLotStmt->bindParam(':id', $oldLotId);
+                    $oldLotStmt->execute();
+                    $oldLotNum = $oldLotStmt->fetchColumn() ?: 'Unknown';
+
                     $updateStmt = $conn->prepare("
                         UPDATE lot_layers 
                         SET is_occupied = 0, burial_record_id = NULL 
@@ -296,6 +312,10 @@ function handlePut($conn, $input) {
                     $updateStmt->bindParam(':burial_record_id', $input['id']);
                     $updateStmt->execute();
                     updateLotStatus($conn, $oldLotId);
+
+                    logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], ($input['full_name'] ?? 'Record') . " is unassigned from lot $oldLotNum");
+                } else {
+                    logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], "Burial record for " . ($input['full_name'] ?? 'ID ' . $input['id']) . " is updated");
                 }
 
                 echo json_encode(['success' => true, 'message' => 'Record updated successfully']);
@@ -389,6 +409,19 @@ function handlePut($conn, $input) {
 
             updateLotStatus($conn, $newLotId);
 
+            // Get lot number for description
+            $lotStmt = $conn->prepare("SELECT lot_number FROM cemetery_lots WHERE id = :id");
+            $lotStmt->bindParam(':id', $newLotId);
+            $lotStmt->execute();
+            $lotNum = $lotStmt->fetchColumn() ?: 'Unknown';
+
+            $name = $input['full_name'] ?? 'Record';
+            if ($oldLotId !== null && ($oldLotId !== $newLotId || $oldLayer !== $newLayer)) {
+                logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], "$name is move in $lotNum layer $newLayer ($lotNum occupied)");
+            } else {
+                logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], "$name assigned on $lotNum ($lotNum occupied)");
+            }
+
             echo json_encode(['success' => true, 'message' => 'Record updated successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update record']);
@@ -408,7 +441,12 @@ function handleDelete($conn, $input) {
         }
         
         // Get the burial record info before deletion
-        $stmt = $conn->prepare("SELECT lot_id, layer FROM deceased_records WHERE id = :id");
+        $stmt = $conn->prepare("
+            SELECT dr.full_name, dr.lot_id, dr.layer, cl.lot_number 
+            FROM deceased_records dr 
+            LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
+            WHERE dr.id = :id
+        ");
         $stmt->bindParam(':id', $id);
         $stmt->execute();
         $record = $stmt->fetch();
@@ -418,11 +456,15 @@ function handleDelete($conn, $input) {
             return;
         }
         
+        $recordName = $record['full_name'];
+        $lotNum = $record['lot_number'] ?: 'Unassigned';
+        
         $stmt = $conn->prepare("DELETE FROM deceased_records WHERE id = :id");
         $stmt->bindParam(':id', $id);
         
         if ($stmt->execute()) {
-            // Update the lot layer to mark it as vacant
+             logActivity($conn, 'DELETE_RECORD', 'deceased_records', $id, "Burial record for $recordName is removed (lot $lotNum)");
+             // Update the lot layer to mark it as vacant
             if ($record && $record['lot_id']) {
                 $updateStmt = $conn->prepare("
                     UPDATE lot_layers 

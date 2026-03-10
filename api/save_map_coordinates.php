@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/logger.php';
 
 $database = new Database();
 $conn = $database->getConnection();
@@ -65,6 +66,23 @@ try {
     }
     
     $conn->commit();
+    
+    $lotIds = array_column($input['lots'], 'id');
+    $lotNumStr = "";
+    if (count($lotIds) > 0) {
+        $placeholders = implode(',', array_fill(0, count($lotIds), '?'));
+        $lotStmt = $conn->prepare("SELECT lot_number FROM cemetery_lots WHERE id IN ($placeholders)");
+        $lotStmt->execute($lotIds);
+        $lotNums = $lotStmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        if (count($lotNums) <= 3) {
+            $lotNumStr = implode(', ', $lotNums);
+        } else {
+            $lotNumStr = count($lotNums) . " lots";
+        }
+    }
+    
+    logActivity($conn, 'UPDATE_MAP', 'cemetery_lots', null, "Map position for $lotNumStr is updated");
     echo json_encode(['success' => true, 'message' => 'Coordinates saved successfully']);
     
 } catch (PDOException $e) {

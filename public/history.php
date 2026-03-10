@@ -10,17 +10,17 @@ require_once __DIR__ . '/../config/database.php';
 $database = new Database();
 $conn = $database->getConnection();
 
-$records = [];
+$logs = [];
 if ($conn) {
     try {
-        // Fetch all deceased records ordered by their addition date (most recent first)
+        // Fetch all activity logs ordered by date (most recent first)
         $stmt = $conn->query("
-            SELECT dr.*, cl.lot_number, cl.section, cl.block 
-            FROM deceased_records dr 
-            LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
-            ORDER BY dr.created_at DESC
+            SELECT al.*, u.full_name as user_name 
+            FROM activity_logs al 
+            LEFT JOIN users u ON al.user_id = u.id 
+            ORDER BY al.created_at DESC
         ");
-        $records = $stmt->fetchAll();
+        $logs = $stmt->fetchAll();
     } catch (PDOException $e) {
         $error = $e->getMessage();
     }
@@ -31,7 +31,7 @@ if ($conn) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PeacePlot Admin - Burial History</title>
+  <title>PeacePlot Admin - System History</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
 </head>
 <body>
@@ -71,20 +71,20 @@ if ($conn) {
 
     <main class="main">
       <div class="page-header">
-        <h1 class="page-title">Burial Additions History</h1>
+        <h1 class="page-title">System Activity History</h1>
       </div>
 
       <section class="card">
         <div class="card-head" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
           <div>
-            <h2 class="card-title">Chronological Burial Additions</h2>
-            <p class="card-sub">A log of all deceased records added to the system, from newest to oldest.</p>
+            <h2 class="card-title">System Activity Log</h2>
+            <p class="card-sub">A comprehensive log of all changes made in the system, from newest to oldest.</p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <input 
               id="historySearch" 
               type="text" 
-              placeholder="🔍 Search history…" 
+              placeholder="🔍 Search activity…" 
               style="padding:12px 20px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; width:380px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.2s ease; outline: none;"
               onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 6px -1px rgba(0,0,0,0.1)';"
               onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)';">
@@ -95,68 +95,45 @@ if ($conn) {
           <table class="table">
             <thead>
               <tr>
-                <th align="left">Full Name</th>
-                <th align="left">Lot Number</th>
-                <th align="left">Layer</th>
-                <th align="left">Section</th>
-                <th align="left">Relationship</th>
-                <th align="left">Notes</th>
-                <th align="center" style="text-align:center;">Action</th>
+                <th align="left">Date & Time</th>
+                <th align="left">User</th>
+                <th align="left">Action</th>
+                <th align="left">Description</th>
               </tr>
             </thead>
             <tbody id="historyTableBody">
               <?php if (isset($error)): ?>
                 <tr>
-                  <td colspan="7" style="text-align:center; color:#ef4444;">
+                  <td colspan="4" style="text-align:center; color:#ef4444;">
                     Error loading data: <?php echo htmlspecialchars($error); ?>
                   </td>
                 </tr>
-              <?php elseif (empty($records)): ?>
+              <?php elseif (empty($logs)): ?>
                 <tr>
-                  <td colspan="7" style="text-align:center; color:#6b7280;">
-                    No burial records found.
+                  <td colspan="4" style="text-align:center; color:#6b7280;">
+                    No system activity found.
                   </td>
                 </tr>
               <?php else: ?>
-                <?php foreach ($records as $record): ?>
+                <?php foreach ($logs as $log): ?>
                   <tr class="history-row" 
-                      data-name="<?php echo strtolower(htmlspecialchars($record['full_name'])); ?>"
-                      data-lot="<?php echo strtolower(htmlspecialchars($record['lot_number'] ?: '')); ?>"
-                      data-section="<?php echo strtolower(htmlspecialchars($record['section'] ?: '')); ?>">
-                    <td><strong style="color: #3b82f6;"><?php echo htmlspecialchars($record['full_name']); ?></strong></td>
-                    <td><?php echo htmlspecialchars($record['lot_number'] ?: '—'); ?></td>
+                      data-user="<?php echo strtolower(htmlspecialchars($log['user_name'] ?: 'System')); ?>"
+                      data-action="<?php echo strtolower(htmlspecialchars($log['action'])); ?>"
+                      data-desc="<?php echo strtolower(htmlspecialchars($log['description'])); ?>">
+                    <td style="white-space: nowrap;"><span style="font-weight: 500; color: #1f2937;"><?php echo date('M d, Y h:i A', strtotime($log['created_at'])); ?></span></td>
+                    <td><strong style="color: #4b5563;"><?php echo htmlspecialchars($log['user_name'] ?: 'System'); ?></strong></td>
                     <td>
-                      <?php if ($record['layer']): ?>
-                        <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">
-                          Layer <?php echo htmlspecialchars($record['layer']); ?>
-                        </span>
-                      <?php else: ?>
-                        —
-                      <?php endif; ?>
+                      <?php 
+                        $badgeClass = 'badge-info';
+                        if (strpos($log['action'], 'DELETE') !== false) $badgeClass = 'badge-danger';
+                        if (strpos($log['action'], 'ADD') !== false) $badgeClass = 'badge-success';
+                        if (strpos($log['action'], 'UPDATE') !== false) $badgeClass = 'badge-warning';
+                      ?>
+                      <span class="badge <?php echo $badgeClass; ?>" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                        <?php echo htmlspecialchars($log['action']); ?>
+                      </span>
                     </td>
-                    <td><?php echo htmlspecialchars($record['section'] ?: '—'); ?></td>
-                    <td style="color: #4b5563; font-style: italic; font-size: 13px;"><?php echo htmlspecialchars($record['remarks'] ?: '—'); ?></td>
-                    <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
-                      <?php echo htmlspecialchars($record['deceased_info'] ?: '—'); ?>
-                    </td>
-                    <td>
-                      <?php if ($record['lot_id']): ?>
-                        <div class="actions" style="justify-content: center;">
-                            <button class="btn-action btn-map" onclick="window.location.href='cemetery-map.php?highlight_lot=<?php echo htmlspecialchars($record['lot_id']); ?>'">
-                                <span class="icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="currentColor" fill-opacity="0.2"/>
-                                        <circle cx="12" cy="10" r="3" fill="currentColor"/>
-                                        <path d="M12 2v20" stroke-width="1" opacity="0.3"/>
-                                    </svg>
-                                </span>
-                                <span>View on Map</span>
-                            </button>
-                        </div>
-                      <?php else: ?>
-                        <div style="text-align: center; color: #9ca3af;">—</div>
-                      <?php endif; ?>
-                    </td>
+                    <td style="color: #4b5563;"><?php echo htmlspecialchars($log['description']); ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -166,6 +143,13 @@ if ($conn) {
       </section>
     </main>
   </div>
+
+  <style>
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-warning { background: #fef9c3; color: #854d0e; }
+    .badge-info { background: #e0f2fe; color: #075985; }
+  </style>
 
   <script src="../assets/js/app.js"></script>
   <script>
@@ -178,13 +162,13 @@ if ($conn) {
           const rows = document.querySelectorAll('.history-row');
           
           rows.forEach(row => {
-            const name = row.getAttribute('data-name');
-            const lot = row.getAttribute('data-lot');
-            const section = row.getAttribute('data-section');
+            const user = row.getAttribute('data-user');
+            const action = row.getAttribute('data-action');
+            const desc = row.getAttribute('data-desc');
             
-            if (name.includes(searchTerm) || 
-                lot.includes(searchTerm) || 
-                section.includes(searchTerm)) {
+            if (user.includes(searchTerm) || 
+                action.includes(searchTerm) || 
+                desc.includes(searchTerm)) {
               row.style.display = '';
             } else {
               row.style.display = 'none';

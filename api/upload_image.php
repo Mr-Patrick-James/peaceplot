@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
@@ -115,6 +116,15 @@ try {
     
     if ($stmt->execute()) {
         $lastId = $conn->lastInsertId();
+        
+        // Get burial record name for description
+        $recordStmt = $conn->prepare("SELECT full_name FROM deceased_records WHERE id = :id");
+        $recordStmt->bindParam(':id', $burialRecordId);
+        $recordStmt->execute();
+        $recordName = $recordStmt->fetchColumn() ?: 'ID ' . $burialRecordId;
+        
+        logActivity($conn, 'UPLOAD_IMAGE', 'burial_record_images', $lastId, "Uploaded image for $recordName");
+        
         echo json_encode([
             'success' => true, 
             'message' => 'Image uploaded successfully', 

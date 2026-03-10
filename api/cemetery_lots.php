@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/logger.php';
 
 $database = new Database();
 $conn = $database->getConnection();
@@ -142,6 +143,8 @@ function handlePost($conn, $input) {
                 error_log("Failed to create default layer for lot $lastId: " . $e->getMessage());
             }
             
+            logActivity($conn, 'ADD_LOT', 'cemetery_lots', $lastId, "New lot " . $input['lot_number'] . " is added to the system");
+            
             echo json_encode(['success' => true, 'message' => 'Lot created successfully', 'id' => $lastId]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to create lot']);
@@ -181,6 +184,7 @@ function handlePut($conn, $input) {
         $stmt->bindParam(':price', $input['price']);
         
         if ($stmt->execute()) {
+            logActivity($conn, 'UPDATE_LOT', 'cemetery_lots', $input['id'], "Lot " . $input['lot_number'] . " is updated (" . $input['status'] . ")");
             echo json_encode(['success' => true, 'message' => 'Lot updated successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update lot']);
@@ -199,10 +203,17 @@ function handleDelete($conn, $input) {
             return;
         }
         
+        // Get lot number before deletion
+        $lotStmt = $conn->prepare("SELECT lot_number FROM cemetery_lots WHERE id = :id");
+        $lotStmt->bindParam(':id', $id);
+        $lotStmt->execute();
+        $lotNum = $lotStmt->fetchColumn() ?: 'ID ' . $id;
+        
         $stmt = $conn->prepare("DELETE FROM cemetery_lots WHERE id = :id");
         $stmt->bindParam(':id', $id);
         
         if ($stmt->execute()) {
+            logActivity($conn, 'DELETE_LOT', 'cemetery_lots', $id, "Lot $lotNum is removed from the system");
             echo json_encode(['success' => true, 'message' => 'Lot deleted successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete lot']);
