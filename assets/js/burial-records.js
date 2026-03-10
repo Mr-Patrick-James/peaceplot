@@ -1,7 +1,7 @@
 const BurialAPI = {
-    async fetchRecords() {
+    async fetchRecords(showArchived = false) {
         try {
-            const response = await fetch(`${API_BASE_URL}/burial_records.php`);
+            const response = await fetch(`${API_BASE_URL}/burial_records.php?archived=${showArchived ? '1' : '0'}`);
             const data = await response.json();
             return data;
         } catch (error) {
@@ -74,6 +74,17 @@ const BurialAPI = {
         }
     },
 
+    async fetchLotLayers(lotId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/lot_layers.php?lot_id=${lotId}`);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching lot layers:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
     async createRecord(recordData) {
         try {
             const response = await fetch(`${API_BASE_URL}/burial_records.php`, {
@@ -108,19 +119,19 @@ const BurialAPI = {
         }
     },
 
-    async deleteRecord(id) {
+    async deleteRecord(id, action = 'archive') {
         try {
             const response = await fetch(`${API_BASE_URL}/burial_records.php`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id })
+                body: JSON.stringify({ id, action })
             });
             const data = await response.json();
             return data;
         } catch (error) {
-            console.error('Error deleting record:', error);
+            console.error('Error with record action:', error);
             return { success: false, message: error.message };
         }
     }
@@ -128,106 +139,24 @@ const BurialAPI = {
 
 let currentRecords = [];
 let editingRecordId = null;
-
-function filterRecords(query) {
-    const q = (query || '').trim().toLowerCase();
-    if (!q) return currentRecords.slice();
-    return currentRecords.filter(record => {
-        const fields = [
-            record.full_name,
-            record.lot_number,
-            record.section,
-
-            record.layer,
-            record.age,
-            record.date_of_death,
-            record.date_of_burial,
-            record.next_of_kin,
-            record.next_of_kin_contact,
-            record.cause_of_death,
-            record.deceased_info,
-            record.remarks
-        ];
-        return fields.some(val => (val || '').toString().toLowerCase().includes(q));
-    });
-}
-
-// Add layer loading function
-async function loadLotLayers(lotId, layerSelect, preselectedLayer = null) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/lot_layers.php?lot_id=${lotId}`);
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-            const layers = data.data;
-            
-            if (layers.length > 0) {
-                // Show layer selection
-                layerSelect.parentElement.style.display = 'block';
-                
-                // Clear existing options
-                layerSelect.innerHTML = '<option value="">Select a layer...</option>';
-                
-                // Add layer options
-                layers.forEach(layer => {
-                    const isOccupied = layer.is_occupied;
-                    const option = document.createElement('option');
-                    option.value = layer.layer_number;
-                    option.textContent = `Layer ${layer.layer_number} - ${isOccupied ? `Occupied by ${layer.deceased_name || 'Unknown'}` : 'Vacant'}`;
-                    
-                    if (isOccupied) {
-                        option.disabled = true;
-                        option.style.color = '#f97316';
-                    } else {
-                        option.style.color = '#16a34a';
-                    }
-                    
-                    if (preselectedLayer && preselectedLayer == layer.layer_number) {
-                        option.selected = true;
-                    }
-                    
-                    layerSelect.appendChild(option);
-                });
-                
-            } else {
-                // No layers available
-                layerSelect.parentElement.style.display = 'none';
-                layerSelect.innerHTML = '<option value="">No layers available</option>';
-            }
-        } else {
-            layerSelect.parentElement.style.display = 'none';
-            layerSelect.innerHTML = '<option value="">Error loading layers</option>';
-        }
-    } catch (error) {
-        console.error('Error loading layers:', error);
-        layerSelect.parentElement.style.display = 'none';
-        layerSelect.innerHTML = '<option value="">Error loading layers</option>';
-    }
-}
-
+let showingArchived = false;
 
 async function loadBurialRecords() {
-    console.log('loadBurialRecords() called');
+    console.log('loadBurialRecords() called, archived:', showingArchived);
     const tbody = document.querySelector('.table tbody');
-    console.log('tbody found:', !!tbody);
     if (!tbody) return;
 
     try {
-        console.log('Fetching burial records...');
-        const result = await BurialAPI.fetchRecords();
-        console.log('API result:', result);
-        
+        const result = await BurialAPI.fetchRecords(showingArchived);
         if (result.success && result.data) {
-            console.log('Records loaded successfully, count:', result.data.length);
             currentRecords = result.data;
             renderRecords(result.data);
         } else {
-            console.log('API returned error:', result.message);
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#ef4444;">Failed to load burial records: ' + (result.message || 'Unknown error') + '</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#ef4444;">Failed to load records: ${result.message}</td></tr>`;
         }
     } catch (error) {
         console.error('Error loading records:', error);
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#ef4444;">Error loading data: ' + error.message + '</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#ef4444;">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -250,7 +179,7 @@ function renderRecords(records) {
         const burialDate = record.date_of_burial ? new Date(record.date_of_burial).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
         
         return `
-        <tr data-record-id="${record.id}">
+        <tr data-record-id="${record.id}" data-death-date="${record.date_of_death || ''}">
             <td>${record.full_name}</td>
             <td>${record.lot_number || '—'}</td>
             <td>
@@ -281,27 +210,51 @@ function renderRecords(records) {
                         </span>
                         <span>View</span>
                     </button>
-                    <button class="btn-action btn-edit" data-action="edit" data-record-id="${record.id}">
-                        <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                            </svg>
-                        </span>
-                        <span>Edit</span>
-                    </button>
-                    <button class="btn-action btn-delete" data-action="delete" data-record-id="${record.id}">
-                        <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 6h18" />
-                                <path d="M8 6V4h8v2" />
-                                <path d="M19 6l-1 14H6L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
-                            </svg>
-                        </span>
-                        <span>Delete</span>
-                    </button>
+                    ${!showingArchived ? `
+                        <button class="btn-action btn-edit" data-action="edit" data-record-id="${record.id}">
+                            <span class="icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                </svg>
+                            </span>
+                            <span>Edit</span>
+                        </button>
+                        <button class="btn-action btn-delete" data-action="delete" data-record-id="${record.id}">
+                            <span class="icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4h8v2" />
+                                    <path d="M19 6l-1 14H6L5 6" />
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                </svg>
+                            </span>
+                            <span>Delete</span>
+                        </button>
+                    ` : `
+                        <button class="btn-action btn-restore" data-action="restore" data-record-id="${record.id}" style="color: #059669; border-color: #059669;">
+                            <span class="icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                    <path d="M3 3v5h5" />
+                                </svg>
+                            </span>
+                            <span>Restore</span>
+                        </button>
+                        <button class="btn-action btn-delete-perm" data-action="permanent_delete" data-record-id="${record.id}" style="color: #dc2626; border-color: #dc2626;">
+                            <span class="icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    <line x1="10" y1="11" x2="10" y2="17" />
+                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                </svg>
+                            </span>
+                            <span>Delete Permanent</span>
+                        </button>
+                    `}
                 </div>
             </td>
         </tr>
@@ -313,30 +266,103 @@ function renderRecords(records) {
     console.log('innerHTML set successfully');
 }
 
-async function handleDelete(recordId) {
+async function handleDelete(recordId, action = null) {
     const record = currentRecords.find(r => r.id == recordId);
     const name = record ? record.full_name : recordId;
+    const isArchived = record?.is_archived == 1;
     
-    if (!confirm(`Are you sure you want to delete the burial record for ${name}?`)) {
-        return;
-    }
+    if (isArchived) {
+        // Use provided action or ask if not provided
+        if (!action) {
+            action = confirm(`Choose action for ${name}:\n\nOK - Restore to Active\nCancel - Permanent Delete`) 
+                ? 'restore' 
+                : (confirm(`Are you SURE you want to PERMANENTLY delete ${name}? This cannot be undone.`) ? 'permanent_delete' : null);
+        } else if (action === 'permanent_delete') {
+            if (!confirm(`Are you SURE you want to PERMANENTLY delete ${name}? This cannot be undone.`)) {
+                return;
+            }
+        } else if (action === 'restore') {
+            if (!confirm(`Restore burial record for ${name} to active status?`)) {
+                return;
+            }
+        }
+        
+        if (!action) return;
 
-    const result = await BurialAPI.deleteRecord(recordId);
-    
-    if (result.success) {
-        loadBurialRecords();
+        const result = await BurialAPI.deleteRecord(recordId, action);
+        if (result.success) {
+            loadBurialRecords();
+        } else {
+            alert('Error: ' + result.message);
+        }
     } else {
-        console.error('Failed to delete record:', result.message);
+        // Standard delete (moves to archive)
+        if (!confirm(`Are you sure you want to move the burial record for ${name} to archive?`)) {
+            return;
+        }
+
+        const result = await BurialAPI.deleteRecord(recordId, 'archive');
+        if (result.success) {
+            loadBurialRecords();
+        } else {
+            alert('Error: ' + result.message);
+        }
     }
 }
 
-function showAddModal() {
-    console.log('showAddModal called');
-    console.log('Available lots:', window.availableLots);
+async function loadLotLayers(lotId, layerSelect, selectedLayer = null) {
+    if (!lotId) {
+        if (layerSelect && layerSelect.parentElement) {
+            layerSelect.parentElement.style.display = 'none';
+        }
+        return;
+    }
+
     try {
-        const modal = createRecordModal();
+        const result = await BurialAPI.fetchLotLayers(lotId);
+        if (result.success && result.data) {
+            const layers = result.data;
+            
+            // Populate select
+            layerSelect.innerHTML = '<option value="">Select a layer...</option>' + 
+                layers.map(layer => {
+                    const isOccupied = layer.is_occupied == 1;
+                    const isSelected = selectedLayer == layer.layer_number;
+                    const isDisabled = isOccupied && !isSelected;
+                    const statusText = isOccupied ? (isSelected ? ' (Current)' : ' (Occupied)') : ' (Vacant)';
+                    
+                    return `<option value="${layer.layer_number}" ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}>
+                        Layer ${layer.layer_number}${statusText}
+                    </option>`;
+                }).join('');
+            
+            // Show layer selection group
+            if (layerSelect.parentElement) {
+                layerSelect.parentElement.style.display = 'block';
+            }
+        } else {
+            console.error('Failed to load layers:', result.message);
+        }
+    } catch (error) {
+        console.error('Error loading layers:', error);
+    }
+}
+
+function showAddModal(preData = null) {
+    console.log('showAddModal called', preData);
+    try {
+        const modal = createRecordModal(preData);
         document.body.appendChild(modal);
         modal.style.display = 'flex';
+        
+        // If we have pre-selected lot, trigger layer loading
+        if (preData && preData.lot_id) {
+            const lotSelect = modal.querySelector('select[name="lot_id"]');
+            const layerSelect = modal.querySelector('#selectedLayer');
+            if (lotSelect && layerSelect) {
+                loadLotLayers(preData.lot_id, layerSelect, preData.layer);
+            }
+        }
     } catch (error) {
         console.error('Error creating modal:', error);
     }
@@ -914,8 +940,8 @@ function createRecordModal(record = null) {
                     </option>
                 `).join('');
             
-            // If editing, load layers for the selected lot
-            if (isEdit && record?.lot_id) {
+            // If lot is pre-selected (editing or from map), load its layers
+            if (record?.lot_id) {
                 loadLotLayers(record.lot_id, layerSelect, record?.layer);
             }
         } else {
@@ -1246,10 +1272,83 @@ document.addEventListener('DOMContentLoaded', () => {
     if (path.includes('burial-records')) {
         loadBurialRecords();
         const searchInput = document.getElementById('recordSearch');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const filtered = filterRecords(e.target.value);
-                renderRecords(filtered);
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        
+        // Check for URL parameters (lot_id, layer)
+        const urlParams = new URLSearchParams(window.location.search);
+        const lotId = urlParams.get('lot_id');
+        const layer = urlParams.get('layer');
+        
+        if (lotId) {
+            // Automatically open add modal with pre-selected lot and layer
+            showAddModal({ lot_id: lotId, layer: layer });
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        function applyFilters() {
+            const searchTerm = searchInput?.value.toLowerCase().trim() || '';
+            const startDate = startDateInput?.value || '';
+            const endDate = endDateInput?.value || '';
+            const rows = document.querySelectorAll('.table tbody tr');
+
+            rows.forEach(row => {
+                if (row.cells.length === 1) return; // Skip "No records found" row
+
+                const recordId = row.getAttribute('data-record-id');
+                const record = currentRecords.find(r => r.id == recordId);
+                if (!record) return;
+
+                // Search filter
+                const fields = [
+                    record.full_name,
+                    record.lot_number,
+                    record.section,
+                    record.layer,
+                    record.age,
+                    record.date_of_death,
+                    record.date_of_burial,
+                    record.deceased_info,
+                    record.remarks
+                ];
+                const matchesSearch = fields.some(val => (val || '').toString().toLowerCase().includes(searchTerm));
+
+                // Date filter
+                const deathDate = row.getAttribute('data-death-date');
+                let matchesDate = true;
+                if (startDate && deathDate < startDate) matchesDate = false;
+                if (endDate && deathDate > endDate) matchesDate = false;
+
+                row.style.display = (matchesSearch && matchesDate) ? '' : 'none';
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (startDateInput) startDateInput.addEventListener('change', applyFilters);
+        if (endDateInput) endDateInput.addEventListener('change', applyFilters);
+        
+        // Archived view toggle
+        const viewArchivedBtn = document.getElementById('viewArchivedBtn');
+        if (viewArchivedBtn) {
+            viewArchivedBtn.addEventListener('click', () => {
+                showingArchived = !showingArchived;
+                const text = document.getElementById('viewArchivedText');
+                if (text) text.textContent = showingArchived ? 'View Active Records' : 'View Archived Records';
+                viewArchivedBtn.classList.toggle('btn-primary');
+                viewArchivedBtn.classList.toggle('btn-secondary');
+                
+                // Update titles
+                const cardTitle = document.querySelector('.card-title');
+                const cardSub = document.querySelector('.card-sub');
+                if (cardTitle) cardTitle.textContent = showingArchived ? 'Archived Burial Records' : 'All Burial Records';
+                if (cardSub) cardSub.textContent = showingArchived ? 'Manage permanently deleted and archived records' : 'Manage deceased person records and burial information';
+                
+                // Hide/show Add button
+                const addBtn = document.querySelector('button[data-action="add"]');
+                if (addBtn) addBtn.style.display = showingArchived ? 'none' : 'flex';
+                
+                loadBurialRecords();
             });
         }
     }
@@ -1264,6 +1363,10 @@ document.addEventListener('click', (e) => {
     
     if (action === 'delete' && recordId) {
         handleDelete(recordId);
+    } else if (action === 'restore' && recordId) {
+        handleDelete(recordId, 'restore');
+    } else if (action === 'permanent_delete' && recordId) {
+        handleDelete(recordId, 'permanent_delete');
     } else if (action === 'edit' && recordId) {
         showEditModal(recordId);
     } else if (action === 'view' && recordId) {

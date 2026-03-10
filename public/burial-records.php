@@ -13,6 +13,7 @@ if ($conn) {
             SELECT dr.*, cl.lot_number, cl.section, cl.block 
             FROM deceased_records dr 
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
+            WHERE dr.is_archived = 0
             ORDER BY dr.date_of_burial DESC
         ");
         $records = $stmt->fetchAll();
@@ -78,15 +79,27 @@ if ($conn) {
     <main class="main">
       <div class="page-header">
         <h1 class="page-title">Burial Records</h1>
-        <button class="btn-primary" data-action="add">
-          <span class="icon" style="color:#fff">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 5v14" />
-              <path d="M5 12h14" />
-            </svg>
-          </span>
-          <span>Add New Burial Record</span>
-        </button>
+        <div style="display:flex; gap:10px;">
+          <button id="viewArchivedBtn" class="btn-secondary" style="display:flex; align-items:center; gap:8px;">
+            <span class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 8v13H3V8"></path>
+                <path d="M1 3h22v5H1z"></path>
+                <path d="M10 12h4"></path>
+              </svg>
+            </span>
+            <span id="viewArchivedText">View Archived Records</span>
+          </button>
+          <button class="btn-primary" data-action="add">
+            <span class="icon" style="color:#fff">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+              </svg>
+            </span>
+            <span>Add New Burial Record</span>
+          </button>
+        </div>
       </div>
 
       <section class="card">
@@ -96,11 +109,18 @@ if ($conn) {
             <p class="card-sub">Manage deceased person records and burial information</p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:8px 15px; border:2px solid #e2e8f0; border-radius:12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              <label for="startDate" style="font-size:13px; font-weight:600; color:#64748b;">Death From:</label>
+              <input type="date" id="startDate" style="border:none; outline:none; font-size:14px; color:#1e293b; cursor:pointer;">
+              <div style="width:1px; height:20px; background:#e2e8f0; margin:0 5px;"></div>
+              <label for="endDate" style="font-size:13px; font-weight:600; color:#64748b;">To:</label>
+              <input type="date" id="endDate" style="border:none; outline:none; font-size:14px; color:#1e293b; cursor:pointer;">
+            </div>
             <input 
               id="recordSearch" 
               type="text" 
               placeholder="🔍 Search records…" 
-              style="padding:12px 20px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; width:380px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.2s ease; outline: none;"
+              style="padding:12px 20px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; width:300px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.2s ease; outline: none;"
               onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 6px -1px rgba(0,0,0,0.1)';"
               onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)';">
           </div>

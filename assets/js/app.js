@@ -12,20 +12,9 @@
     const action = btn.getAttribute("data-action");
     const lot = btn.getAttribute("data-lot") || "";
 
-    if(action === "delete"){
-      const ok = confirm(`Delete lot ${lot}?`);
-      if(!ok) return;
-      const row = btn.closest("tr");
-      if(row) row.remove();
-      return;
-    }
-
-    if(action === "edit"){
-      console.log(`Edit lot ${lot}`);
-    }
-
-    if(action === "add"){
-      console.log("Add New Cemetery Lot");
-    }
+    /* 
+    Generic listeners removed - individual pages (cemetery-lots.js, burial-records.js) 
+    now handle their own specific actions.
+    */
   });
 })();

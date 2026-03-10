@@ -22,7 +22,3 @@ INSERT OR IGNORE INTO deceased_records (lot_id, full_name, date_of_birth, date_o
 -- Note: In production, use proper password hashing
 INSERT OR IGNORE INTO users (username, password_hash, full_name, email, role, is_active) VALUES
 ('admin', 'admin123', 'Admin User', 'admin@peaceplot.com', 'admin', 1);
-
--- Insert sample activity log (skip if already exists)
-INSERT OR IGNORE INTO activity_logs (user_id, action, table_name, description) VALUES
-(1, 'LOGIN', 'users', 'Admin user logged in');

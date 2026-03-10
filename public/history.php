@@ -11,13 +11,25 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $logs = [];
+$archivedLogs = [];
+$showArchived = isset($_GET['view']) && $_GET['view'] === 'archived';
+
 if ($conn) {
     try {
-        // Fetch all activity logs ordered by date (most recent first)
+        // Ensure column exists (migration helper)
+        $conn->exec("ALTER TABLE activity_logs ADD COLUMN is_archived BOOLEAN DEFAULT 0");
+    } catch (PDOException $e) {
+        // Ignore if already exists
+    }
+
+    try {
+        $archivedCondition = $showArchived ? "al.is_archived = 1" : "al.is_archived = 0";
+        // Fetch activity logs, excluding login actions
         $stmt = $conn->query("
             SELECT al.*, u.full_name as user_name 
             FROM activity_logs al 
             LEFT JOIN users u ON al.user_id = u.id 
+            WHERE al.action != 'LOGIN' AND $archivedCondition
             ORDER BY al.created_at DESC
         ");
         $logs = $stmt->fetchAll();
@@ -72,20 +84,39 @@ if ($conn) {
     <main class="main">
       <div class="page-header">
         <h1 class="page-title">System Activity History</h1>
+        <div style="display:flex; gap:10px;">
+          <a href="history.php?view=<?php echo $showArchived ? 'active' : 'archived'; ?>" class="btn-secondary" style="display:flex; align-items:center; gap:8px; text-decoration:none;">
+            <span class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 8v13H3V8"></path>
+                <path d="M1 3h22v5H1z"></path>
+                <path d="M10 12h4"></path>
+              </svg>
+            </span>
+            <span><?php echo $showArchived ? 'View Active Logs' : 'View Archived Logs'; ?></span>
+          </a>
+        </div>
       </div>
 
       <section class="card">
         <div class="card-head" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
           <div>
-            <h2 class="card-title">System Activity Log</h2>
-            <p class="card-sub">A comprehensive log of all changes made in the system, from newest to oldest.</p>
+            <h2 class="card-title"><?php echo $showArchived ? 'Archived System Activity' : 'System Activity Log'; ?></h2>
+            <p class="card-sub"><?php echo $showArchived ? 'History logs that have been moved to archive.' : 'A comprehensive log of all changes made in the system, from newest to oldest.'; ?></p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:8px 15px; border:2px solid #e2e8f0; border-radius:12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              <label for="startDate" style="font-size:13px; font-weight:600; color:#64748b;">From:</label>
+              <input type="date" id="startDate" style="border:none; outline:none; font-size:14px; color:#1e293b;">
+              <div style="width:1px; height:20px; background:#e2e8f0; margin:0 5px;"></div>
+              <label for="endDate" style="font-size:13px; font-weight:600; color:#64748b;">To:</label>
+              <input type="date" id="endDate" style="border:none; outline:none; font-size:14px; color:#1e293b;">
+            </div>
             <input 
               id="historySearch" 
               type="text" 
               placeholder="🔍 Search activity…" 
-              style="padding:12px 20px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; width:380px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.2s ease; outline: none;"
+              style="padding:12px 20px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; width:300px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.2s ease; outline: none;"
               onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 6px -1px rgba(0,0,0,0.1)';"
               onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)';">
           </div>
@@ -99,27 +130,30 @@ if ($conn) {
                 <th align="left">User</th>
                 <th align="left">Action</th>
                 <th align="left">Description</th>
+                <th align="right">Actions</th>
               </tr>
             </thead>
             <tbody id="historyTableBody">
               <?php if (isset($error)): ?>
                 <tr>
-                  <td colspan="4" style="text-align:center; color:#ef4444;">
+                  <td colspan="5" style="text-align:center; color:#ef4444;">
                     Error loading data: <?php echo htmlspecialchars($error); ?>
                   </td>
                 </tr>
               <?php elseif (empty($logs)): ?>
                 <tr>
-                  <td colspan="4" style="text-align:center; color:#6b7280;">
+                  <td colspan="5" style="text-align:center; color:#6b7280;">
                     No system activity found.
                   </td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($logs as $log): ?>
                   <tr class="history-row" 
+                      data-id="<?php echo $log['id']; ?>"
                       data-user="<?php echo strtolower(htmlspecialchars($log['user_name'] ?: 'System')); ?>"
                       data-action="<?php echo strtolower(htmlspecialchars($log['action'])); ?>"
-                      data-desc="<?php echo strtolower(htmlspecialchars($log['description'])); ?>">
+                      data-desc="<?php echo strtolower(htmlspecialchars($log['description'])); ?>"
+                      data-date="<?php echo date('Y-m-d', strtotime($log['created_at'])); ?>">
                     <td style="white-space: nowrap;"><span style="font-weight: 500; color: #1f2937;"><?php echo date('M d, Y h:i A', strtotime($log['created_at'])); ?></span></td>
                     <td><strong style="color: #4b5563;"><?php echo htmlspecialchars($log['user_name'] ?: 'System'); ?></strong></td>
                     <td>
@@ -134,6 +168,26 @@ if ($conn) {
                       </span>
                     </td>
                     <td style="color: #4b5563;"><?php echo htmlspecialchars($log['description']); ?></td>
+                    <td align="right">
+                      <button class="btn-action archive-single-btn" 
+                              data-id="<?php echo $log['id']; ?>" 
+                              data-action-type="<?php echo $showArchived ? 'restore' : 'archive'; ?>"
+                              title="<?php echo $showArchived ? 'Restore to Active' : 'Move to Archive'; ?>">
+                        <span class="icon">
+                          <?php if ($showArchived): ?>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="23 4 23 10 17 10"></polyline>
+                              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                          <?php else: ?>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                              <rect x="1" y="3" width="22" height="5"></rect>
+                            </svg>
+                          <?php endif; ?>
+                        </span>
+                      </button>
+                    </td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -153,29 +207,88 @@ if ($conn) {
 
   <script src="../assets/js/app.js"></script>
   <script>
-    // Search functionality
+    // Search and filter functionality
     document.addEventListener('DOMContentLoaded', () => {
       const searchInput = document.getElementById('historySearch');
-      if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-          const searchTerm = e.target.value.toLowerCase().trim();
-          const rows = document.querySelectorAll('.history-row');
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      const rows = document.querySelectorAll('.history-row');
+
+      function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        rows.forEach(row => {
+          const user = row.getAttribute('data-user');
+          const action = row.getAttribute('data-action');
+          const desc = row.getAttribute('data-desc');
+          const rowDate = row.getAttribute('data-date');
+
+          const matchesSearch = user.includes(searchTerm) || 
+                               action.includes(searchTerm) || 
+                               desc.includes(searchTerm);
           
-          rows.forEach(row => {
-            const user = row.getAttribute('data-user');
-            const action = row.getAttribute('data-action');
-            const desc = row.getAttribute('data-desc');
-            
-            if (user.includes(searchTerm) || 
-                action.includes(searchTerm) || 
-                desc.includes(searchTerm)) {
-              row.style.display = '';
-            } else {
-              row.style.display = 'none';
-            }
-          });
+          let matchesDate = true;
+          if (startDate && rowDate < startDate) matchesDate = false;
+          if (endDate && rowDate > endDate) matchesDate = false;
+
+          if (matchesSearch && matchesDate) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
         });
       }
+
+      if (searchInput) searchInput.addEventListener('input', filterTable);
+      if (startDateInput) startDateInput.addEventListener('change', filterTable);
+      if (endDateInput) endDateInput.addEventListener('change', filterTable);
+
+      // Handle single log archiving/restoring
+      document.querySelectorAll('.archive-single-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const logId = btn.getAttribute('data-id');
+          const actionType = btn.getAttribute('data-action-type');
+          const isArchive = actionType === 'archive';
+          
+          if (!confirm(`Are you sure you want to ${isArchive ? 'archive' : 'restore'} this activity log?`)) {
+            return;
+          }
+          
+          try {
+            const response = await fetch('../api/archive_history.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                action: isArchive ? 'archive_single' : 'restore_single', 
+                id: logId 
+              })
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+              // Smoothly remove the row
+              const row = btn.closest('tr');
+              row.style.transition = 'all 0.3s ease';
+              row.style.opacity = '0';
+              row.style.transform = 'translateX(20px)';
+              setTimeout(() => {
+                row.remove();
+                // If no more rows, show the empty message
+                if (document.querySelectorAll('.history-row').length === 0) {
+                  window.location.reload();
+                }
+              }, 300);
+            } else {
+              alert('Error: ' + result.message);
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert(`Failed to ${actionType} log.`);
+          }
+        });
+      });
     });
   </script>
 </body>

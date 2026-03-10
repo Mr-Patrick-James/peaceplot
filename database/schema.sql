@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS deceased_records (
     next_of_kin_contact VARCHAR(100),
     deceased_info TEXT,
     remarks TEXT,
+    is_archived BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (lot_id) REFERENCES cemetery_lots(id) ON DELETE SET NULL
@@ -87,6 +88,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     record_id INTEGER,
     description TEXT,
     ip_address VARCHAR(45),
+    is_archived BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );

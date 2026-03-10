@@ -57,19 +57,19 @@ const API = {
         }
     },
 
-    async deleteLot(id) {
+    async deleteRecord(id, action = 'archive') {
         try {
-            const response = await fetch(`${API_BASE_URL}/cemetery_lots.php`, {
+            const response = await fetch(`${API_BASE_URL}/burial_records.php`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id })
+                body: JSON.stringify({ id, action })
             });
             const data = await response.json();
             return data;
         } catch (error) {
-            console.error('Error deleting lot:', error);
+            console.error('Error with record action:', error);
             return { success: false, message: error.message };
         }
     }

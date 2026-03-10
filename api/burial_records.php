@@ -39,6 +39,7 @@ switch ($method) {
 function handleGet($conn) {
     try {
         $id = isset($_GET['id']) ? intval($_GET['id']) : null;
+        $showArchived = isset($_GET['archived']) && $_GET['archived'] === '1' ? 1 : 0;
         
         // Check if burial_record_images table exists
         $tableCheck = $conn->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='burial_record_images'");
@@ -82,12 +83,15 @@ function handleGet($conn) {
                 echo json_encode(['success' => false, 'message' => 'Record not found']);
             }
         } else {
-            $stmt = $conn->query("
+            $stmt = $conn->prepare("
                 SELECT dr.*, cl.lot_number, cl.section, cl.block 
                 FROM deceased_records dr 
                 LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
+                WHERE dr.is_archived = :is_archived
                 ORDER BY dr.date_of_death DESC
             ");
+            $stmt->bindParam(':is_archived', $showArchived);
+            $stmt->execute();
             $results = $stmt->fetchAll();
             
             // Get images for each burial record only if table exists
@@ -155,7 +159,7 @@ function handlePost($conn, $input) {
 
             if ($stmt->execute()) {
                 $lastId = $conn->lastInsertId();
-                logActivity($conn, 'ADD_RECORD', 'deceased_records', $lastId, "New burial record for " . $input['full_name'] . " is added");
+                logActivity($conn, 'ADD_RECORD', 'deceased_records', $lastId, "New burial record for " . $input['full_name'] . " is added (lot unassigned)");
                 echo json_encode(['success' => true, 'message' => 'Record created successfully', 'id' => $lastId]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to create record']);
@@ -315,7 +319,7 @@ function handlePut($conn, $input) {
 
                     logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], ($input['full_name'] ?? 'Record') . " is unassigned from lot $oldLotNum");
                 } else {
-                    logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], "Burial record for " . ($input['full_name'] ?? 'ID ' . $input['id']) . " is updated");
+                    logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], ($input['full_name'] ?? 'Record') . " is updated (lot unassigned)");
                 }
 
                 echo json_encode(['success' => true, 'message' => 'Record updated successfully']);
@@ -434,6 +438,7 @@ function handlePut($conn, $input) {
 function handleDelete($conn, $input) {
     try {
         $id = isset($input['id']) ? $input['id'] : (isset($_GET['id']) ? $_GET['id'] : null);
+        $action = $input['action'] ?? 'archive'; // Default to archive
         
         if (!$id) {
             echo json_encode(['success' => false, 'message' => 'Missing record ID']);
@@ -457,13 +462,38 @@ function handleDelete($conn, $input) {
         }
         
         $recordName = $record['full_name'];
-        $lotNum = $record['lot_number'] ?: 'Unassigned';
+        $lotInfo = $record['lot_number'] ? "lot " . $record['lot_number'] : "lot unassigned";
         
-        $stmt = $conn->prepare("DELETE FROM deceased_records WHERE id = :id");
+        if ($action === 'restore') {
+            $stmt = $conn->prepare("UPDATE deceased_records SET is_archived = 0 WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            if ($stmt->execute()) {
+                logActivity($conn, 'RESTORE_RECORD', 'deceased_records', $id, "Burial record for $recordName is restored ($lotInfo)");
+                echo json_encode(['success' => true, 'message' => 'Record restored successfully']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to restore record']);
+            }
+            return;
+        }
+
+        if ($action === 'permanent_delete') {
+            $stmt = $conn->prepare("DELETE FROM deceased_records WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            if ($stmt->execute()) {
+                logActivity($conn, 'DELETE_RECORD', 'deceased_records', $id, "Burial record for $recordName is permanently removed ($lotInfo)");
+                echo json_encode(['success' => true, 'message' => 'Record permanently deleted']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to permanently delete record']);
+            }
+            return;
+        }
+
+        // Default: Archive
+        $stmt = $conn->prepare("UPDATE deceased_records SET is_archived = 1 WHERE id = :id");
         $stmt->bindParam(':id', $id);
         
         if ($stmt->execute()) {
-             logActivity($conn, 'DELETE_RECORD', 'deceased_records', $id, "Burial record for $recordName is removed (lot $lotNum)");
+             logActivity($conn, 'ARCHIVE_RECORD', 'deceased_records', $id, "Burial record for $recordName is moved to archive ($lotInfo)");
              // Update the lot layer to mark it as vacant
             if ($record && $record['lot_id']) {
                 $updateStmt = $conn->prepare("
@@ -485,9 +515,9 @@ function handleDelete($conn, $input) {
                 $conn->exec("UPDATE cemetery_lots SET status = '{$status}' WHERE id = " . intval($record['lot_id']));
             }
             
-            echo json_encode(['success' => true, 'message' => 'Record deleted successfully']);
+            echo json_encode(['success' => true, 'message' => 'Record archived successfully']);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to delete record']);
+            echo json_encode(['success' => false, 'message' => 'Failed to archive record']);
         }
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
