@@ -104,6 +104,7 @@ if ($conn) {
       display: block;
       -webkit-user-drag: none;
       user-select: none;
+      pointer-events: none;
     }
     
     .lot-marker {
@@ -155,14 +156,44 @@ if ($conn) {
     .highlighted-marker {
       z-index: 105 !important;
       border-width: calc(4px / var(--current-zoom, 1)) !important;
-      box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) #3b82f6, 0 calc(4px / var(--current-zoom, 1)) calc(20px / var(--current-zoom, 1)) rgba(0,0,0,0.5) !important;
-      animation: pulse-ring 2s infinite;
+      border-color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.2) !important;
+      box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 20px rgba(239, 68, 68, 0.6) !important;
+    }
+    
+    .highlighted-marker::after {
+      content: '📍';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      font-size: calc(22px / var(--current-zoom, 1));
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      animation: pinBounce 2s infinite;
+      pointer-events: none;
+      z-index: 110;
+    }
+    
+    @media (max-width: 768px) {
+      .highlighted-marker::after {
+        font-size: calc(18px / var(--current-zoom, 1));
+      }
+    }
+    
+    @keyframes pinBounce {
+      0%, 100% { transform: translate(-50%, -100%); }
+      50% { transform: translate(-50%, -120%); }
+    }
+    
+    @keyframes pinDrop {
+      0% { transform: translate(-50%, -200%); opacity: 0; }
+      100% { transform: translate(-50%, -100%); opacity: 1; }
     }
     
     @keyframes pulse-ring {
-      0% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) rgba(59, 130, 246, 0.8), 0 calc(4px / var(--current-zoom, 1)) calc(20px / var(--current-zoom, 1)) rgba(0,0,0,0.5); }
-      50% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(12px / var(--current-zoom, 1)) rgba(59, 130, 246, 0.4), 0 calc(4px / var(--current-zoom, 1)) calc(20px / var(--current-zoom, 1)) rgba(0,0,0,0.5); }
-      100% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) rgba(59, 130, 246, 0.8), 0 calc(4px / var(--current-zoom, 1)) calc(20px / var(--current-zoom, 1)) rgba(0,0,0,0.5); }
+      0% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.8); }
+      50% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(12px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.4); }
+      100% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.8); }
     }
     
     .no-map-message {
@@ -1006,37 +1037,97 @@ if ($conn) {
     let panStartClientX = 0;
     let panStartClientY = 0;
     let didPan = false;
+    let isAnimating = false;
 
     const mapWrapper = document.querySelector('.map-image-wrapper');
     const mapCanvas = document.getElementById('mapCanvas');
     const mapImage = document.getElementById('cemeteryMapImage');
+
+    // State persistence functions
+    function saveMapState() {
+      if (isAnimating) return;
+      const state = {
+        zoom: zoom,
+        panX: panX,
+        panY: panY,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('cemetery_map_state', JSON.stringify(state));
+    }
+
+    function loadMapState() {
+      const saved = sessionStorage.getItem('cemetery_map_state');
+      if (!saved) return null;
+      
+      try {
+        const state = JSON.parse(saved);
+        // Expire state after 30 minutes of inactivity
+        if (Date.now() - state.timestamp > 30 * 60 * 1000) {
+          sessionStorage.removeItem('cemetery_map_state');
+          return null;
+        }
+        return state;
+      } catch (e) {
+        return null;
+      }
+    }
 
     // Initialize map view
     if (mapImage) {
         const initMap = () => {
             const containerWidth = mapWrapper.clientWidth;
             const containerHeight = mapWrapper.clientHeight;
-            const imgWidth = mapImage.naturalWidth;
-            const imgHeight = mapImage.naturalHeight;
+            
+            // Check for saved state first
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightLotId = urlParams.get('highlight_lot');
+            const savedState = loadMapState();
 
-            // Calculate zoom to fit width or height (whichever is smaller)
-            // Or set a fixed initial zoom for large images
-            if (imgWidth > 3000 || imgHeight > 3000) {
-                zoom = 0.2; // Start zoomed out for large maps
+            if (highlightLotId) {
+                // If highlighting a lot, use a good default and let highlightLotOnMap handle the rest
+                zoom = 1;
+                panX = 0;
+                panY = 0;
+            } else if (savedState) {
+                // Restore saved state
+                zoom = savedState.zoom;
+                panX = savedState.panX;
+                panY = savedState.panY;
             } else {
-                const scaleX = containerWidth / imgWidth;
-                const scaleY = containerHeight / imgHeight;
-                zoom = Math.min(scaleX, scaleY, 1);
+                // Calculate default zoom to fit the image properly
+                // Base width is 100% of containerWidth because of CSS width: 100%
+                const baseWidth = containerWidth;
+                const baseHeight = (mapImage.naturalHeight / mapImage.naturalWidth) * baseWidth;
+
+                // We want to fit the image in the container with some padding
+                const padding = 40;
+                const availableW = containerWidth - padding;
+                const availableH = containerHeight - padding;
+
+                const scaleX = availableW / baseWidth;
+                const scaleY = availableH / baseHeight;
+                
+                // Fit scale to container
+                const fitScale = Math.min(scaleX, scaleY, 1);
+                
+                // Set default zoom to be 40% larger than the fit-to-container view
+                // This makes the map appear more practical and closer by default
+                zoom = Math.min(fitScale * 1.4, 5);
+                
+                // Center the map initially
+                const displayedWidth = baseWidth * zoom;
+                const displayedHeight = baseHeight * zoom;
+
+                panX = (containerWidth - displayedWidth) / 2;
+                panY = (containerHeight - displayedHeight) / 2;
             }
 
-            // Center the map
-            const displayedWidth = imgWidth * zoom;
-            const displayedHeight = imgHeight * zoom;
-
-            panX = (containerWidth - displayedWidth) / 2;
-            panY = (containerHeight - displayedHeight) / 2;
-
             updateTransform();
+            
+            // Check for highlighted lot after initialization
+            if (highlightLotId) {
+                setTimeout(highlightLotOnMap, 300);
+            }
         };
 
         if (mapImage.complete) {
@@ -1046,53 +1137,116 @@ if ($conn) {
         }
     }
 
-    function clampPan() {
-      if (!mapWrapper || !mapCanvas) return;
+    function clampPan(targetPanX, targetPanY, targetZoom) {
+      if (!mapWrapper || !mapCanvas || !mapImage) return { x: targetPanX, y: targetPanY };
 
       const wrapperW = mapWrapper.clientWidth;
       const wrapperH = mapWrapper.clientHeight;
-      const contentW = mapCanvas.offsetWidth * zoom;
-      const contentH = mapCanvas.offsetHeight * zoom;
+      
+      // Use natural dimensions scaled by targetZoom
+      // Since map-image has width: 100%, its base width is mapWrapper.clientWidth
+      const baseWidth = mapWrapper.clientWidth;
+      const baseHeight = (mapImage.naturalHeight / mapImage.naturalWidth) * baseWidth;
+      
+      const contentW = baseWidth * targetZoom;
+      const contentH = baseHeight * targetZoom;
+
+      let x = targetPanX;
+      let y = targetPanY;
 
       if (contentW <= wrapperW) {
-        panX = (wrapperW - contentW) / 2;
+        x = (wrapperW - contentW) / 2;
       } else {
         const minX = wrapperW - contentW;
         const maxX = 0;
-        panX = Math.min(maxX, Math.max(minX, panX));
+        x = Math.min(maxX, Math.max(minX, x));
       }
 
       if (contentH <= wrapperH) {
-        panY = (wrapperH - contentH) / 2;
+        y = (wrapperH - contentH) / 2;
       } else {
         const minY = wrapperH - contentH;
         const maxY = 0;
-        panY = Math.min(maxY, Math.max(minY, panY));
+        y = Math.min(maxY, Math.max(minY, y));
       }
+      
+      return { x, y };
     }
 
-    function updateTransform() {
+    function updateTransform(smooth = false) {
       if (!mapCanvas) return;
-      clampPan();
+      
+      const clamped = clampPan(panX, panY, zoom);
+      panX = clamped.x;
+      panY = clamped.y;
+
+      if (smooth) {
+        mapCanvas.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        isAnimating = true;
+        setTimeout(() => {
+          mapCanvas.style.transition = '';
+          isAnimating = false;
+          saveMapState();
+        }, 500);
+      } else {
+        mapCanvas.style.transition = '';
+      }
+
       mapCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
       if (mapWrapper) {
         mapWrapper.style.setProperty('--current-zoom', zoom);
       }
+      
+      // Save state for persistence
+      saveMapState();
     }
 
     function setZoomAt(newZoom, clientX, clientY) {
-      if (!mapWrapper) return;
+      if (!mapWrapper || isAnimating) return;
       const rect = mapWrapper.getBoundingClientRect();
       const mouseX = clientX - rect.left;
       const mouseY = clientY - rect.top;
 
+      // Current point in image coordinates (unscaled)
       const worldX = (mouseX - panX) / zoom;
       const worldY = (mouseY - panY) / zoom;
 
       zoom = newZoom;
+      
+      // New pan to keep the same image point under the mouse
       panX = mouseX - worldX * zoom;
       panY = mouseY - worldY * zoom;
+      
       updateTransform();
+    }
+
+    /**
+     * Programmatically zoom to a specific percentage coordinate
+     */
+    function zoomToPoint(percentX, percentY, targetZoom = 1.8) {
+      if (!mapWrapper || !mapImage) return;
+
+      const containerWidth = mapWrapper.clientWidth;
+      const containerHeight = mapWrapper.clientHeight;
+      
+      // Calculate base dimensions (zoom = 1)
+      const baseWidth = containerWidth;
+      const baseHeight = (mapImage.naturalHeight / mapImage.naturalWidth) * baseWidth;
+
+      // Target position on base image in pixels
+      const targetPxX = (percentX / 100) * baseWidth;
+      const targetPxY = (percentY / 100) * baseHeight;
+
+      // We want: targetPxX * targetZoom + panX = containerWidth / 2
+      const targetPanX = (containerWidth / 2) - (targetPxX * targetZoom);
+      const targetPanY = (containerHeight / 2) - (targetPxY * targetZoom);
+
+      // Set globals and update
+      zoom = targetZoom;
+      panX = targetPanX;
+      panY = targetPanY;
+
+      updateTransform(true);
     }
 
     if (mapWrapper && mapCanvas) {
@@ -1102,10 +1256,11 @@ if ($conn) {
 
       mapWrapper.addEventListener('wheel', (e) => {
         e.preventDefault();
+        if (isAnimating) return;
 
-        const step = 0.15;
+        const step = 0.2;
         const direction = e.deltaY > 0 ? -1 : 1;
-        const newZoom = Math.min(3, Math.max(0.05, zoom + direction * step));
+        const newZoom = Math.min(5, Math.max(0.1, zoom + direction * step));
 
         if (newZoom !== zoom) {
           setZoomAt(newZoom, e.clientX, e.clientY);
@@ -1113,14 +1268,17 @@ if ($conn) {
       }, { passive: false });
 
       mapWrapper.addEventListener('click', (e) => {
-        if (!didPan) return;
-        e.preventDefault();
-        e.stopPropagation();
-        didPan = false;
+        if (didPan) {
+          e.preventDefault();
+          e.stopPropagation();
+          didPan = false;
+        }
       }, true);
 
       mapWrapper.addEventListener('mousedown', (e) => {
-        if (e.button !== 0) return;
+        const isExtraButton = e.button === 1 || e.button === 2;
+        if ((e.button !== 0 && !isExtraButton) || isAnimating) return;
+        
         isPanning = true;
         startPanX = e.clientX - panX;
         startPanY = e.clientY - panY;
@@ -1129,6 +1287,14 @@ if ($conn) {
         didPan = false;
         mapWrapper.classList.add('grabbing');
         document.body.style.userSelect = 'none';
+        if (isExtraButton) e.preventDefault();
+      });
+
+      // Prevent context menu on right click
+      mapWrapper.addEventListener('contextmenu', (e) => {
+        if (didPan || e.button === 2) {
+          e.preventDefault();
+        }
       });
 
       window.addEventListener('mousemove', (e) => {
@@ -1942,150 +2108,47 @@ if ($conn) {
     
     // Highlight lot functionality
     function highlightLotOnMap() {
-      console.log('highlightLotOnMap called'); // Debug log
-      
       const urlParams = new URLSearchParams(window.location.search);
       const highlightLotId = urlParams.get('highlight_lot');
       
-      console.log('Highlight data:', { highlightLotId }); // Debug log
+      if (!highlightLotId) return;
+
+      const lotMarkers = document.querySelectorAll('.lot-marker');
+      let targetMarker = null;
       
-      if (highlightLotId) {
-        // Find the lot marker on the map
-        const lotMarkers = document.querySelectorAll('.lot-marker');
-        console.log('Found markers:', lotMarkers.length); // Debug log
-        
-        let targetMarker = null;
-        
-        lotMarkers.forEach(marker => {
-          if (marker.getAttribute('data-lot-id') === highlightLotId) {
-            targetMarker = marker;
-            marker.classList.add('highlighted-marker');
-            console.log('Found target marker!'); // Debug log
-          } else {
-            marker.classList.add('hidden-marker');
-          }
-        });
-        
-        if (targetMarker) {
-          console.log('Creating pin overlay'); // Debug log
-          
-          // Get screen size for responsive pin
-          const isMobile = window.innerWidth <= 768;
-          const isSmallMobile = window.innerWidth <= 480;
-          
-          // Create smaller responsive pin overlay
-          const pinOverlay = document.createElement('div');
-          const pinSize = isSmallMobile ? 25 : (isMobile ? 30 : 40);
-          const fontSize = isSmallMobile ? 18 : (isMobile ? 22 : 28);
-          
-          pinOverlay.style.cssText = `
-            position: absolute;
-            z-index: 1006;
-            pointer-events: none;
-            animation: pinDrop 0.5s ease-out, pinBounce 2s infinite;
-            font-size: ${fontSize}px;
-            text-align: center;
-            line-height: 1;
-            filter: drop-shadow(0 ${isSmallMobile ? 4 : 6}px ${isSmallMobile ? 8 : 12}px rgba(239, 68, 68, 0.6));
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            border: ${isSmallMobile ? 2 : 3}px solid #ef4444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: ${pinSize}px;
-            height: ${pinSize}px;
-          `;
-          
-          // Use emoji pin with responsive styling
-          pinOverlay.innerHTML = '📍';
-          pinOverlay.style.color = '#ef4444';
-          
-          // Add the pin overlay to the map canvas instead of the marker
-          const mapCanvas = document.getElementById('mapCanvas');
-          if (mapCanvas) {
-            // Position relative to the map canvas
-            const markerRect = targetMarker.getBoundingClientRect();
-            const canvasRect = mapCanvas.getBoundingClientRect();
-            
-            const relativeLeft = markerRect.left - canvasRect.left + (markerRect.width / 2) - (pinSize / 2);
-            const relativeTop = markerRect.top - canvasRect.top - pinSize + 20;
-            
-            pinOverlay.style.left = relativeLeft + 'px';
-            pinOverlay.style.top = relativeTop + 'px';
-            
-            mapCanvas.appendChild(pinOverlay);
-          } else {
-            // Fallback to adding to marker
-            pinOverlay.style.top = `-${pinSize - 20}px`;
-            pinOverlay.style.left = '50%';
-            pinOverlay.style.transform = 'translateX(-50%)';
-            targetMarker.style.position = 'relative';
-            targetMarker.appendChild(pinOverlay);
-          }
-          
-          // Center the map on the highlighted lot
-          setTimeout(() => {
-            const mapWrapper = document.querySelector('.map-image-wrapper');
-            const mapCanvas = document.getElementById('mapCanvas');
-            
-            console.log('Centering map...'); // Debug log
-            
-            if (mapWrapper && mapCanvas) {
-              const markerRect = targetMarker.getBoundingClientRect();
-              const wrapperRect = mapWrapper.getBoundingClientRect();
-              
-              console.log('Marker rect:', markerRect); // Debug log
-              console.log('Wrapper rect:', wrapperRect); // Debug log
-              
-              // Reset zoom and pan first
-              zoom = 1;
-              panX = 0;
-              panY = 0;
-              updateTransform();
-              
-              // Calculate the center position for the marker
-              const markerCenterX = markerRect.left + markerRect.width / 2 - wrapperRect.left;
-              const markerCenterY = markerRect.top + markerRect.height / 2 - wrapperRect.top;
-              
-              console.log('Marker center:', { markerCenterX, markerCenterY }); // Debug log
-              
-              // Calculate required pan to center the marker
-              const wrapperCenterX = wrapperRect.width / 2;
-              const wrapperCenterY = wrapperRect.height / 2;
-              
-              const targetPanX = wrapperCenterX - markerCenterX;
-              const targetPanY = wrapperCenterY - markerCenterY;
-              
-              console.log('Target pan:', { targetPanX, targetPanY }); // Debug log
-              
-              // Apply pan and zoom
-              panX = targetPanX;
-              panY = targetPanY;
-              zoom = 1.8; // Set a reasonable zoom level
-              updateTransform();
-              
-              console.log('Map centered and zoomed'); // Debug log
-            }
-          }, 200);
-          
-          // Add clear highlight button to the header
-          const actionsContainer = document.querySelector('.page-header .actions');
-          if (actionsContainer) {
-             const clearBtn = document.createElement('button');
-             clearBtn.className = 'btn-primary';
-             clearBtn.style.background = '#6b7280';
-             clearBtn.innerHTML = '✕ Clear Highlight';
-             clearBtn.onclick = function() {
-                 window.location.href = 'cemetery-map.php';
-             };
-             actionsContainer.appendChild(clearBtn);
-          }
-          
-          // Show notification
-          showNotification(`Showing only selected lot. Click "Clear Highlight" to show all.`, 'success');
+      lotMarkers.forEach(marker => {
+        if (marker.getAttribute('data-lot-id') === highlightLotId) {
+          targetMarker = marker;
+          marker.classList.add('highlighted-marker');
         } else {
-          showNotification(`Lot not found on map`, 'warning');
+          marker.classList.add('hidden-marker');
+        }
+      });
+      
+      if (targetMarker) {
+        // Position relative to map canvas using percentages
+        const lotX = parseFloat(targetMarker.style.left);
+        const lotY = parseFloat(targetMarker.style.top);
+        const lotW = parseFloat(targetMarker.style.width);
+        const lotH = parseFloat(targetMarker.style.height);
+        
+        // Smoothly zoom to the lot
+        setTimeout(() => {
+          const centerX = lotX + (lotW / 2);
+          const centerY = lotY + (lotH / 2);
+          zoomToPoint(centerX, centerY, 2.5);
+        }, 300);
+        
+        // Add clear highlight button
+        const actionsContainer = document.querySelector('.page-header .actions');
+        if (actionsContainer && !document.getElementById('clearHighlightBtn')) {
+           const clearBtn = document.createElement('button');
+           clearBtn.id = 'clearHighlightBtn';
+           clearBtn.className = 'btn-primary';
+           clearBtn.style.background = '#6b7280';
+           clearBtn.innerHTML = '✕ Clear Highlight';
+           clearBtn.onclick = () => window.location.href = 'cemetery-map.php';
+           actionsContainer.appendChild(clearBtn);
         }
       }
     }
@@ -2141,49 +2204,6 @@ if ($conn) {
         }, 300);
       }, 4000);
     }
-    
-    // Add CSS animation for pin effects
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes pinDrop {
-        0% {
-          transform: translateX(-50%) translateY(-100px) scale(0.5);
-          opacity: 0;
-        }
-        50% {
-          transform: translateX(-50%) translateY(-10px) scale(1.1);
-          opacity: 1;
-        }
-        75% {
-          transform: translateX(-50%) translateY(5px) scale(0.95);
-        }
-        100% {
-          transform: translateX(-50%) translateY(0) scale(1);
-        }
-      }
-      
-      @keyframes pinBounce {
-        0%, 100% {
-          transform: translateX(-50%) translateY(0) scale(1);
-        }
-        50% {
-          transform: translateX(-50%) translateY(-8px) scale(1.05);
-        }
-      }
-      
-      @keyframes pulse {
-        0% {
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4);
-        }
-        50% {
-          box-shadow: 0 0 30px rgba(59, 130, 246, 1), 0 0 60px rgba(59, 130, 246, 0.6);
-        }
-        100% {
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4);
-        }
-      }
-    `;
-    document.head.appendChild(style);
     
     // Initialize highlighting when page loads
     document.addEventListener('DOMContentLoaded', function() {
