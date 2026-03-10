@@ -109,42 +109,42 @@ if ($conn) {
     
     .lot-marker {
       position: absolute;
-      border: calc(3px / var(--current-zoom, 1)) solid;
+      border: calc(1.5px + 1.5px / var(--current-zoom, 1)) solid;
       cursor: pointer;
       transition: all 0.3s;
-      box-shadow: 0 calc(2px / var(--current-zoom, 1)) calc(8px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
+      box-shadow: 0 calc(1px + 1px / var(--current-zoom, 1)) calc(4px + 4px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
     }
     
     .lot-marker:hover {
-      border-width: calc(4px / var(--current-zoom, 1));
+      border-width: calc(2px + 2px / var(--current-zoom, 1));
       z-index: 100;
-      box-shadow: 0 calc(4px / var(--current-zoom, 1)) calc(16px / var(--current-zoom, 1)) rgba(0,0,0,0.5);
+      box-shadow: 0 calc(2px + 2px / var(--current-zoom, 1)) calc(8px + 8px / var(--current-zoom, 1)) rgba(0,0,0,0.5);
     }
     
     .lot-marker.vacant {
       border-color: #22c55e;
-      background: rgba(34, 197, 94, 0.3);
+      background: rgba(34, 197, 94, 0.4);
     }
     
     .lot-marker.occupied {
       border-color: #f97316;
-      background: rgba(249, 115, 22, 0.3);
+      background: rgba(249, 115, 22, 0.4);
     }
     
     .lot-marker.maintenance {
-      border-color: #6b7280;
-      background: rgba(107, 114, 128, 0.3);
+      border-color: #64748b;
+      background: rgba(100, 116, 139, 0.4);
     }
     
     .lot-label {
       position: absolute;
-      top: calc(4px / var(--current-zoom, 1));
-      left: calc(4px / var(--current-zoom, 1));
+      top: 0.5px;
+      left: 0.5px;
       background: rgba(0,0,0,0.8);
       color: white;
-      padding: calc(2px / var(--current-zoom, 1)) calc(6px / var(--current-zoom, 1));
-      border-radius: calc(4px / var(--current-zoom, 1));
-      font-size: calc(11px / var(--current-zoom, 1));
+      padding: calc(0.2px + 0.3px / var(--current-zoom, 1)) calc(1px + 1px / var(--current-zoom, 1));
+      border-radius: calc(0.5px + 0.5px / var(--current-zoom, 1));
+      font-size: calc(3.5px + 3.5px / var(--current-zoom, 1));
       font-weight: 700;
       pointer-events: none;
     }
@@ -155,10 +155,10 @@ if ($conn) {
     
     .highlighted-marker {
       z-index: 105 !important;
-      border-width: calc(4px / var(--current-zoom, 1)) !important;
+      border-width: calc(2px + 2px / var(--current-zoom, 1)) !important;
       border-color: #ef4444 !important;
       background: rgba(239, 68, 68, 0.2) !important;
-      box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 20px rgba(239, 68, 68, 0.6) !important;
+      box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 20px rgba(239, 68, 68, 0.6) !important;
     }
     
     .highlighted-marker::after {
@@ -167,7 +167,7 @@ if ($conn) {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -100%);
-      font-size: calc(22px / var(--current-zoom, 1));
+      font-size: calc(10px + 12px / var(--current-zoom, 1));
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
       animation: pinBounce 2s infinite;
       pointer-events: none;
@@ -176,7 +176,7 @@ if ($conn) {
     
     @media (max-width: 768px) {
       .highlighted-marker::after {
-        font-size: calc(18px / var(--current-zoom, 1));
+        font-size: calc(8px + 10px / var(--current-zoom, 1));
       }
     }
     
@@ -191,9 +191,9 @@ if ($conn) {
     }
     
     @keyframes pulse-ring {
-      0% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.8); }
-      50% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(12px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.4); }
-      100% { box-shadow: 0 0 0 calc(4px / var(--current-zoom, 1)) white, 0 0 0 calc(8px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.8); }
+      0% { box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 0 calc(4px + 4px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.8); }
+      50% { box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 0 calc(6px + 6px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.4); }
+      100% { box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 0 calc(4px + 4px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.8); }
     }
     
     .no-map-message {
@@ -342,8 +342,8 @@ if ($conn) {
     }
     
     .status-badge.maintenance {
-      background: #fafafa;
-      color: #757575;
+      background: #f1f5f9;
+      color: #64748b;
     }
     
     .card-content {
@@ -545,13 +545,13 @@ if ($conn) {
     }
     
     .legend-box.vacant { 
-      background: linear-gradient(135deg, #a8d5a8 0%, #8bc98b 100%);
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
     }
     .legend-box.occupied { 
-      background: linear-gradient(135deg, #e8e8e8 0%, #c5c5c5 100%);
+      background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
     }
     .legend-box.maintenance { 
-      background: linear-gradient(135deg, #b8b8b8 0%, #8a8a8a 100%);
+      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
     }
     
     

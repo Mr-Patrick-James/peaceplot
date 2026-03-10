@@ -140,7 +140,7 @@ if ($conn) {
     
     .lot-rectangle {
       position: absolute;
-      border: calc(3px / var(--current-zoom, 1)) solid;
+      border: calc(1.5px + 1.5px / var(--current-zoom, 1)) solid;
       box-sizing: border-box;
       pointer-events: all;
       cursor: pointer;
@@ -149,17 +149,17 @@ if ($conn) {
 
     .lot-remove-btn {
       position: absolute;
-      top: calc(-10px / var(--current-zoom, 1));
-      right: calc(-10px / var(--current-zoom, 1));
-      width: calc(22px / var(--current-zoom, 1));
-      height: calc(22px / var(--current-zoom, 1));
+      top: calc(-5px - 5px / var(--current-zoom, 1));
+      right: calc(-5px - 5px / var(--current-zoom, 1));
+      width: calc(11px + 11px / var(--current-zoom, 1));
+      height: calc(11px + 11px / var(--current-zoom, 1));
       border-radius: 999px;
-      border: calc(2px / var(--current-zoom, 1)) solid rgba(0,0,0,0.2);
+      border: calc(1px + 1px / var(--current-zoom, 1)) solid rgba(0,0,0,0.2);
       background: rgba(255,255,255,0.95);
       color: #111827;
       font-weight: 900;
-      font-size: calc(14px / var(--current-zoom, 1));
-      line-height: calc(16px / var(--current-zoom, 1));
+      font-size: calc(7px + 7px / var(--current-zoom, 1));
+      line-height: calc(8px + 8px / var(--current-zoom, 1));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -174,42 +174,42 @@ if ($conn) {
     }
     
     .lot-rectangle:hover {
-      border-width: calc(4px / var(--current-zoom, 1));
-      box-shadow: 0 0 calc(12px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
+      border-width: calc(2px + 2px / var(--current-zoom, 1));
+      box-shadow: 0 0 calc(6px + 6px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
       z-index: 100;
     }
     
     .lot-rectangle.vacant {
       border-color: #22c55e;
-      background: rgba(34, 197, 94, 0.2);
+      background: rgba(34, 197, 94, 0.4);
     }
     
     .lot-rectangle.occupied {
       border-color: #f97316;
-      background: rgba(249, 115, 22, 0.2);
+      background: rgba(249, 115, 22, 0.4);
     }
     
     .lot-rectangle.maintenance {
-      border-color: #6b7280;
-      background: rgba(107, 114, 128, 0.2);
+      border-color: #64748b;
+      background: rgba(100, 116, 139, 0.4);
     }
     
     .lot-label {
       position: absolute;
-      top: calc(4px / var(--current-zoom, 1));
-      left: calc(4px / var(--current-zoom, 1));
+      top: 0.5px;
+      left: 0.5px;
       background: rgba(0,0,0,0.8);
       color: white;
-      padding: calc(2px / var(--current-zoom, 1)) calc(6px / var(--current-zoom, 1));
-      border-radius: calc(4px / var(--current-zoom, 1));
-      font-size: calc(11px / var(--current-zoom, 1));
+      padding: calc(0.2px + 0.3px / var(--current-zoom, 1)) calc(1px + 1px / var(--current-zoom, 1));
+      border-radius: calc(0.5px + 0.5px / var(--current-zoom, 1));
+      font-size: calc(3.5px + 3.5px / var(--current-zoom, 1));
       font-weight: 700;
       pointer-events: none;
     }
     
     .drawing-rect {
       position: absolute;
-      border: calc(3px / var(--current-zoom, 1)) dashed var(--primary);
+      border: calc(1.5px + 1.5px / var(--current-zoom, 1)) dashed var(--primary);
       background: rgba(47, 109, 246, 0.1);
       pointer-events: none;
     }
@@ -359,8 +359,10 @@ if ($conn) {
 
       <nav class="nav">
         <a href="dashboard.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h8V3H3v10z" /><path d="M13 21h8V11h-8v10z" /><path d="M13 3h8v6h-8V3z" /><path d="M3 21h8v-6H3v6z" /></svg></span><span>Dashboard</span></a>
-        <a href="index.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /><path d="M8 7v10" /><path d="M16 7v10" /></svg></span><span>Cemetery Lot Management</span></a>
-        <a href="cemetery-map.php" class="active"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" /><path d="M9 4v14" /><path d="M15 6v14" /></svg></span><span>Map Editor</span></a>
+        <a href="index.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /><path d="M8 7v10" /><path d="M16 7v10" /></svg></span><span>Lot Management</span></a>
+        <a href="lot-availability.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20" /><path d="M2 12h20" /><path d="M4 4l16 16" /></svg></span><span>Lots</span></a>
+        <a href="cemetery-map.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" /><path d="M9 4v14" /><path d="M15 6v14" /></svg></span><span>Cemetery Map</span></a>
+        <a href="map-editor.php" class="active"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg></span><span>Map Editor</span></a>
         <a href="burial-records.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M8 6h8" /><path d="M8 10h8" /></svg></span><span>Burial Records</span></a>
         <a href="reports.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18" /><path d="M7 14v4" /><path d="M11 10v8" /><path d="M15 6v12" /><path d="M19 12v6" /></svg></span><span>Reports</span></a>
         <a href="history.php"><span class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span>History</span></a>
