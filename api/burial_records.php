@@ -40,6 +40,9 @@ function handleGet($conn) {
     try {
         $id = isset($_GET['id']) ? intval($_GET['id']) : null;
         $showArchived = isset($_GET['archived']) && $_GET['archived'] === '1' ? 1 : 0;
+        $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : null;
+        $limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 10;
+        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         
         // Check if burial_record_images table exists
         $tableCheck = $conn->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='burial_record_images'");
@@ -83,14 +86,51 @@ function handleGet($conn) {
                 echo json_encode(['success' => false, 'message' => 'Record not found']);
             }
         } else {
-            $stmt = $conn->prepare("
+            // Build query with filters
+            $whereClause = "WHERE dr.is_archived = :is_archived";
+            $params = [':is_archived' => $showArchived];
+            
+            if ($search) {
+                $whereClause .= " AND (dr.full_name LIKE :search OR cl.lot_number LIKE :search OR cl.section LIKE :search OR dr.deceased_info LIKE :search OR dr.remarks LIKE :search)";
+                $params[':search'] = "%$search%";
+            }
+            
+            // Get total count for pagination
+            $countStmt = $conn->prepare("
+                SELECT COUNT(*) 
+                FROM deceased_records dr 
+                LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
+                $whereClause
+            ");
+            foreach ($params as $key => $val) {
+                $countStmt->bindValue($key, $val);
+            }
+            $countStmt->execute();
+            $totalRecords = intval($countStmt->fetchColumn());
+            
+            $sql = "
                 SELECT dr.*, cl.lot_number, cl.section, cl.block 
                 FROM deceased_records dr 
                 LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
-                WHERE dr.is_archived = :is_archived
+                $whereClause
                 ORDER BY dr.date_of_death DESC
-            ");
-            $stmt->bindParam(':is_archived', $showArchived);
+            ";
+            
+            if ($page !== null) {
+                $offset = ($page - 1) * $limit;
+                $sql .= " LIMIT :limit OFFSET :offset";
+            }
+            
+            $stmt = $conn->prepare($sql);
+            foreach ($params as $key => $val) {
+                $stmt->bindValue($key, $val);
+            }
+            
+            if ($page !== null) {
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            }
+            
             $stmt->execute();
             $results = $stmt->fetchAll();
             
@@ -119,7 +159,22 @@ function handleGet($conn) {
                 }
             }
             
-            echo json_encode(['success' => true, 'data' => $results]);
+            $response = [
+                'success' => true, 
+                'data' => $results,
+                'pagination' => null
+            ];
+            
+            if ($page !== null) {
+                $response['pagination'] = [
+                    'total_records' => $totalRecords,
+                    'total_pages' => ceil($totalRecords / $limit),
+                    'current_page' => $page,
+                    'limit' => $limit
+                ];
+            }
+            
+            echo json_encode($response);
         }
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);

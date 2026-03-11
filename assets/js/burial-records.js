@@ -1,7 +1,11 @@
 const BurialAPI = {
-    async fetchRecords(showArchived = false) {
+    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '') {
         try {
-            const response = await fetch(`${API_BASE_URL}/burial_records.php?archived=${showArchived ? '1' : '0'}`);
+            let url = `${API_BASE_URL}/burial_records.php?archived=${showArchived ? '1' : '0'}&page=${page}&limit=${limit}`;
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            const response = await fetch(url);
             const data = await response.json();
             return data;
         } catch (error) {
@@ -140,17 +144,30 @@ const BurialAPI = {
 let currentRecords = [];
 let editingRecordId = null;
 let showingArchived = false;
+let currentPage = 1;
+let itemsPerPage = 10;
+let totalPages = 1;
 
 async function loadBurialRecords() {
-    console.log('loadBurialRecords() called, archived:', showingArchived);
+    console.log('loadBurialRecords() called, archived:', showingArchived, 'page:', currentPage);
     const tbody = document.querySelector('.table tbody');
     if (!tbody) return;
 
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading records...</td></tr>';
+
     try {
-        const result = await BurialAPI.fetchRecords(showingArchived);
+        const searchInput = document.getElementById('recordSearch');
+        const searchTerm = searchInput ? searchInput.value : '';
+        
+        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchTerm);
         if (result.success && result.data) {
             currentRecords = result.data;
+            if (result.pagination) {
+                totalPages = result.pagination.total_pages;
+                currentPage = result.pagination.current_page;
+            }
             renderRecords(result.data);
+            renderPagination(result.pagination);
         } else {
             tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#ef4444;">Failed to load records: ${result.message}</td></tr>`;
         }
@@ -159,6 +176,74 @@ async function loadBurialRecords() {
         tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#ef4444;">Error: ${error.message}</td></tr>`;
     }
 }
+
+function renderPagination(pagination) {
+    let paginationContainer = document.querySelector('.pagination-container');
+    if (!paginationContainer) {
+        paginationContainer = document.createElement('div');
+        paginationContainer.className = 'pagination-container';
+        const main = document.querySelector('.main-content') || document.querySelector('.main');
+        if (main) main.appendChild(paginationContainer);
+    }
+
+    if (!pagination || pagination.total_pages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    const { current_page, total_pages, total_records } = pagination;
+    
+    let html = `
+        <div class="pagination-info">
+            Showing <strong>${(current_page - 1) * itemsPerPage + 1}</strong> to <strong>${Math.min(current_page * itemsPerPage, total_records)}</strong> of <strong>${total_records}</strong> records
+        </div>
+        <div class="pagination-controls">
+            <button class="pagination-btn" ${current_page === 1 ? 'disabled' : ''} onclick="changePage(${current_page - 1})">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+    `;
+
+    // Calculate range of pages to show
+    let startPage = Math.max(1, current_page - 2);
+    let endPage = Math.min(total_pages, startPage + 4);
+    if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+    }
+
+    if (startPage > 1) {
+        html += `<button class="pagination-btn" onclick="changePage(1)">1</button>`;
+        if (startPage > 2) html += `<span class="pagination-ellipsis">...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `
+            <button class="pagination-btn ${i === current_page ? 'active' : ''}" onclick="changePage(${i})">
+                ${i}
+            </button>
+        `;
+    }
+
+    if (endPage < total_pages) {
+        if (endPage < total_pages - 1) html += `<span class="pagination-ellipsis">...</span>`;
+        html += `<button class="pagination-btn" onclick="changePage(${total_pages})">${total_pages}</button>`;
+    }
+
+    html += `
+            <button class="pagination-btn" ${current_page === total_pages ? 'disabled' : ''} onclick="changePage(${current_page + 1})">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+        </div>
+    `;
+
+    paginationContainer.innerHTML = html;
+}
+
+window.changePage = function(page) {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    currentPage = page;
+    loadBurialRecords();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function renderRecords(records) {
     console.log('renderRecords() called with', records.length, 'records');
@@ -1288,40 +1373,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function applyFilters() {
-            const searchTerm = searchInput?.value.toLowerCase().trim() || '';
-            const startDate = startDateInput?.value || '';
-            const endDate = endDateInput?.value || '';
-            const rows = document.querySelectorAll('.table tbody tr');
-
-            rows.forEach(row => {
-                if (row.cells.length === 1) return; // Skip "No records found" row
-
-                const recordId = row.getAttribute('data-record-id');
-                const record = currentRecords.find(r => r.id == recordId);
-                if (!record) return;
-
-                // Search filter
-                const fields = [
-                    record.full_name,
-                    record.lot_number,
-                    record.section,
-                    record.layer,
-                    record.age,
-                    record.date_of_death,
-                    record.date_of_burial,
-                    record.deceased_info,
-                    record.remarks
-                ];
-                const matchesSearch = fields.some(val => (val || '').toString().toLowerCase().includes(searchTerm));
-
-                // Date filter
-                const deathDate = row.getAttribute('data-death-date');
-                let matchesDate = true;
-                if (startDate && deathDate < startDate) matchesDate = false;
-                if (endDate && deathDate > endDate) matchesDate = false;
-
-                row.style.display = (matchesSearch && matchesDate) ? '' : 'none';
-            });
+            currentPage = 1;
+            loadBurialRecords();
         }
 
         if (searchInput) searchInput.addEventListener('input', applyFilters);
@@ -1348,6 +1401,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const addBtn = document.querySelector('button[data-action="add"]');
                 if (addBtn) addBtn.style.display = showingArchived ? 'none' : 'flex';
                 
+                currentPage = 1; // Reset to first page
                 loadBurialRecords();
             });
         }

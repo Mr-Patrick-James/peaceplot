@@ -248,6 +248,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="burial-records.php" class="active"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M8 6h8" /><path d="M8 10h8" /></svg></span><span>Burial Records</span></a>
                 <a href="cemetery-map.php"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" /><path d="M9 4v14" /><path d="M15 6v14" /></svg></span><span>Cemetery Map</span></a>
             </nav>
+
+            <div class="sidebar-footer">
+                <div class="user" onclick="window.location.href='public/settings.php'" style="cursor:pointer; transition: background 0.2s ease; border-radius: 12px; padding: 10px; margin-bottom: 10px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
+                    <div class="avatar"><?php echo htmlspecialchars($userInitials); ?></div>
+                    <div>
+                        <div class="user-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
+                        <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
+                    </div>
+                </div>
+
+                <a class="logout" href="public/logout.php">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg></span>
+                    <span>Logout</span>
+                </a>
+            </div>
         </aside>
 
         <main class="main">

@@ -133,7 +133,7 @@ if ($conn) {
       </nav>
 
       <div class="sidebar-footer">
-        <div class="user">
+        <div class="user" onclick="window.location.href='settings.php'" style="cursor:pointer; transition: background 0.2s ease; border-radius: 12px; padding: 10px; margin-bottom: 10px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
           <div class="avatar"><?php echo htmlspecialchars($userInitials); ?></div>
           <div>
             <div class="user-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
@@ -142,13 +142,7 @@ if ($conn) {
         </div>
 
         <a class="logout" href="logout.php">
-          <span class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <path d="M16 17l5-5-5-5" />
-              <path d="M21 12H9" />
-            </svg>
-          </span>
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg></span>
           <span>Logout</span>
         </a>
       </div>

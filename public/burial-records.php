@@ -1,23 +1,19 @@
 <?php
+require_once __DIR__ . '/../config/auth.php';
+requireLogin();
+
+$user = getUserInfo();
+$userInitials = getInitials($user['full_name']);
+
 require_once __DIR__ . '/../config/database.php';
 
 $database = new Database();
 $conn = $database->getConnection();
 
-$records = [];
 $availableLots = [];
 
 if ($conn) {
     try {
-        $stmt = $conn->query("
-            SELECT dr.*, cl.lot_number, cl.section, cl.block 
-            FROM deceased_records dr 
-            LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
-            WHERE dr.is_archived = 0
-            ORDER BY dr.date_of_burial DESC
-        ");
-        $records = $stmt->fetchAll();
-        
         $lotsStmt = $conn->query("
             SELECT id, lot_number, section, block 
             FROM cemetery_lots 
@@ -40,6 +36,62 @@ if ($conn) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PeacePlot Admin - Burial Records</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
+  <style>
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background: #fff;
+        border-top: 1px solid #e2e8f0;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        margin-top: -1px; /* Overlap with table-wrap border if any */
+    }
+    .pagination-info {
+        font-size: 14px;
+        color: #64748b;
+    }
+    .pagination-controls {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+    .pagination-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 8px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #1e293b;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .pagination-btn:hover:not(:disabled) {
+        border-color: #3b82f6;
+        color: #3b82f6;
+        background: #f0f7ff;
+    }
+    .pagination-btn.active {
+        background: #3b82f6;
+        color: #fff;
+        border-color: #3b82f6;
+    }
+    .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .pagination-ellipsis {
+        color: #94a3b8;
+        padding: 0 5px;
+    }
+  </style>
 </head>
 <body>
   <div class="app">
@@ -61,15 +113,15 @@ if ($conn) {
       </nav>
 
       <div class="sidebar-footer">
-        <div class="user">
-          <div class="avatar">AD</div>
+        <div class="user" onclick="window.location.href='settings.php'" style="cursor:pointer; transition: background 0.2s ease; border-radius: 12px; padding: 10px; margin-bottom: 10px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
+          <div class="avatar"><?php echo htmlspecialchars($userInitials); ?></div>
           <div>
-            <div class="user-name">Admin User</div>
-            <div class="user-email">admin@peaceplot.com</div>
+            <div class="user-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
+            <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
           </div>
         </div>
 
-        <a class="logout" href="#" onclick="return false;">
+        <a class="logout" href="logout.php">
           <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg></span>
           <span>Logout</span>
         </a>
@@ -143,82 +195,13 @@ if ($conn) {
               </tr>
             </thead>
             <tbody>
-              <?php if (isset($error)): ?>
-                <tr>
-                  <td colspan="10" style="text-align:center; color:#ef4444;">
-                    Error loading data: <?php echo htmlspecialchars($error); ?>
-                  </td>
-                </tr>
-              <?php elseif (empty($records)): ?>
-                <tr>
-                  <td colspan="10" style="text-align:center; color:#6b7280;">
-                    No burial records found. Click "Add New Burial Record" to create one.
-                  </td>
-                </tr>
-              <?php else: ?>
-                <?php foreach ($records as $record): ?>
-                  <tr data-record-id="<?php echo $record['id']; ?>">
-                    <td><?php echo htmlspecialchars($record['full_name']); ?></td>
-                    <td><?php echo htmlspecialchars($record['lot_number'] ?: '—'); ?></td>
-                    <td>
-                      <?php if ($record['layer']): ?>
-                        <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">
-                          Layer <?php echo htmlspecialchars($record['layer']); ?>
-                        </span>
-                      <?php else: ?>
-                        —
-                      <?php endif; ?>
-                    </td>
-                    <td><?php echo htmlspecialchars($record['section'] ?: '—'); ?></td>
-                    <td><?php echo $record['date_of_death'] ? date('M d, Y', strtotime($record['date_of_death'])) : '—'; ?></td>
-                    <td><?php echo $record['date_of_burial'] ? date('M d, Y', strtotime($record['date_of_burial'])) : '—'; ?></td>
-                    <td><?php echo $record['age'] ?: '—'; ?></td>
-                    <td style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
-                      <?php echo htmlspecialchars($record['deceased_info'] ?: '—'); ?>
-                    </td>
-                    <td style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
-                      <?php echo htmlspecialchars($record['remarks'] ?: '—'); ?>
-                    </td>
-                    <td>
-                      <div class="actions">
-                        <button class="btn-action btn-edit" data-action="view" data-record-id="<?php echo $record['id']; ?>">
-                          <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          </span>
-                          <span>View</span>
-                        </button>
-                        <button class="btn-action btn-edit" data-action="edit" data-record-id="<?php echo $record['id']; ?>">
-                          <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M12 20h9" />
-                              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                            </svg>
-                          </span>
-                          <span>Edit</span>
-                        </button>
-                        <button class="btn-action btn-delete" data-action="delete" data-record-id="<?php echo $record['id']; ?>">
-                          <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M3 6h18" />
-                              <path d="M8 6V4h8v2" />
-                              <path d="M19 6l-1 14H6L5 6" />
-                              <path d="M10 11v6" />
-                              <path d="M14 11v6" />
-                            </svg>
-                          </span>
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
+              <tr>
+                <td colspan="10" style="text-align:center;">Loading records...</td>
+              </tr>
             </tbody>
           </table>
         </div>
+        <div class="pagination-container"></div>
       </section>
     </main>
   </div>
