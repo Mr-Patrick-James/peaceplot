@@ -7,7 +7,7 @@ $conn = $database->getConnection();
 $lots = [];
 if ($conn) {
     try {
-        $stmt = $conn->query("SELECT id, lot_number, section, block, status FROM cemetery_lots ORDER BY lot_number");
+        $stmt = $conn->query("SELECT id, lot_number, section, block, status FROM cemetery_lots WHERE status = 'Vacant' ORDER BY lot_number");
         $lots = $stmt->fetchAll();
     } catch (PDOException $e) {
         $error = $e->getMessage();

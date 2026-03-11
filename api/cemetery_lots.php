@@ -77,14 +77,84 @@ function handleGet($conn) {
             }
         } else {
             if ($conn) {
-                $stmt = $conn->query("
+                $status = isset($_GET['status']) ? $_GET['status'] : null;
+                $all = isset($_GET['all']) && $_GET['all'] === 'true';
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                
+                $whereClauses = [];
+                $params = [];
+                
+                if ($status) {
+                    $whereClauses[] = "cl.status = :status";
+                    $params[':status'] = $status;
+                }
+                
+                if ($search) {
+                    $whereClauses[] = "(cl.lot_number = :exact_search OR cl.lot_number LIKE :search OR cl.section LIKE :search OR cl.position LIKE :search OR dr.full_name LIKE :search)";
+                    $params[':exact_search'] = $search;
+                    $params[':search'] = "%$search%";
+                }
+                
+                $whereSQL = count($whereClauses) > 0 ? " WHERE " . implode(" AND ", $whereClauses) : "";
+
+                // Get total count for pagination
+                $countQuery = "SELECT COUNT(*) FROM cemetery_lots cl LEFT JOIN deceased_records dr ON cl.id = dr.lot_id" . $whereSQL;
+                $countStmt = $conn->prepare($countQuery);
+                foreach ($params as $key => $val) {
+                    $countStmt->bindValue($key, $val);
+                }
+                $countStmt->execute();
+                $totalLots = $countStmt->fetchColumn();
+
+                // Pagination parameters
+                $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+                $limit = $all ? (intval($totalLots) ?: 1) : (isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 20);
+                $offset = ($page - 1) * $limit;
+
+                // Main query with search, order, and limit
+                $query = "
                     SELECT cl.*, dr.full_name as deceased_name 
                     FROM cemetery_lots cl 
                     LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
-                    ORDER BY cl.lot_number
-                ");
+                    $whereSQL
+                ";
+                
+                // Prioritize exact matches in sorting, then natural-ish length sort
+                $orderBy = " ORDER BY ";
+                if ($search) {
+                    $orderBy .= "CASE WHEN cl.lot_number = :exact_search THEN 0 ELSE 1 END, ";
+                }
+                $orderBy .= "LENGTH(cl.lot_number), cl.lot_number";
+                
+                if (!$all) {
+                    $query .= $orderBy . " LIMIT :limit OFFSET :offset";
+                } else {
+                    $query .= $orderBy;
+                }
+
+                $stmt = $conn->prepare($query);
+                foreach ($params as $key => $val) {
+                    $stmt->bindValue($key, $val);
+                }
+                
+                if (!$all) {
+                    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+                }
+                
+                $stmt->execute();
                 $results = $stmt->fetchAll();
-                echo json_encode(['success' => true, 'data' => $results]);
+
+                echo json_encode([
+                    'success' => true, 
+                    'data' => $results,
+                    'pagination' => [
+                        'total' => intval($totalLots),
+                        'page' => $page,
+                        'limit' => $limit,
+                        'pages' => $totalLots > 0 ? ceil($totalLots / $limit) : 0
+                    ]
+                ]);
             } else {
                 // Use sample data if database connection fails
                 $sampleFile = __DIR__ . '/../database/sample_lots.json';
@@ -105,6 +175,16 @@ function handlePost($conn, $input) {
     try {
         if (!isset($input['lot_number']) || !isset($input['section']) || !isset($input['status'])) {
             echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+            return;
+        }
+        
+        // Check if lot number already exists in the same section
+        $checkStmt = $conn->prepare("SELECT id FROM cemetery_lots WHERE lot_number = :lot_number AND section = :section");
+        $checkStmt->bindParam(':lot_number', $input['lot_number']);
+        $checkStmt->bindParam(':section', $input['section']);
+        $checkStmt->execute();
+        if ($checkStmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => "Lot number '" . $input['lot_number'] . "' already exists in '" . $input['section'] . "'."]);
             return;
         }
         
@@ -157,6 +237,17 @@ function handlePut($conn, $input) {
     try {
         if (!isset($input['id'])) {
             echo json_encode(['success' => false, 'message' => 'Missing lot ID']);
+            return;
+        }
+        
+        // Check if new lot number and section already exists elsewhere
+        $checkStmt = $conn->prepare("SELECT id FROM cemetery_lots WHERE lot_number = :lot_number AND section = :section AND id != :id");
+        $checkStmt->bindParam(':lot_number', $input['lot_number']);
+        $checkStmt->bindParam(':section', $input['section']);
+        $checkStmt->bindParam(':id', $input['id']);
+        $checkStmt->execute();
+        if ($checkStmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => "Another lot with number '" . $input['lot_number'] . "' already exists in '" . $input['section'] . "'."]);
             return;
         }
         

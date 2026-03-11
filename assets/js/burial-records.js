@@ -67,9 +67,18 @@ const BurialAPI = {
         }
     },
 
-    async fetchLots() {
+    async fetchLots(status = null, all = false) {
         try {
-            const response = await fetch(`${API_BASE_URL}/cemetery_lots.php`);
+            let url = `${API_BASE_URL}/cemetery_lots.php`;
+            const params = [];
+            if (status) params.push(`status=${status}`);
+            if (all) params.push(`all=true`);
+            
+            if (params.length > 0) {
+                url += `?${params.join('&')}`;
+            }
+            
+            const response = await fetch(url);
             const data = await response.json();
             return data;
         } catch (error) {
@@ -1016,10 +1025,15 @@ function createRecordModal(record = null) {
         }
     });
     
-    BurialAPI.fetchLots().then(result => {
+    BurialAPI.fetchLots(null, true).then(result => {
         if (result.success && result.data) {
+            // Filter lots to only show Vacant ones, OR the one currently assigned to this record
+            const filteredLots = result.data.filter(lot => 
+                lot.status === 'Vacant' || (record && record.lot_id == lot.id)
+            );
+            
             lotSelect.innerHTML = '<option value="">Unassigned</option>' + 
-                result.data.map(lot => `
+                filteredLots.map(lot => `
                     <option value="${lot.id}" ${record?.lot_id == lot.id ? 'selected' : ''}>
                         ${lot.lot_number} - ${lot.section}${lot.block ? ' - ' + lot.block : ''} (${lot.status})
                     </option>

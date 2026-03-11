@@ -192,62 +192,58 @@ if ($conn) {
               </tr>
             </thead>
             <tbody>
-              <?php if (isset($error)): ?>
-                <tr>
-                  <td colspan="6" style="text-align:center; color:#ef4444;">
-                    Error loading data: <?php echo htmlspecialchars($error); ?>
-                  </td>
-                </tr>
-              <?php elseif (empty($lots)): ?>
-                <tr>
-                  <td colspan="6" style="text-align:center; color:#6b7280;">
-                    No cemetery lots found. Click "Add New Cemetery Lot" to create one.
-                  </td>
-                </tr>
-              <?php else: ?>
-                <?php foreach ($lots as $lot): ?>
-                  <tr data-lot-id="<?php echo $lot['id']; ?>">
-                    <td><?php echo htmlspecialchars($lot['lot_number']); ?></td>
-                    <td><?php echo htmlspecialchars($lot['section']); ?></td>
-                    <td><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></td>
-                    <td><span class="badge <?php echo strtolower($lot['status']); ?>"><?php echo htmlspecialchars($lot['status']); ?></span></td>
-                    <td class="<?php echo $lot['deceased_name'] ? '' : 'muted'; ?>">
-                      <?php echo $lot['deceased_name'] ? htmlspecialchars($lot['deceased_name']) : '—'; ?>
-                    </td>
-                    <td>
-                      <div class="actions">
-                        <button class="btn-action btn-edit" data-action="edit" data-lot-id="<?php echo $lot['id']; ?>">
-                          <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M12 20h9" />
-                              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                            </svg>
-                          </span>
-                          <span>Edit</span>
-                        </button>
-                        <button class="btn-action btn-delete" data-action="delete" data-lot-id="<?php echo $lot['id']; ?>">
-                          <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M3 6h18" />
-                              <path d="M8 6V4h8v2" />
-                              <path d="M19 6l-1 14H6L5 6" />
-                              <path d="M10 11v6" />
-                              <path d="M14 11v6" />
-                            </svg>
-                          </span>
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
+              <!-- Data will be loaded via JS -->
+              <tr>
+                <td colspan="6" style="text-align:center; padding: 40px; color:#6b7280;">
+                  <div class="loading-spinner" style="display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
+                  <div style="margin-top: 10px;">Loading cemetery lots...</div>
+                </td>
+              </tr>
             </tbody>
           </table>
+        </div>
+
+        <div id="paginationContainer" class="pagination-wrap" style="padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <div class="pagination-info" style="color: #6b7280; font-size: 14px;">
+            Showing <span id="paginationRange">-</span> of <span id="paginationTotal">-</span> lots
+          </div>
+          <div class="pagination-controls" style="display: flex; gap: 8px;">
+            <!-- Pagination buttons will be rendered here -->
+          </div>
         </div>
       </section>
     </main>
   </div>
+
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .pagination-btn {
+      padding: 8px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: white;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pagination-btn:hover:not(:disabled) {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .pagination-btn.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
 
   <script src="../assets/js/app.js"></script>
   <script src="../assets/js/api.js"></script>

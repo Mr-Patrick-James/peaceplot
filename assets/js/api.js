@@ -1,9 +1,14 @@
 const API_BASE_URL = '/peaceplot/api';
 
 const API = {
-    async fetchLots() {
+    async fetchLots(page = 1, limit = 20, search = '') {
         try {
-            const response = await fetch(`${API_BASE_URL}/cemetery_lots.php`);
+            const url = new URL(`${window.location.origin}${API_BASE_URL}/cemetery_lots.php`);
+            url.searchParams.append('page', page);
+            url.searchParams.append('limit', limit);
+            if (search) url.searchParams.append('search', search);
+            
+            const response = await fetch(url.toString());
             const data = await response.json();
             return data;
         } catch (error) {

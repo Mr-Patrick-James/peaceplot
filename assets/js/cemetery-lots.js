@@ -1,16 +1,31 @@
 let currentLots = [];
 let editingLotId = null;
+let currentPage = 1;
+const rowsPerPage = 20;
+let searchQuery = '';
 
-async function loadCemeteryLots() {
+async function loadCemeteryLots(page = 1) {
     const tbody = document.querySelector('.table tbody');
     if (!tbody) return;
 
+    // Show loading state
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" style="text-align:center; padding: 40px; color:#6b7280;">
+                <div class="loading-spinner" style="display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
+                <div style="margin-top: 10px;">Loading cemetery lots...</div>
+            </td>
+        </tr>
+    `;
+
     try {
-        const result = await API.fetchLots();
+        const result = await API.fetchLots(page, rowsPerPage, searchQuery);
         
         if (result.success && result.data) {
             currentLots = result.data;
+            currentPage = page;
             renderLots(result.data);
+            renderPagination(result.pagination);
         } else {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ef4444;">Failed to load cemetery lots</td></tr>';
         }
@@ -20,20 +35,41 @@ async function loadCemeteryLots() {
     }
 }
 
-function filterLots(query) {
-    const q = (query || '').trim().toLowerCase();
-    if (!q) return currentLots.slice();
-    return currentLots.filter(lot => {
-        const fields = [
-            lot.lot_number,
-            lot.section,
+function renderPagination(pagination) {
+    const controls = document.querySelector('.pagination-controls');
+    const rangeDisplay = document.getElementById('paginationRange');
+    const totalDisplay = document.getElementById('paginationTotal');
+    
+    if (!controls || !rangeDisplay || !totalDisplay) return;
 
-            lot.position,
-            lot.status,
-            lot.deceased_name
-        ];
-        return fields.some(val => (val || '').toString().toLowerCase().includes(q));
-    });
+    const { total, page, pages, limit } = pagination;
+    
+    // Update info
+    const start = total === 0 ? 0 : (page - 1) * limit + 1;
+    const end = Math.min(page * limit, total);
+    rangeDisplay.textContent = `${start}-${end}`;
+    totalDisplay.textContent = total;
+
+    // Build buttons
+    let html = '';
+    
+    // Previous
+    html += `<button class="pagination-btn" ${page === 1 ? 'disabled' : ''} onclick="loadCemeteryLots(${page - 1})">Previous</button>`;
+    
+    // Page numbers (simplified: show current, first, last, and neighbors)
+    const delta = 2;
+    for (let i = 1; i <= pages; i++) {
+        if (i === 1 || i === pages || (i >= page - delta && i <= page + delta)) {
+            html += `<button class="pagination-btn ${i === page ? 'active' : ''}" onclick="loadCemeteryLots(${i})">${i}</button>`;
+        } else if (i === page - delta - 1 || i === page + delta + 1) {
+            html += `<span style="padding: 8px; color: #64748b;">...</span>`;
+        }
+    }
+    
+    // Next
+    html += `<button class="pagination-btn" ${page === pages ? 'disabled' : ''} onclick="loadCemeteryLots(${page + 1})">Next</button>`;
+    
+    controls.innerHTML = html;
 }
 
 function renderLots(lots) {
@@ -41,9 +77,8 @@ function renderLots(lots) {
     if (!tbody) return;
 
     if (lots.length === 0) {
-        const q = (document.getElementById('lotSearch')?.value || '').trim();
-        const msg = q ? 'No matching lots found' : 'No cemetery lots found';
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#6b7280;">${msg}</td></tr>`;
+        const msg = searchQuery ? 'No matching lots found' : 'No cemetery lots found';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 40px; color:#6b7280;">${msg}</td></tr>`;
         return;
     }
 
@@ -104,7 +139,7 @@ async function handleDelete(lotId) {
     const result = await API.deleteLot(lotId);
     
     if (result.success) {
-        loadCemeteryLots();
+        loadCemeteryLots(currentPage);
     } else {
         console.error('Failed to delete lot:', result.message);
     }
@@ -185,7 +220,7 @@ function createLotModal(lot = null) {
         
         if (result.success) {
             closeModal(modal);
-            loadCemeteryLots();
+            loadCemeteryLots(isEdit ? currentPage : 1);
             editingLotId = null;
         } else {
             console.error('Error:', result.message);
@@ -208,12 +243,16 @@ function handleMapRedirect(lotId, lotNumber) {
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     if (path.includes('index.html') || path.includes('index.php')) {
-        loadCemeteryLots();
+        loadCemeteryLots(1);
         const searchInput = document.getElementById('lotSearch');
         if (searchInput) {
+            let timeout = null;
             searchInput.addEventListener('input', (e) => {
-                const filtered = filterLots(e.target.value);
-                renderLots(filtered);
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    searchQuery = e.target.value.trim();
+                    loadCemeteryLots(1);
+                }, 300);
             });
         }
     }

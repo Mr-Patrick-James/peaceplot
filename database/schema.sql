@@ -4,7 +4,7 @@
 -- Cemetery Lots Table
 CREATE TABLE IF NOT EXISTS cemetery_lots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lot_number VARCHAR(20) NOT NULL UNIQUE,
+    lot_number VARCHAR(20) NOT NULL,
     section VARCHAR(50) NOT NULL,
     block VARCHAR(50),
     position VARCHAR(50),
@@ -15,8 +15,10 @@ CREATE TABLE IF NOT EXISTS cemetery_lots (
     map_y DECIMAL(10,4),
     map_width DECIMAL(10,4),
     map_height DECIMAL(10,4),
+    layers INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(lot_number, section)
 );
 
 -- Deceased Records Table

@@ -910,7 +910,21 @@ if ($conn) {
 
         const createResult = await createNewLot(newLotData);
         if (!createResult.success) {
-          alert('Failed to create lot: ' + createResult.message);
+          if (createResult.message.includes('already exists')) {
+            const useExisting = confirm(createResult.message + "\n\nWould you like to search for this existing lot and assign it to the map instead?");
+            if (useExisting) {
+              // Switch to existing mode and try to select it
+              document.querySelector('input[name="assignMode"][value="existing"]').checked = true;
+              toggleAssignMode();
+              
+              // We need to refresh the page or dynamically find the ID if it's not in the dropdown
+              // For now, let's just alert them to select it from the list
+              alert("Please select '" + lotNumber + "' from the 'Assign Existing Lot' dropdown.");
+              return;
+            }
+          } else {
+            alert('Failed to create lot: ' + createResult.message);
+          }
           return;
         }
 
