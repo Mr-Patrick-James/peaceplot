@@ -57,6 +57,23 @@ const API = {
         }
     },
 
+    async deleteLot(id) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/cemetery_lots.php`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id })
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error deleting lot:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
     async deleteRecord(id, action = 'archive') {
         try {
             const response = await fetch(`${API_BASE_URL}/burial_records.php`, {

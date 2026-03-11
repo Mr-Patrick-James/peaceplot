@@ -24,24 +24,24 @@ try {
     switch ($reportType) {
         case 'all_lots':
             $stmt = $conn->query("
-                SELECT cl.lot_number, cl.section, cl.block, cl.position, cl.status, cl.size_sqm, cl.price, dr.full_name as deceased_name 
+                SELECT cl.lot_number, cl.section, cl.block, cl.position, cl.status, cl.price, dr.full_name as deceased_name 
                 FROM cemetery_lots cl 
                 LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
                 ORDER BY cl.lot_number
             ");
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $headers = ['Lot Number', 'Section', 'Block', 'Position', 'Status', 'Size (sqm)', 'Price', 'Deceased Name'];
+            $headers = ['Lot Number', 'Section', 'Block', 'Position', 'Status', 'Price', 'Deceased Name'];
             break;
 
         case 'vacant_lots':
             $stmt = $conn->query("
-                SELECT lot_number, section, block, position, status, size_sqm, price 
+                SELECT lot_number, section, block, position, status, price 
                 FROM cemetery_lots 
                 WHERE status = 'Vacant'
                 ORDER BY lot_number
             ");
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $headers = ['Lot Number', 'Section', 'Block', 'Position', 'Status', 'Size (sqm)', 'Price'];
+            $headers = ['Lot Number', 'Section', 'Block', 'Position', 'Status', 'Price'];
             break;
 
         case 'occupied_lots':

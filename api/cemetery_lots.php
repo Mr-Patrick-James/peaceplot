@@ -109,8 +109,8 @@ function handlePost($conn, $input) {
         }
         
         $stmt = $conn->prepare("
-            INSERT INTO cemetery_lots (lot_number, section, block, position, status, size_sqm, price) 
-            VALUES (:lot_number, :section, :block, :position, :status, :size_sqm, :price)
+            INSERT INTO cemetery_lots (lot_number, section, block, position, status, price) 
+            VALUES (:lot_number, :section, :block, :position, :status, :price)
         ");
         
         $stmt->bindParam(':lot_number', $input['lot_number']);
@@ -118,7 +118,6 @@ function handlePost($conn, $input) {
         $stmt->bindParam(':block', $input['block']);
         $stmt->bindParam(':position', $input['position']);
         $stmt->bindParam(':status', $input['status']);
-        $stmt->bindParam(':size_sqm', $input['size_sqm']);
         $stmt->bindParam(':price', $input['price']);
         
         if ($stmt->execute()) {
@@ -168,7 +167,6 @@ function handlePut($conn, $input) {
                 block = :block, 
                 position = :position, 
                 status = :status, 
-                size_sqm = :size_sqm, 
                 price = :price,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id
@@ -180,7 +178,6 @@ function handlePut($conn, $input) {
         $stmt->bindParam(':block', $input['block']);
         $stmt->bindParam(':position', $input['position']);
         $stmt->bindParam(':status', $input['status']);
-        $stmt->bindParam(':size_sqm', $input['size_sqm']);
         $stmt->bindParam(':price', $input['price']);
         
         if ($stmt->execute()) {

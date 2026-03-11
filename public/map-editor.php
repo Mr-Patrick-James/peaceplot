@@ -510,20 +510,13 @@ if ($conn) {
             </div>
             
             <div class="form-group">
-              <label>Status *</label>
-              <select id="newStatus" required>
-                <option value="Vacant">Vacant</option>
+              <label>Status</label>
+              <select id="newStatus">
+                <option value="Vacant" selected>Vacant</option>
                 <option value="Occupied">Occupied</option>
                 <option value="Maintenance">Maintenance</option>
               </select>
             </div>
-            
-            <div class="form-group">
-              <label>Size (sqm)</label>
-              <input type="number" id="newSize" placeholder="e.g., 12" step="0.01" min="0">
-            </div>
-            
-
           </div>
         </div>
       </div>
@@ -812,7 +805,6 @@ if ($conn) {
       document.getElementById('newBlock').value = '';
       document.getElementById('newPosition').value = '';
       document.getElementById('newStatus').value = 'Vacant';
-      document.getElementById('newSize').value = '';
 
       
       // Remove event listeners
@@ -903,7 +895,6 @@ if ($conn) {
         const section = document.getElementById('newSection').value.trim();
         const position = document.getElementById('newPosition').value.trim();
         const status = document.getElementById('newStatus').value;
-        const size = document.getElementById('newSize').value;
 
         if (!lotNumber || !section) {
           alert('Please fill in required fields (Lot Number and Section)');
@@ -914,8 +905,7 @@ if ($conn) {
           lot_number: lotNumber,
           section: section,
           position: position || null,
-          status: status,
-          size_sqm: size ? parseFloat(size) : null
+          status: status
         };
 
         const createResult = await createNewLot(newLotData);
@@ -930,8 +920,7 @@ if ($conn) {
           lot_number: lotNumber,
           section: section,
           position: position,
-          status: status,
-          size_sqm: size ? parseFloat(size) : null
+          status: status
         };
       }
 

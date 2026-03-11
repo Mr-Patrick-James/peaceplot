@@ -162,10 +162,6 @@ function createLotModal(lot = null) {
                         <option value="Maintenance" ${lot?.status === 'Maintenance' ? 'selected' : ''}>Maintenance</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Size (sqm)</label>
-                    <input type="number" step="0.01" name="size_sqm" value="${lot?.size_sqm || ''}">
-                </div>
             </form>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary modal-cancel">Cancel</button>

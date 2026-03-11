@@ -176,14 +176,13 @@ if ($conn) {
                 <?php if ($filterStatus === 'Occupied'): ?>
                   <th align="left">Deceased Name</th>
                 <?php endif; ?>
-                <th align="left">Size (sqm)</th>
                 <th align="right">Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($filteredLots)): ?>
                 <tr>
-                  <td colspan="<?php echo $filterStatus === 'Occupied' ? '9' : '8'; ?>" style="text-align:center; color:#6b7280;">
+                  <td colspan="<?php echo $filterStatus === 'Occupied' ? '8' : '7'; ?>" style="text-align:center; color:#6b7280;">
                     No <?php echo strtolower($filterStatus); ?> lots found
                   </td>
                 </tr>
@@ -198,7 +197,6 @@ if ($conn) {
                     <?php if ($filterStatus === 'Occupied'): ?>
                       <td><?php echo htmlspecialchars($lot['deceased_name'] ?: '—'); ?></td>
                     <?php endif; ?>
-                    <td><?php echo $lot['size_sqm'] ? number_format($lot['size_sqm'], 2) : '—'; ?></td>
                     <td>
                       <div class="actions">
                         <button class="btn-action btn-map" onclick="handleMapRedirect(<?php echo $lot['id']; ?>, '<?php echo htmlspecialchars($lot['lot_number']); ?>')">
