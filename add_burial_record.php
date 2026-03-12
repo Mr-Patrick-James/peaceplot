@@ -257,9 +257,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </nav>
 
             <div class="sidebar-footer">
-                <div class="user" onclick="window.location.href='public/settings.php'" style="cursor:pointer; transition: background 0.2s ease; border-radius: 12px; padding: 10px; margin-bottom: 10px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
+                <div class="user" onclick="window.location.href='public/settings.php'" style="cursor:pointer;">
                     <div class="avatar"><?php echo htmlspecialchars($userInitials); ?></div>
-                    <div>
+                    <div class="user-info-text">
                         <div class="user-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
                         <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
                     </div>

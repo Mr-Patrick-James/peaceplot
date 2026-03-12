@@ -445,9 +445,9 @@ if ($conn && $isAdmin) {
       </nav>
 
       <div class="sidebar-footer">
-        <div class="user active" onclick="window.location.href='settings.php'" style="cursor:pointer; transition: background 0.2s ease; border-radius: 12px; padding: 10px; margin-bottom: 10px;">
+        <div class="user active" onclick="window.location.href='settings.php'" style="cursor:pointer;">
           <div class="avatar"><?php echo htmlspecialchars($userInitials); ?></div>
-          <div>
+          <div class="user-info-text">
             <div class="user-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
             <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
           </div>
