@@ -1,10 +1,13 @@
 const BurialAPI = {
-    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '') {
+    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '', section = '', status = '', startDate = '', endDate = '') {
         try {
             let url = `${API_BASE_URL}/burial_records.php?archived=${showArchived ? '1' : '0'}&page=${page}&limit=${limit}`;
-            if (search) {
-                url += `&search=${encodeURIComponent(search)}`;
-            }
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (section) url += `&section=${encodeURIComponent(section)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (startDate) url += `&start_date=${encodeURIComponent(startDate)}`;
+            if (endDate) url += `&end_date=${encodeURIComponent(endDate)}`;
+            
             const response = await fetch(url);
             const data = await response.json();
             return data;
@@ -167,8 +170,20 @@ async function loadBurialRecords() {
     try {
         const searchInput = document.getElementById('recordSearch');
         const searchTerm = searchInput ? searchInput.value : '';
+
+        const sectionFilter = document.getElementById('sectionFilter');
+        const section = sectionFilter ? sectionFilter.value : '';
+
+        const statusFilter = document.getElementById('statusFilter');
+        const status = statusFilter ? statusFilter.value : '';
+
+        const startDateInput = document.getElementById('startDate');
+        const startDate = startDateInput ? startDateInput.value : '';
+
+        const endDateInput = document.getElementById('endDate');
+        const endDate = endDateInput ? endDateInput.value : '';
         
-        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchTerm);
+        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchTerm, section, status, startDate, endDate);
         if (result.success && result.data) {
             currentRecords = result.data;
             if (result.pagination) {
@@ -1027,17 +1042,31 @@ function createRecordModal(record = null) {
     
     BurialAPI.fetchLots(null, true).then(result => {
         if (result.success && result.data) {
-            // Filter lots to only show Vacant ones, OR the one currently assigned to this record
-            const filteredLots = result.data.filter(lot => 
-                lot.status === 'Vacant' || (record && record.lot_id == lot.id)
-            );
+            // Filter lots to only show Vacant ones, OR Occupied ones with vacant layers, OR the one currently assigned to this record
+            const filteredLots = result.data.filter(lot => {
+                if (record && record.lot_id == lot.id) return true;
+                if (lot.status === 'Vacant') return true;
+                
+                const total = parseInt(lot.total_layers_count) || parseInt(lot.layers) || 1;
+                const occupied = parseInt(lot.occupied_layers_count) || 0;
+                if (lot.status === 'Occupied' && occupied < total) return true;
+                
+                return false;
+            });
             
             lotSelect.innerHTML = '<option value="">Unassigned</option>' + 
-                filteredLots.map(lot => `
-                    <option value="${lot.id}" ${record?.lot_id == lot.id ? 'selected' : ''}>
-                        ${lot.lot_number} - ${lot.section}${lot.block ? ' - ' + lot.block : ''} (${lot.status})
-                    </option>
-                `).join('');
+                filteredLots.map(lot => {
+                    const total = parseInt(lot.total_layers_count) || parseInt(lot.layers) || 1;
+                    const occupied = parseInt(lot.occupied_layers_count) || 0;
+                    const available = total - occupied;
+                    const availabilityText = total > 1 ? ` (${available}/${total} layers available)` : ` (${lot.status})`;
+                    
+                    return `
+                        <option value="${lot.id}" ${record?.lot_id == lot.id ? 'selected' : ''}>
+                            ${lot.lot_number} - ${lot.section}${lot.block ? ' - ' + lot.block : ''}${availabilityText}
+                        </option>
+                    `;
+                }).join('');
             
             // If lot is pre-selected (editing or from map), load its layers
             if (record?.lot_id) {
@@ -1373,6 +1402,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('recordSearch');
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
+        const sectionFilter = document.getElementById('sectionFilter');
+        const statusFilter = document.getElementById('statusFilter');
         
         // Check for URL parameters (lot_id, layer)
         const urlParams = new URLSearchParams(window.location.search);
@@ -1394,6 +1425,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (searchInput) searchInput.addEventListener('input', applyFilters);
         if (startDateInput) startDateInput.addEventListener('change', applyFilters);
         if (endDateInput) endDateInput.addEventListener('change', applyFilters);
+        if (sectionFilter) sectionFilter.addEventListener('change', applyFilters);
+        if (statusFilter) statusFilter.addEventListener('change', applyFilters);
         
         // Archived view toggle
         const viewArchivedBtn = document.getElementById('viewArchivedBtn');

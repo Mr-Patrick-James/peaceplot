@@ -11,8 +11,13 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $lots = [];
+$sections = [];
 if ($conn) {
     try {
+        // Fetch unique sections for filtering
+        $sectionStmt = $conn->query("SELECT DISTINCT section FROM cemetery_lots WHERE section IS NOT NULL AND section != '' ORDER BY LENGTH(section), section");
+        $sections = $sectionStmt->fetchAll(PDO::FETCH_COLUMN);
+
         $stmt = $conn->query("
             SELECT cl.*, dr.full_name as deceased_name 
             FROM cemetery_lots cl 
@@ -135,7 +140,7 @@ if ($conn) {
       <div class="sidebar-footer">
         <div class="user" onclick="window.location.href='settings.php'" style="cursor:pointer; transition: background 0.2s ease; border-radius: 12px; padding: 10px; margin-bottom: 10px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
           <div class="avatar"><?php echo htmlspecialchars($userInitials); ?></div>
-          <div>
+          <div class="user-info-text">
             <div class="user-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
             <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
           </div>
@@ -169,10 +174,22 @@ if ($conn) {
             <p class="card-sub">Manage and update cemetery lot information</p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
+            <select id="sectionFilter" style="padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; color:#475569; outline:none; transition:all 0.2s; background:white; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6';" onblur="this.style.borderColor='#e2e8f0';">
+              <option value="">All Sections</option>
+              <?php foreach ($sections as $section): ?>
+                <option value="<?php echo htmlspecialchars($section); ?>"><?php echo htmlspecialchars($section); ?></option>
+              <?php endforeach; ?>
+            </select>
+            <select id="statusFilter" style="padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; color:#475569; outline:none; transition:all 0.2s; background:white; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6';" onblur="this.style.borderColor='#e2e8f0';">
+              <option value="">All Statuses</option>
+              <option value="Vacant">Vacant</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
             <input 
               id="lotSearch" 
               type="text" 
-              placeholder="🔍 Search lots…" 
+              placeholder="Search by lot number, section, or deceased name..." 
               style="padding:12px 20px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; width:380px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.2s ease; outline: none;"
               onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 6px -1px rgba(0,0,0,0.1)';"
               onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)';">

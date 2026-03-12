@@ -29,8 +29,27 @@ if ($conn) {
         ");
         $sections = $stmt->fetchAll();
         
-        // Get filtered lots
-        $query = "SELECT cl.*, dr.full_name as deceased_name 
+        // Pagination parameters
+        $itemsPerPage = 20;
+        $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+        $offset = ($currentPage - 1) * $itemsPerPage;
+
+        // Get total count for filtered lots
+        $countQuery = "SELECT COUNT(*) FROM cemetery_lots WHERE status = :status";
+        if ($filterSection) {
+            $countQuery .= " AND section = :section";
+        }
+        $countStmt = $conn->prepare($countQuery);
+        $countStmt->bindParam(':status', $filterStatus);
+        if ($filterSection) {
+            $countStmt->bindParam(':section', $filterSection);
+        }
+        $countStmt->execute();
+        $totalItems = $countStmt->fetchColumn();
+        $totalPages = ceil($totalItems / $itemsPerPage);
+
+        // Get filtered and paginated lots
+        $query = "SELECT cl.*, GROUP_CONCAT(dr.full_name, ', ') as deceased_name 
                   FROM cemetery_lots cl 
                   LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
                   WHERE cl.status = :status";
@@ -39,13 +58,15 @@ if ($conn) {
             $query .= " AND cl.section = :section";
         }
         
-        $query .= " ORDER BY cl.lot_number";
+        $query .= " GROUP BY cl.id ORDER BY LENGTH(cl.lot_number), cl.lot_number LIMIT :limit OFFSET :offset";
         
         $lotsStmt = $conn->prepare($query);
         $lotsStmt->bindParam(':status', $filterStatus);
         if ($filterSection) {
             $lotsStmt->bindParam(':section', $filterSection);
         }
+        $lotsStmt->bindParam(':limit', $itemsPerPage, PDO::PARAM_INT);
+        $lotsStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
         $lotsStmt->execute();
         $filteredLots = $lotsStmt->fetchAll();
         
@@ -83,14 +104,14 @@ if ($conn) {
 
       <div class="sidebar-footer">
         <div class="user" onclick="window.location.href='settings.php'" style="cursor:pointer; transition: background 0.2s ease; border-radius: 12px; padding: 10px; margin-bottom: 10px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
-          <div class="avatar">AD</div>
-          <div>
-            <div class="user-name">Admin User</div>
-            <div class="user-email">admin@peaceplot.com</div>
+          <div class="avatar"><?php echo htmlspecialchars($userInitials); ?></div>
+          <div class="user-info-text">
+            <div class="user-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
+            <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
           </div>
         </div>
 
-        <a class="logout" href="#" onclick="return false;">
+        <a class="logout" href="logout.php">
           <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg></span>
           <span>Logout</span>
         </a>
@@ -149,7 +170,9 @@ if ($conn) {
         <div class="card-head" style="border-top:1px solid var(--border); padding:16px 18px;">
           <div>
             <h2 class="card-title"><?php echo htmlspecialchars($filterStatus); ?> Lots</h2>
-            <p class="card-sub">Showing <?php echo count($filteredLots); ?> <?php echo strtolower($filterStatus); ?> lots</p>
+            <p class="card-sub">
+              Showing <?php echo $totalItems > 0 ? ($offset + 1) : 0; ?>-<?php echo min($offset + $itemsPerPage, $totalItems); ?> of <?php echo $totalItems; ?> <?php echo strtolower($filterStatus); ?> lots
+            </p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <select id="sectionFilter" style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;">
@@ -191,7 +214,7 @@ if ($conn) {
                   <tr>
                     <td><strong><?php echo htmlspecialchars($lot['lot_number']); ?></strong></td>
                     <td><?php echo htmlspecialchars($lot['section']); ?></td>
-
+                    <td><?php echo htmlspecialchars($lot['block'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></td>
                     <td><span class="badge <?php echo strtolower($lot['status']); ?>"><?php echo htmlspecialchars($lot['status']); ?></span></td>
                     <?php if ($filterStatus === 'Occupied'): ?>
@@ -217,11 +240,70 @@ if ($conn) {
             </tbody>
           </table>
         </div>
+
+        <?php if ($totalPages > 1): ?>
+        <div class="pagination-wrap" style="padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; align-items: center;">
+          <?php
+            $base_url = "?status=" . urlencode($filterStatus) . ($filterSection ? "&section=" . urlencode($filterSection) : "");
+          ?>
+          
+          <a href="<?php echo $base_url; ?>&page=<?php echo $currentPage - 1; ?>" 
+             class="pagination-btn <?php echo $currentPage <= 1 ? 'disabled' : ''; ?>"
+             style="text-decoration: none;">Previous</a>
+          
+          <?php
+          $delta = 2;
+          for ($i = 1; $i <= $totalPages; $i++):
+            if ($i === 1 || $i === $totalPages || ($i >= $currentPage - $delta && $i <= $currentPage + $delta)):
+          ?>
+            <a href="<?php echo $base_url; ?>&page=<?php echo $i; ?>" 
+               class="pagination-btn <?php echo $i === $currentPage ? 'active' : ''; ?>"
+               style="text-decoration: none;"><?php echo $i; ?></a>
+          <?php elseif ($i === $currentPage - $delta - 1 || $i === $currentPage + $delta + 1): ?>
+            <span style="padding: 8px; color: #64748b;">...</span>
+          <?php endif; endfor; ?>
+          
+          <a href="<?php echo $base_url; ?>&page=<?php echo $currentPage + 1; ?>" 
+             class="pagination-btn <?php echo $currentPage >= $totalPages ? 'disabled' : ''; ?>"
+             style="text-decoration: none;">Next</a>
+        </div>
+        <?php endif; ?>
       </section>
 
       <?php endif; ?>
     </main>
   </div>
+
+  <style>
+    .pagination-btn {
+      padding: 8px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: white;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pagination-btn:hover:not(.disabled) {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .pagination-btn.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    .pagination-btn.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+  </style>
 
   <script>
     function handleMapRedirect(lotId, lotNumber) {

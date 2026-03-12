@@ -17,14 +17,13 @@ if ($conn) {
     try {
         $stmt = $conn->query("
             SELECT cl.*, 
-                   COUNT(DISTINCT ll.layer_number) as total_layers,
-                   SUM(CASE WHEN ll.is_occupied = 1 THEN 1 ELSE 0 END) as occupied_layers,
+                   (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
+                   (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
                    dr.full_name as deceased_name 
             FROM cemetery_lots cl 
-            LEFT JOIN lot_layers ll ON cl.id = ll.lot_id
             LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
             GROUP BY cl.id
-            ORDER BY cl.lot_number
+            ORDER BY LENGTH(cl.lot_number), cl.lot_number
         ");
         $lots = $stmt->fetchAll();
     } catch (PDOException $e) {
@@ -210,6 +209,15 @@ if ($conn) {
       font-size: calc(3.5px + 3.5px / var(--current-zoom, 1));
       font-weight: 700;
       pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .lot-label .section-tag {
+      font-size: 0.7em;
+      opacity: 0.9;
+      font-weight: 500;
     }
 
     .lot-layer-indicator {
@@ -393,7 +401,7 @@ if ($conn) {
       <div class="sidebar-footer">
         <div class="user" onclick="window.location.href='settings.php'" style="cursor:pointer; transition: background 0.2s ease; border-radius: 12px; padding: 10px; margin-bottom: 10px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
           <div class="avatar"><?php echo htmlspecialchars($userInitials); ?></div>
-          <div>
+          <div class="user-info-text">
             <div class="user-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
             <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
           </div>
@@ -727,7 +735,7 @@ if ($conn) {
       
       const label = document.createElement('div');
       label.className = 'lot-label';
-      label.textContent = lotData.lot_number;
+      label.innerHTML = `<span>${lotData.lot_number}</span><span class="section-tag">${lotData.section}</span>`;
       rect.appendChild(label);
 
       // Add layer indicator if multiple layers exist

@@ -3,6 +3,8 @@ let editingLotId = null;
 let currentPage = 1;
 const rowsPerPage = 20;
 let searchQuery = '';
+let statusFilter = '';
+let sectionFilter = '';
 
 async function loadCemeteryLots(page = 1) {
     const tbody = document.querySelector('.table tbody');
@@ -19,7 +21,7 @@ async function loadCemeteryLots(page = 1) {
     `;
 
     try {
-        const result = await API.fetchLots(page, rowsPerPage, searchQuery);
+        const result = await API.fetchLots(page, rowsPerPage, searchQuery, statusFilter, sectionFilter);
         
         if (result.success && result.data) {
             currentLots = result.data;
@@ -223,6 +225,7 @@ function createLotModal(lot = null) {
             loadCemeteryLots(isEdit ? currentPage : 1);
             editingLotId = null;
         } else {
+            alert('Error: ' + result.message);
             console.error('Error:', result.message);
         }
     };
@@ -242,7 +245,8 @@ function handleMapRedirect(lotId, lotNumber) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
-    if (path.includes('index.html') || path.includes('index.php')) {
+    // Check for index.php, index.html, or root path
+    if (path.includes('index.html') || path.includes('index.php') || path.endsWith('/public/') || path.endsWith('/public')) {
         loadCemeteryLots(1);
         const searchInput = document.getElementById('lotSearch');
         if (searchInput) {
@@ -253,6 +257,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     searchQuery = e.target.value.trim();
                     loadCemeteryLots(1);
                 }, 300);
+            });
+        }
+
+        const statusFilterSelect = document.getElementById('statusFilter');
+        if (statusFilterSelect) {
+            statusFilterSelect.addEventListener('change', (e) => {
+                statusFilter = e.target.value;
+                loadCemeteryLots(1);
+            });
+        }
+
+        const sectionFilterSelect = document.getElementById('sectionFilter');
+        if (sectionFilterSelect) {
+            sectionFilterSelect.addEventListener('change', (e) => {
+                sectionFilter = e.target.value;
+                loadCemeteryLots(1);
             });
         }
     }

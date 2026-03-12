@@ -7,7 +7,14 @@ $conn = $database->getConnection();
 $lots = [];
 if ($conn) {
     try {
-        $stmt = $conn->query("SELECT id, lot_number, section, block, status FROM cemetery_lots WHERE status = 'Vacant' ORDER BY lot_number");
+        $stmt = $conn->query("
+            SELECT cl.id, cl.lot_number, cl.section, cl.block, cl.status, cl.layers,
+                   (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers
+            FROM cemetery_lots cl
+            WHERE cl.status = 'Vacant' 
+               OR (cl.status = 'Occupied' AND (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 0) > 0)
+            ORDER BY cl.lot_number
+        ");
         $lots = $stmt->fetchAll();
     } catch (PDOException $e) {
         $error = $e->getMessage();
@@ -297,11 +304,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <select id="lot_id" name="lot_id" required onchange="loadLayers(this.value)">
                             <option value="">Select a lot</option>
                             <?php foreach ($lots as $lot): ?>
+                                <?php 
+                                    $total = intval($lot['layers']);
+                                    $occupied = intval($lot['occupied_layers']);
+                                    $available = $total - $occupied;
+                                    $availabilityText = $total > 1 ? " ($available/$total layers available)" : " (" . $lot['status'] . ")";
+                                ?>
                                 <option value="<?php echo $lot['id']; ?>">
                                     <?php echo htmlspecialchars($lot['lot_number']); ?> - 
                                     <?php echo htmlspecialchars($lot['section']); ?>
                                     <?php echo $lot['block'] ? ' - ' . htmlspecialchars($lot['block']) : ''; ?>
-                                    (<?php echo htmlspecialchars($lot['status']); ?>)
+                                    <?php echo $availabilityText; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

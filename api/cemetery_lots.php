@@ -77,7 +77,8 @@ function handleGet($conn) {
             }
         } else {
             if ($conn) {
-                $status = isset($_GET['status']) ? $_GET['status'] : null;
+                $status = isset($_GET['status']) && $_GET['status'] !== '' ? $_GET['status'] : null;
+                $section = isset($_GET['section']) && $_GET['section'] !== '' ? $_GET['section'] : null;
                 $all = isset($_GET['all']) && $_GET['all'] === 'true';
                 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
                 
@@ -87,6 +88,11 @@ function handleGet($conn) {
                 if ($status) {
                     $whereClauses[] = "cl.status = :status";
                     $params[':status'] = $status;
+                }
+
+                if ($section) {
+                    $whereClauses[] = "cl.section = :section";
+                    $params[':section'] = $section;
                 }
                 
                 if ($search) {
@@ -98,25 +104,35 @@ function handleGet($conn) {
                 $whereSQL = count($whereClauses) > 0 ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
                 // Get total count for pagination
-                $countQuery = "SELECT COUNT(*) FROM cemetery_lots cl LEFT JOIN deceased_records dr ON cl.id = dr.lot_id" . $whereSQL;
+                $countQuery = "SELECT COUNT(DISTINCT cl.id) FROM cemetery_lots cl";
+                if ($search) {
+                    $countQuery .= " LEFT JOIN deceased_records dr ON cl.id = dr.lot_id";
+                }
+                $countQuery .= $whereSQL;
+                
                 $countStmt = $conn->prepare($countQuery);
                 foreach ($params as $key => $val) {
                     $countStmt->bindValue($key, $val);
                 }
                 $countStmt->execute();
-                $totalLots = $countStmt->fetchColumn();
+                $totalLots = (int)$countStmt->fetchColumn();
 
                 // Pagination parameters
                 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-                $limit = $all ? (intval($totalLots) ?: 1) : (isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 20);
+                $limit = $all ? ($totalLots ?: 1) : (isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 20);
                 $offset = ($page - 1) * $limit;
 
                 // Main query with search, order, and limit
+                // Use GROUP BY cl.id to avoid duplicate lot rows when multiple deceased records exist
                 $query = "
-                    SELECT cl.*, dr.full_name as deceased_name 
+                    SELECT cl.*, 
+                           GROUP_CONCAT(DISTINCT dr.full_name) as deceased_name,
+                           (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers_count,
+                           (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers_count
                     FROM cemetery_lots cl 
                     LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
                     $whereSQL
+                    GROUP BY cl.id
                 ";
                 
                 // Prioritize exact matches in sorting, then natural-ish length sort
@@ -143,13 +159,13 @@ function handleGet($conn) {
                 }
                 
                 $stmt->execute();
-                $results = $stmt->fetchAll();
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 echo json_encode([
                     'success' => true, 
                     'data' => $results,
                     'pagination' => [
-                        'total' => intval($totalLots),
+                        'total' => $totalLots,
                         'page' => $page,
                         'limit' => $limit,
                         'pages' => $totalLots > 0 ? ceil($totalLots / $limit) : 0
@@ -189,8 +205,8 @@ function handlePost($conn, $input) {
         }
         
         $stmt = $conn->prepare("
-            INSERT INTO cemetery_lots (lot_number, section, block, position, status, price) 
-            VALUES (:lot_number, :section, :block, :position, :status, :price)
+            INSERT INTO cemetery_lots (lot_number, section, block, position, status) 
+            VALUES (:lot_number, :section, :block, :position, :status)
         ");
         
         $stmt->bindParam(':lot_number', $input['lot_number']);
@@ -198,7 +214,6 @@ function handlePost($conn, $input) {
         $stmt->bindParam(':block', $input['block']);
         $stmt->bindParam(':position', $input['position']);
         $stmt->bindParam(':status', $input['status']);
-        $stmt->bindParam(':price', $input['price']);
         
         if ($stmt->execute()) {
             $lastId = $conn->lastInsertId();
@@ -258,7 +273,6 @@ function handlePut($conn, $input) {
                 block = :block, 
                 position = :position, 
                 status = :status, 
-                price = :price,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id
         ");
@@ -269,7 +283,6 @@ function handlePut($conn, $input) {
         $stmt->bindParam(':block', $input['block']);
         $stmt->bindParam(':position', $input['position']);
         $stmt->bindParam(':status', $input['status']);
-        $stmt->bindParam(':price', $input['price']);
         
         if ($stmt->execute()) {
             logActivity($conn, 'UPDATE_LOT', 'cemetery_lots', $input['id'], "Lot " . $input['lot_number'] . " is updated (" . $input['status'] . ")");

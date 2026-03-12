@@ -43,6 +43,10 @@ function handleGet($conn) {
         $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : null;
         $limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 10;
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $filterSection = isset($_GET['section']) ? trim($_GET['section']) : '';
+        $filterStatus = isset($_GET['status']) ? trim($_GET['status']) : '';
+        $startDate = isset($_GET['start_date']) ? trim($_GET['start_date']) : '';
+        $endDate = isset($_GET['end_date']) ? trim($_GET['end_date']) : '';
         
         // Check if burial_record_images table exists
         $tableCheck = $conn->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='burial_record_images'");
@@ -94,6 +98,26 @@ function handleGet($conn) {
                 $whereClause .= " AND (dr.full_name LIKE :search OR cl.lot_number LIKE :search OR cl.section LIKE :search OR dr.deceased_info LIKE :search OR dr.remarks LIKE :search)";
                 $params[':search'] = "%$search%";
             }
+
+            if ($filterSection) {
+                $whereClause .= " AND cl.section = :section";
+                $params[':section'] = $filterSection;
+            }
+
+            if ($filterStatus) {
+                $whereClause .= " AND cl.status = :status";
+                $params[':status'] = $filterStatus;
+            }
+
+            if ($startDate) {
+                $whereClause .= " AND dr.date_of_death >= :start_date";
+                $params[':start_date'] = $startDate;
+            }
+
+            if ($endDate) {
+                $whereClause .= " AND dr.date_of_death <= :end_date";
+                $params[':end_date'] = $endDate;
+            }
             
             // Get total count for pagination
             $countStmt = $conn->prepare("
@@ -109,11 +133,11 @@ function handleGet($conn) {
             $totalRecords = intval($countStmt->fetchColumn());
             
             $sql = "
-                SELECT dr.*, cl.lot_number, cl.section, cl.block 
+                SELECT dr.*, cl.lot_number, cl.section, cl.block, cl.status as lot_status
                 FROM deceased_records dr 
                 LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
                 $whereClause
-                ORDER BY dr.date_of_death DESC
+                ORDER BY dr.created_at DESC, dr.id DESC
             ";
             
             if ($page !== null) {

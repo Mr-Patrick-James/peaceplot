@@ -11,9 +11,14 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $availableLots = [];
+$sections = [];
 
 if ($conn) {
     try {
+        // Fetch unique sections for filtering
+        $sectionStmt = $conn->query("SELECT DISTINCT section FROM cemetery_lots WHERE section IS NOT NULL AND section != '' ORDER BY LENGTH(section), section");
+        $sections = $sectionStmt->fetchAll(PDO::FETCH_COLUMN);
+
         $lotsStmt = $conn->query("
             SELECT id, lot_number, section, block 
             FROM cemetery_lots 
@@ -24,9 +29,11 @@ if ($conn) {
     } catch (PDOException $e) {
         $error = $e->getMessage();
         $availableLots = [];
+        $sections = [];
     }
 } else {
     $availableLots = [];
+    $sections = [];
 }
 ?>
 <!doctype html>
@@ -161,6 +168,18 @@ if ($conn) {
             <p class="card-sub">Manage deceased person records and burial information</p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
+            <select id="sectionFilter" style="padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#475569; outline:none; transition:all 0.2s; background:white; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6';" onblur="this.style.borderColor='#e2e8f0';">
+              <option value="">All Sections</option>
+              <?php foreach ($sections as $section): ?>
+                <option value="<?php echo htmlspecialchars($section); ?>"><?php echo htmlspecialchars($section); ?></option>
+              <?php endforeach; ?>
+            </select>
+            <select id="statusFilter" style="padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#475569; outline:none; transition:all 0.2s; background:white; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6';" onblur="this.style.borderColor='#e2e8f0';">
+              <option value="">All Statuses</option>
+              <option value="Vacant">Vacant</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
             <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:8px 15px; border:2px solid #e2e8f0; border-radius:12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
               <label for="startDate" style="font-size:13px; font-weight:600; color:#64748b;">Death From:</label>
               <input type="date" id="startDate" style="border:none; outline:none; font-size:14px; color:#1e293b; cursor:pointer;">
