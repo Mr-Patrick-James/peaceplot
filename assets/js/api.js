@@ -96,5 +96,52 @@ const API = {
             console.error('Error with record action:', error);
             return { success: false, message: error.message };
         }
+    },
+
+    async fetchBurialRecords(page = 1, limit = 10, search = '', status = '', section = '', archived = 0) {
+        try {
+            const url = new URL(`${window.location.origin}${API_BASE_URL}/burial_records.php`);
+            url.searchParams.append('page', page);
+            url.searchParams.append('limit', limit);
+            if (search) url.searchParams.append('search', search);
+            if (status) url.searchParams.append('status', status);
+            if (section) url.searchParams.append('section', section);
+            if (archived) url.searchParams.append('archived', archived);
+            
+            const response = await fetch(url.toString());
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching burial records:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
+    async updateBurialRecord(id, recordData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/burial_records.php`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ...recordData, id })
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error updating burial record:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
+    async fetchLotLayers(lotId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/lot_layers.php?lot_id=${lotId}`);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching lot layers:', error);
+            return { success: false, message: error.message };
+        }
     }
 };

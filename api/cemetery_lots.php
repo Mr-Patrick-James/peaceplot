@@ -40,9 +40,13 @@ function handleGet($conn) {
         if ($id) {
             if ($conn) {
                 $stmt = $conn->prepare("
-                    SELECT cl.*, dr.full_name as deceased_name 
+                    SELECT cl.*, 
+                           (SELECT GROUP_CONCAT(full_name, ', ') 
+                            FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
+                           ) as deceased_name,
+                           (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers_count,
+                           (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers_count
                     FROM cemetery_lots cl 
-                    LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
                     WHERE cl.id = :id
                 ");
                 $stmt->bindParam(':id', $id);
@@ -123,14 +127,16 @@ function handleGet($conn) {
                 $offset = ($page - 1) * $limit;
 
                 // Main query with search, order, and limit
-                // Use GROUP BY cl.id to avoid duplicate lot rows when multiple deceased records exist
+                // Use a subquery for deceased_name to ensure latest records appear first
                 $query = "
                     SELECT cl.*, 
-                           GROUP_CONCAT(DISTINCT dr.full_name) as deceased_name,
+                           (SELECT GROUP_CONCAT(full_name, ', ') 
+                            FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
+                           ) as deceased_name,
                            (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers_count,
                            (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers_count
                     FROM cemetery_lots cl 
-                    LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
+                    " . ($search ? "LEFT JOIN deceased_records dr ON cl.id = dr.lot_id" : "") . "
                     $whereSQL
                     GROUP BY cl.id
                 ";

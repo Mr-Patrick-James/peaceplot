@@ -137,13 +137,13 @@ if ($conn) {
     
     .lot-label {
       position: absolute;
-      top: 0.5px;
-      left: 0.5px;
+      top: 0px;
+      left: 0px;
       background: rgba(0,0,0,0.8);
       color: white;
-      padding: calc(0.2px + 0.3px / var(--current-zoom, 1)) calc(1px + 1px / var(--current-zoom, 1));
-      border-radius: calc(0.5px + 0.5px / var(--current-zoom, 1));
-      font-size: calc(3.5px + 3.5px / var(--current-zoom, 1));
+      padding: 0.5px 1.5px;
+      border-radius: 0.5px;
+      font-size: 3.5px;
       font-weight: 700;
       pointer-events: none;
       display: flex;
@@ -152,9 +152,9 @@ if ($conn) {
     }
 
     .lot-label .section-tag {
-      font-size: 0.7em;
-      opacity: 0.9;
-      font-weight: 500;
+      font-size: 0.65em;
+      opacity: 0.8;
+      font-weight: 400;
     }
     
     .hidden-marker {
@@ -807,8 +807,8 @@ if ($conn) {
       position: absolute;
       top: 2px;
       right: 2px;
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
     }
     
@@ -863,19 +863,20 @@ if ($conn) {
     
     .lot-layer-indicator {
       position: absolute;
-      top: 1px;
-      right: 1px;
-      background: rgba(0,0,0,0.8);
+      top: 0px;
+      right: 0px;
+      background: rgba(0,0,0,0.85);
       color: white;
       border-radius: 50%;
-      width: 8px;
-      height: 8px;
-      font-size: 5px;
-      font-weight: 700;
+      width: 6px;
+      height: 6px;
+      font-size: 3.5px;
+      font-weight: 800;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
+      line-height: 1;
     }
   </style>
 </head>
@@ -1662,9 +1663,8 @@ if ($conn) {
           alert(`Layer ${highestLayer} has been removed successfully`);
           // Reload layers and lot details
           loadLotLayers(lotId);
-          // Instead of full reload, just refresh the lot data in the background if needed
-          // or at least don't reload if we want to keep the modal open.
-          // location.reload();
+          // Update the map marker dynamically
+          updateLotMarkerOnMap(lotId);
         } else {
           alert('Failed to remove layer: ' + deleteResult.message);
         }
@@ -2060,6 +2060,66 @@ if ($conn) {
       window.location.href = `burial-records.php?lot_id=${lotId}&layer=${layerNumber}`;
     }
     
+    async function updateLotMarkerOnMap(lotId) {
+      try {
+        const response = await fetch(`../api/cemetery_lots.php?id=${lotId}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const lot = result.data;
+          const marker = document.querySelector(`.lot-marker[data-lot-id="${lotId}"]`);
+          if (marker) {
+            // Determine actual status (logic from PHP)
+            const actualStatus = lot.occupied_layers_count > 0 ? 'Occupied' : lot.status;
+            
+            // Update status class
+            marker.className = 'lot-marker ' + actualStatus.toLowerCase();
+            
+            // Re-apply highlight/hidden classes if they were there
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightLotId = urlParams.get('highlight_lot');
+            if (highlightLotId) {
+              if (lotId == highlightLotId) marker.classList.add('highlighted-marker');
+              else marker.classList.add('hidden-marker');
+            }
+            
+            // Update title
+            marker.title = `${lot.lot_number} - ${actualStatus}`;
+            
+            // Update layer indicator
+            const totalLayers = lot.total_layers_count || 1;
+            const occupiedLayers = lot.occupied_layers_count || 0;
+            
+            let indicator = marker.querySelector('.lot-layer-indicator');
+            if (totalLayers > 1) {
+              if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.className = 'lot-layer-indicator';
+                marker.appendChild(indicator);
+              }
+              indicator.textContent = `${occupiedLayers}/${totalLayers}`;
+              indicator.title = `${occupiedLayers}/${totalLayers} layers occupied`;
+            } else if (indicator) {
+              indicator.remove();
+            }
+            
+            // Update onclick with new lot data
+            // We need to transform API data to match the format expected by showLotDetails
+            const mappedLot = {
+              ...lot,
+              actual_status: actualStatus,
+              total_layers: totalLayers,
+              occupied_layers: occupiedLayers,
+              burial_info: lot.deceased_name // Simple version
+            };
+            marker.onclick = () => showLotDetails(mappedLot);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating lot marker:', error);
+      }
+    }
+    
     async function addNewLayer(lotId) {
       if (!confirm('Add a new burial layer to this lot? This will allow additional burials in the same location.')) {
         return;
@@ -2082,9 +2142,8 @@ if ($conn) {
         if (data.success) {
           alert('New layer added successfully!');
           loadLotLayers(lotId); // Reload the layer display
-          // Instead of full reload, just refresh the lot data in the background if needed
-          // or at least don't reload if we want to keep the modal open.
-          // location.reload(); 
+          // Update the map marker dynamically
+          updateLotMarkerOnMap(lotId);
         } else {
           alert('Error adding layer: ' + data.message);
         }

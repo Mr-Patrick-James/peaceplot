@@ -93,6 +93,19 @@ function renderLots(lots) {
             <td class="${lot.deceased_name ? '' : 'muted'}">${lot.deceased_name || '—'}</td>
             <td>
                 <div class="actions">
+                    ${(lot.occupied_layers_count < lot.total_layers_count || !lot.deceased_name) ? `
+                    <button class="btn-action btn-assign" data-action="assign-burial" data-lot-id="${lot.id}">
+                        <span class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="8.5" cy="7" r="4" />
+                                <line x1="20" y1="8" x2="20" y2="14" />
+                                <line x1="23" y1="11" x2="17" y2="11" />
+                            </svg>
+                        </span>
+                        <span>Assign Burial</span>
+                    </button>
+                    ` : ''}
                     <button class="btn-action btn-edit" data-action="edit" data-lot-id="${lot.id}">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -102,6 +115,7 @@ function renderLots(lots) {
                         </span>
                         <span>Edit</span>
                     </button>
+                    ${(lot.map_x !== null && lot.map_y !== null) ? `
                     <button class="btn-action btn-map" data-action="map" data-lot-id="${lot.id}" data-lot-number="${lot.lot_number}">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -112,6 +126,7 @@ function renderLots(lots) {
                         </span>
                         <span>View on Map</span>
                     </button>
+                    ` : ''}
                     <button class="btn-action btn-delete" data-action="delete" data-lot-id="${lot.id}">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -293,5 +308,146 @@ document.addEventListener('click', (e) => {
         handleMapRedirect(lotId, btn.getAttribute('data-lot-number'));
     } else if (action === 'add') {
         showAddModal();
+    } else if (action === 'assign-burial' && lotId) {
+        showAssignBurialModal(lotId);
     }
 });
+
+async function showAssignBurialModal(lotId) {
+    const lot = currentLots.find(l => l.id == lotId);
+    if (!lot) return;
+
+    // Fetch layers for this lot
+    const layersResult = await API.fetchLotLayers(lotId);
+    const layers = layersResult.success ? layersResult.data : [];
+    
+    // Only show vacant layers
+    const vacantLayers = layers.filter(l => !l.is_occupied);
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Assign Burial to Lot ${lot.lot_number}</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Search Burial Record</label>
+                    <input type="text" id="burialSearchInput" placeholder="Search by name..." style="margin-bottom: 15px;">
+                    <div id="burialSearchResults" style="max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <div style="padding: 20px; text-align: center; color: #64748b;">Type to search for unassigned burial records...</div>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Select Layer</label>
+                    <select id="layerSelect" required>
+                        ${vacantLayers.map(l => `<option value="${l.layer_number}">Layer ${l.layer_number}</option>`).join('')}
+                        ${vacantLayers.length === 0 ? '<option value="" disabled selected>No vacant layers available</option>' : ''}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+                <button type="button" id="confirmAssignBtn" class="btn-primary" disabled>Assign Selected Burial</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+
+    let selectedBurialId = null;
+    const searchInput = modal.querySelector('#burialSearchInput');
+    const resultsContainer = modal.querySelector('#burialSearchResults');
+    const confirmBtn = modal.querySelector('#confirmAssignBtn');
+    const layerSelect = modal.querySelector('#layerSelect');
+
+    const performSearch = async (query) => {
+        resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center;"><div class="loading-spinner" style="display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div></div>';
+        
+        try {
+            const result = await API.fetchBurialRecords(1, 50, query);
+            if (result.success) {
+                // Filter for unassigned records
+                const unassigned = result.data.filter(r => !r.lot_id);
+                
+                if (unassigned.length === 0) {
+                    resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">No unassigned records found</div>';
+                } else {
+                    resultsContainer.innerHTML = unassigned.map(r => `
+                        <div class="burial-item" data-id="${r.id}" style="padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+                            <div style="font-weight: 600; color: #1e293b;">${r.full_name}</div>
+                            <div style="font-size: 12px; color: #64748b;">Died: ${r.date_of_death || 'N/A'} | Age: ${r.age || 'N/A'}</div>
+                        </div>
+                    `).join('');
+
+                    resultsContainer.querySelectorAll('.burial-item').forEach(item => {
+                        item.onclick = () => {
+                            resultsContainer.querySelectorAll('.burial-item').forEach(i => i.style.background = 'transparent');
+                            item.style.background = '#eff6ff';
+                            selectedBurialId = item.getAttribute('data-id');
+                            confirmBtn.disabled = !selectedBurialId || !layerSelect.value;
+                        };
+                    });
+                }
+            }
+        } catch (error) {
+            resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">Error searching records</div>';
+        }
+    };
+
+    let searchTimeout = null;
+    searchInput.oninput = (e) => {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        if (query.length >= 2) {
+            searchTimeout = setTimeout(() => performSearch(query), 300);
+        } else {
+            resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">Type at least 2 characters to search...</div>';
+            selectedBurialId = null;
+            confirmBtn.disabled = true;
+        }
+    };
+
+    layerSelect.onchange = () => {
+        confirmBtn.disabled = !selectedBurialId || !layerSelect.value;
+    };
+
+    modal.querySelector('.modal-close').onclick = () => closeModal(modal);
+    modal.querySelector('.modal-cancel').onclick = () => closeModal(modal);
+    
+    confirmBtn.onclick = async () => {
+        if (!selectedBurialId || !layerSelect.value) return;
+        
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = 'Assigning...';
+        
+        // We need to fetch the full burial record first to update it with new lot info
+        const burialResult = await fetch(`${API_BASE_URL}/burial_records.php?id=${selectedBurialId}`).then(r => r.json());
+        
+        if (burialResult.success) {
+            const burialData = burialResult.data;
+            burialData.lot_id = lotId;
+            burialData.layer = layerSelect.value;
+            
+            const updateResult = await API.updateBurialRecord(selectedBurialId, burialData);
+            
+            if (updateResult.success) {
+                closeModal(modal);
+                loadCemeteryLots(currentPage);
+            } else {
+                alert('Error assigning burial: ' + updateResult.message);
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = 'Assign Selected Burial';
+            }
+        } else {
+            alert('Error fetching burial record details');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = 'Assign Selected Burial';
+        }
+    };
+}
+

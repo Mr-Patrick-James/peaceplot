@@ -19,9 +19,11 @@ if ($conn) {
         $sections = $sectionStmt->fetchAll(PDO::FETCH_COLUMN);
 
         $stmt = $conn->query("
-            SELECT cl.*, dr.full_name as deceased_name 
+            SELECT cl.*, 
+                   (SELECT GROUP_CONCAT(full_name, ', ') 
+                    FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
+                   ) as deceased_name 
             FROM cemetery_lots cl 
-            LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
             ORDER BY cl.lot_number
         ");
         $lots = $stmt->fetchAll();
@@ -259,6 +261,18 @@ if ($conn) {
     .pagination-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+    .btn-assign {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+    .btn-assign:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+    .burial-item:hover {
+      background: #f8fafc !important;
     }
   </style>
 
