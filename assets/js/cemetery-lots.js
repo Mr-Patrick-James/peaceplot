@@ -163,9 +163,7 @@ async function handleDelete(lotId) {
 }
 
 function showAddModal() {
-    const modal = createLotModal();
-    document.body.appendChild(modal);
-    modal.style.display = 'flex';
+    showLotModal();
 }
 
 function showEditModal(lotId) {
@@ -173,16 +171,24 @@ function showEditModal(lotId) {
     if (!lot) return;
 
     editingLotId = lotId;
-    const modal = createLotModal(lot);
-    document.body.appendChild(modal);
-    modal.style.display = 'flex';
+    showLotModal(lot);
 }
 
-function createLotModal(lot = null) {
+async function showLotModal(lot = null) {
     const isEdit = lot !== null;
     
+    // Fetch sections and blocks for dropdowns
+    const [sectionsRes, blocksRes] = await Promise.all([
+        fetch('../api/sections.php').then(r => r.json()),
+        API.fetchBlocks()
+    ]);
+    
+    const sections = Array.isArray(sectionsRes) ? sectionsRes : (sectionsRes.data || []);
+    const blocks = blocksRes.success ? blocksRes.data : [];
+
     const modal = document.createElement('div');
     modal.className = 'modal';
+    modal.style.display = 'flex';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -196,11 +202,17 @@ function createLotModal(lot = null) {
                 </div>
                 <div class="form-group">
                     <label>Section *</label>
-                    <input type="text" name="section" value="${lot?.section || ''}" required>
+                    <select name="section" required>
+                        <option value="">Select Section</option>
+                        ${sections.map(s => `<option value="${s.name}" ${lot?.section === s.name ? 'selected' : ''}>${s.name}</option>`).join('')}
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label>Block</label>
-                    <input type="text" name="block" value="${lot?.block || ''}">
+                    <label>Block *</label>
+                    <select name="block" required>
+                        <option value="">Select Block</option>
+                        ${blocks.map(b => `<option value="${b.name}" ${lot?.block === b.name ? 'selected' : ''}>${b.name}</option>`).join('')}
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Position</label>
@@ -221,6 +233,8 @@ function createLotModal(lot = null) {
             </div>
         </div>
     `;
+
+    document.body.appendChild(modal);
 
     modal.querySelector('.modal-close').onclick = () => closeModal(modal);
     modal.querySelector('.modal-cancel').onclick = () => closeModal(modal);
@@ -244,8 +258,11 @@ function createLotModal(lot = null) {
             console.error('Error:', result.message);
         }
     };
+}
 
-    return modal;
+function createLotModal(lot = null) {
+    // This function is replaced by showLotModal
+    return null;
 }
 
 function closeModal(modal) {

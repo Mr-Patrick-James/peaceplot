@@ -112,6 +112,7 @@ if ($conn) {
           <div class="dropdown-content">
             <a href="index.php"><span>Manage Lots</span></a>
             <a href="sections.php"><span>Manage Sections</span></a>
+            <a href="blocks.php"><span>Manage Blocks</span></a>
           </div>
         </div>
         <a href="lot-availability.php" class="active"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20" /><path d="M2 12h20" /><path d="M4 4l16 16" /></svg></span><span>Lots</span></a>

@@ -195,8 +195,8 @@ function handleGet($conn) {
 
 function handlePost($conn, $input) {
     try {
-        if (!isset($input['lot_number']) || !isset($input['section']) || !isset($input['status'])) {
-            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        if (empty($input['lot_number']) || empty($input['section']) || empty($input['block']) || empty($input['status'])) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields (Lot Number, Section, Block, and Status)']);
             return;
         }
         
@@ -256,8 +256,8 @@ function handlePost($conn, $input) {
 
 function handlePut($conn, $input) {
     try {
-        if (!isset($input['id'])) {
-            echo json_encode(['success' => false, 'message' => 'Missing lot ID']);
+        if (empty($input['id']) || empty($input['lot_number']) || empty($input['section']) || empty($input['block']) || empty($input['status'])) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
             return;
         }
         

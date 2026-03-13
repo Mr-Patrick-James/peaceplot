@@ -80,6 +80,7 @@ if ($conn) {
           <div class="dropdown-content">
             <a href="index.php" class="active"><span>Manage Lots</span></a>
             <a href="sections.php"><span>Manage Sections</span></a>
+            <a href="blocks.php"><span>Manage Blocks</span></a>
           </div>
         </div>
 

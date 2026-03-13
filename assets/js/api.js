@@ -143,5 +143,59 @@ const API = {
             console.error('Error fetching lot layers:', error);
             return { success: false, message: error.message };
         }
+    },
+
+    // Blocks API
+    async fetchBlocks() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blocks.php`);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching blocks:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
+    async createBlock(blockData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blocks.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(blockData)
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Error creating block:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
+    async updateBlock(id, blockData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blocks.php`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...blockData, id })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating block:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
+    async deleteBlock(id) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blocks.php`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Error deleting block:', error);
+            return { success: false, message: error.message };
+        }
     }
 };
