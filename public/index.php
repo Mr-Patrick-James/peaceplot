@@ -61,18 +61,27 @@ if ($conn) {
           <span>Dashboard</span>
         </a>
 
-        <a href="index.php" class="active">
-          <span class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 7h16" />
-              <path d="M4 12h16" />
-              <path d="M4 17h16" />
-              <path d="M8 7v10" />
-              <path d="M16 7v10" />
-            </svg>
-          </span>
-          <span>Lot Management</span>
-        </a>
+        <div class="dropdown active">
+           <a href="#" class="dropdown-toggle active" onclick="this.parentElement.classList.toggle('active'); return false;">
+             <div style="display: flex; align-items: center;">
+              <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 7h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 17h16" />
+                  <path d="M8 7v10" />
+                  <path d="M16 7v10" />
+                </svg>
+              </span>
+              <span>Lot Management</span>
+            </div>
+            <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </a>
+          <div class="dropdown-content">
+            <a href="index.php" class="active"><span>Manage Lots</span></a>
+            <a href="sections.php"><span>Manage Sections</span></a>
+          </div>
+        </div>
 
         <a href="lot-availability.php">
           <span class="icon">

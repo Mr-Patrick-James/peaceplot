@@ -2,6 +2,14 @@
 -- SQLite Database
 
 -- Cemetery Lots Table
+CREATE TABLE IF NOT EXISTS sections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS cemetery_lots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     lot_number VARCHAR(20) NOT NULL,
