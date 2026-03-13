@@ -128,7 +128,7 @@ if ($conn && $isAdmin) {
   <link rel="stylesheet" href="../assets/css/styles.css" />
   <style>
     :root {
-        --settings-bg: #f5f7fb;
+        --settings-bg: #f1f5f9;
         --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
         --input-focus: #3b82f6;
         --tab-active: #2f6df6;
@@ -145,35 +145,33 @@ if ($conn && $isAdmin) {
 
     .modern-card {
         background: white;
-        border-radius: 20px;
+        border-radius: 16px;
         box-shadow: var(--card-shadow);
         overflow: hidden;
         border: 1px solid #e2e8f0;
     }
 
     .settings-header {
-        padding: 30px 40px;
+        padding: 24px 32px;
         border-bottom: 1px solid #f1f5f9;
     }
 
     .settings-title {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 700;
         color: #1e293b;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
     }
 
-    /* Tabs Styling */
     .tabs-nav {
         display: flex;
-        gap: 30px;
-        border-bottom: 1px solid #f1f5f9;
-        margin-bottom: 0;
+        gap: 24px;
+        margin-bottom: -1px;
     }
 
     .tab-link {
         padding: 12px 0;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 600;
         color: var(--tab-inactive);
         text-decoration: none;
@@ -205,7 +203,7 @@ if ($conn && $isAdmin) {
 
     /* Content Area */
     .settings-content {
-        padding: 40px;
+        padding: 32px;
     }
 
     .tab-panel {
@@ -222,13 +220,12 @@ if ($conn && $isAdmin) {
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Form Styling */
     .form-section {
-        margin-bottom: 40px;
+        margin-bottom: 32px;
     }
 
     .section-label {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         color: #64748b;
         margin-bottom: 12px;
@@ -236,15 +233,15 @@ if ($conn && $isAdmin) {
     }
 
     .modern-input-group {
-        margin-bottom: 25px;
+        margin-bottom: 20px;
     }
 
     .modern-input {
         width: 100%;
-        padding: 14px 18px;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 12px;
-        font-size: 15px;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        font-size: 14px;
         color: #1e293b;
         background: #fcfdfe;
         transition: all 0.2s;
@@ -254,7 +251,7 @@ if ($conn && $isAdmin) {
     .modern-input:focus {
         border-color: var(--input-focus);
         background: white;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     .modern-input:disabled {
@@ -271,8 +268,8 @@ if ($conn && $isAdmin) {
 
     /* Button Styling */
     .modern-btn {
-        padding: 12px 24px;
-        border-radius: 12px;
+        padding: 10px 20px;
+        border-radius: 10px;
         font-weight: 600;
         font-size: 14px;
         cursor: pointer;
@@ -313,33 +310,32 @@ if ($conn && $isAdmin) {
         background: #e2e8f0;
     }
 
-    /* Team List */
     .team-grid {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
     }
 
     .user-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 15px 20px;
+        padding: 12px 16px;
         background: #f8fafc;
-        border-radius: 15px;
+        border-radius: 12px;
         border: 1px solid #f1f5f9;
     }
 
     .user-info {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
     }
 
     .user-avatar-sm {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
         background: var(--primary);
         color: white;
         display: flex;
@@ -351,13 +347,13 @@ if ($conn && $isAdmin) {
 
     .user-details h4 {
         margin: 0;
-        font-size: 15px;
+        font-size: 14px;
         color: #1e293b;
     }
 
     .user-details p {
         margin: 0;
-        font-size: 13px;
+        font-size: 12px;
         color: #64748b;
     }
 
@@ -369,39 +365,38 @@ if ($conn && $isAdmin) {
         text-transform: uppercase;
     }
 
-    /* Modal-like dialogs */
     .modern-dialog {
         background: #1c2128;
         color: white;
-        border-radius: 16px;
-        padding: 30px;
-        max-width: 400px;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 380px;
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         z-index: 1000;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         display: none;
     }
 
     .dialog-title {
-        font-size: 20px;
-        font-weight: 700;
-        margin-bottom: 15px;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 12px;
     }
 
     .dialog-text {
         color: #94a3b8;
         font-size: 14px;
-        line-height: 1.6;
-        margin-bottom: 25px;
+        line-height: 1.5;
+        margin-bottom: 24px;
     }
 
     .dialog-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 12px;
+        gap: 10px;
     }
 
     /* Sidebar Footer Clickable State */
@@ -411,12 +406,12 @@ if ($conn && $isAdmin) {
 
     /* Alerts */
     .status-alert {
-        padding: 16px 20px;
-        border-radius: 12px;
-        margin-bottom: 30px;
+        padding: 14px 18px;
+        border-radius: 10px;
+        margin-bottom: 24px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         font-size: 14px;
         font-weight: 500;
     }

@@ -227,12 +227,7 @@ def main():
             dod_iso = parse_date_iso(dod_raw)
             age = compute_age(dob_iso, dod_iso)
 
-            deceased_info = "\n".join(
-                [
-                    f"Born: {dob_raw or 'NA'}",
-                    f"Died: {dod_raw or 'NA'}",
-                ]
-            )
+            deceased_info = None
 
             if record_exists_unassigned(con, full_name, dob_iso, dod_iso):
                 skipped += 1
@@ -244,9 +239,9 @@ def main():
                 (lot_id, layer, full_name, date_of_birth, date_of_death, date_of_burial, age,
                  cause_of_death, next_of_kin, next_of_kin_contact, deceased_info, remarks)
                 VALUES
-                (NULL, NULL, ?, ?, ?, NULL, ?, NULL, NULL, NULL, ?, ?)
+                (NULL, NULL, ?, ?, ?, NULL, ?, NULL, NULL, NULL, ?, NULL)
                 """,
-                (full_name, dob_iso, dod_iso, age, deceased_info, "NA"),
+                (full_name, dob_iso, dod_iso, age, deceased_info),
             )
             inserted += 1
 
