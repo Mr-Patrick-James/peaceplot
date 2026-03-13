@@ -5,6 +5,7 @@ const rowsPerPage = 20;
 let searchQuery = '';
 let statusFilter = '';
 let sectionFilter = '';
+let blockFilter = '';
 
 async function loadCemeteryLots(page = 1) {
     const tbody = document.querySelector('.table tbody');
@@ -21,7 +22,7 @@ async function loadCemeteryLots(page = 1) {
     `;
 
     try {
-        const result = await API.fetchLots(page, rowsPerPage, searchQuery, statusFilter, sectionFilter);
+        const result = await API.fetchLots(page, rowsPerPage, searchQuery, statusFilter, sectionFilter, blockFilter);
         
         if (result.success && result.data) {
             currentLots = result.data;
@@ -56,7 +57,9 @@ function renderPagination(pagination) {
     let html = '';
     
     // Previous
-    html += `<button class="pagination-btn" ${page === 1 ? 'disabled' : ''} onclick="loadCemeteryLots(${page - 1})">Previous</button>`;
+    html += `<button class="pagination-btn" ${page === 1 ? 'disabled' : ''} onclick="loadCemeteryLots(${page - 1})" title="Previous Page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>`;
     
     // Page numbers (simplified: show current, first, last, and neighbors)
     const delta = 2;
@@ -64,12 +67,14 @@ function renderPagination(pagination) {
         if (i === 1 || i === pages || (i >= page - delta && i <= page + delta)) {
             html += `<button class="pagination-btn ${i === page ? 'active' : ''}" onclick="loadCemeteryLots(${i})">${i}</button>`;
         } else if (i === page - delta - 1 || i === page + delta + 1) {
-            html += `<span style="padding: 8px; color: #64748b;">...</span>`;
+            html += `<span class="pagination-ellipsis">...</span>`;
         }
     }
     
     // Next
-    html += `<button class="pagination-btn" ${page === pages ? 'disabled' : ''} onclick="loadCemeteryLots(${page + 1})">Next</button>`;
+    html += `<button class="pagination-btn" ${page === pages ? 'disabled' : ''} onclick="loadCemeteryLots(${page + 1})" title="Next Page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>`;
     
     controls.innerHTML = html;
 }
@@ -80,54 +85,64 @@ function renderLots(lots) {
 
     if (lots.length === 0) {
         const msg = searchQuery ? 'No matching lots found' : 'No cemetery lots found';
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 40px; color:#6b7280;">${msg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 60px; color:#94a3b8;">${msg}</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = lots.map(lot => `
+    tbody.innerHTML = lots.map(lot => {
+        const statusClass = lot.status.toLowerCase();
+        const badgeClass = statusClass === 'occupied' ? 'active' : statusClass;
+        
+        return `
         <tr data-lot-id="${lot.id}">
-            <td>${lot.lot_number}</td>
-            <td>${lot.section}</td>
+            <td>${lot.id}</td>
+            <td>
+                <div class="lot-name-cell">
+                    <div class="lot-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#fff"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </div>
+                    <div class="lot-name-info">
+                        <span class="name">Lot ${lot.lot_number}</span>
+                        <span class="sub">${lot.section}${lot.block ? ' • ' + lot.block : ''}</span>
+                    </div>
+                </div>
+            </td>
             <td>${lot.position || '—'}</td>
-            <td><span class="badge ${lot.status.toLowerCase()}">${lot.status}</span></td>
             <td class="${lot.deceased_name ? '' : 'muted'}">${lot.deceased_name || '—'}</td>
+            <td><span class="status-badge ${badgeClass}">${lot.status}</span></td>
             <td>
                 <div class="actions">
                     ${(lot.occupied_layers_count < lot.total_layers_count || !lot.deceased_name) ? `
-                    <button class="btn-action btn-assign" data-action="assign-burial" data-lot-id="${lot.id}">
+                    <button class="btn-action btn-assign" data-action="assign-burial" data-lot-id="${lot.id}" title="Assign Burial">
                         <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                                 <circle cx="8.5" cy="7" r="4" />
                                 <line x1="20" y1="8" x2="20" y2="14" />
                                 <line x1="23" y1="11" x2="17" y2="11" />
                             </svg>
                         </span>
-                        <span>Assign Burial</span>
                     </button>
                     ` : ''}
-                    <button class="btn-action btn-edit" data-action="edit" data-lot-id="${lot.id}">
+                    <button class="btn-action btn-edit" data-action="edit" data-lot-id="${lot.id}" title="Edit Lot">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 20h9" />
                                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                             </svg>
                         </span>
-                        <span>Edit</span>
                     </button>
                     ${(lot.map_x !== null && lot.map_y !== null) ? `
-                    <button class="btn-action btn-map" data-action="map" data-lot-id="${lot.id}" data-lot-number="${lot.lot_number}">
+                    <button class="btn-action btn-map" data-action="map" data-lot-id="${lot.id}" data-lot-number="${lot.lot_number}" title="View on Map">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="currentColor" fill-opacity="0.2"/>
-                                <circle cx="12" cy="10" r="3" fill="currentColor"/>
-                                <path d="M12 2v20" stroke-width="1" opacity="0.3"/>
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
                             </svg>
                         </span>
-                        <span>View on Map</span>
                     </button>
                     ` : ''}
-                    <button class="btn-action btn-delete" data-action="delete" data-lot-id="${lot.id}">
+                    <button class="btn-action btn-delete" data-action="delete" data-lot-id="${lot.id}" title="Delete Lot">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 6h18" />
@@ -137,12 +152,11 @@ function renderLots(lots) {
                                 <path d="M14 11v6" />
                             </svg>
                         </span>
-                        <span>Delete</span>
                     </button>
                 </div>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 async function handleDelete(lotId) {
@@ -201,17 +215,17 @@ async function showLotModal(lot = null) {
                     <input type="text" name="lot_number" value="${lot?.lot_number || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label>Section *</label>
-                    <select name="section" required>
-                        <option value="">Select Section</option>
-                        ${sections.map(s => `<option value="${s.name}" ${lot?.section === s.name ? 'selected' : ''}>${s.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
                     <label>Block *</label>
                     <select name="block" required>
                         <option value="">Select Block</option>
                         ${blocks.map(b => `<option value="${b.name}" ${lot?.block === b.name ? 'selected' : ''}>${b.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Section *</label>
+                    <select name="section" required>
+                        <option value="">Select Section</option>
+                        ${sections.map(s => `<option value="${s.name}" ${lot?.section === s.name ? 'selected' : ''}>${s.name}</option>`).join('')}
                     </select>
                 </div>
                 <div class="form-group">
@@ -304,6 +318,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sectionFilterSelect) {
             sectionFilterSelect.addEventListener('change', (e) => {
                 sectionFilter = e.target.value;
+                loadCemeteryLots(1);
+            });
+        }
+
+        const blockFilterSelect = document.getElementById('blockFilter');
+        if (blockFilterSelect) {
+            blockFilterSelect.addEventListener('change', (e) => {
+                blockFilter = e.target.value;
                 loadCemeteryLots(1);
             });
         }

@@ -44,6 +44,7 @@ function handleGet($conn) {
         $limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 10;
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         $filterSection = isset($_GET['section']) ? trim($_GET['section']) : '';
+        $filterBlock = isset($_GET['block']) ? trim($_GET['block']) : '';
         $filterStatus = isset($_GET['status']) ? trim($_GET['status']) : '';
         $startDate = isset($_GET['start_date']) ? trim($_GET['start_date']) : '';
         $endDate = isset($_GET['end_date']) ? trim($_GET['end_date']) : '';
@@ -102,6 +103,11 @@ function handleGet($conn) {
             if ($filterSection) {
                 $whereClause .= " AND cl.section = :section";
                 $params[':section'] = $filterSection;
+            }
+
+            if ($filterBlock) {
+                $whereClause .= " AND cl.block = :block";
+                $params[':block'] = $filterBlock;
             }
 
             if ($filterStatus) {

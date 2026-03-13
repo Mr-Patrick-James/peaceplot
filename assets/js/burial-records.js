@@ -1,9 +1,10 @@
 const BurialAPI = {
-    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '', section = '', status = '', startDate = '', endDate = '') {
+    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '', section = '', block = '', status = '', startDate = '', endDate = '') {
         try {
             let url = `${API_BASE_URL}/burial_records.php?archived=${showArchived ? '1' : '0'}&page=${page}&limit=${limit}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
             if (section) url += `&section=${encodeURIComponent(section)}`;
+            if (block) url += `&block=${encodeURIComponent(block)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (startDate) url += `&start_date=${encodeURIComponent(startDate)}`;
             if (endDate) url += `&end_date=${encodeURIComponent(endDate)}`;
@@ -174,6 +175,9 @@ async function loadBurialRecords() {
         const sectionFilter = document.getElementById('sectionFilter');
         const section = sectionFilter ? sectionFilter.value : '';
 
+        const blockFilter = document.getElementById('blockFilter');
+        const block = blockFilter ? blockFilter.value : '';
+
         const statusFilter = document.getElementById('statusFilter');
         const status = statusFilter ? statusFilter.value : '';
 
@@ -183,7 +187,7 @@ async function loadBurialRecords() {
         const endDateInput = document.getElementById('endDate');
         const endDate = endDateInput ? endDateInput.value : '';
         
-        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchTerm, section, status, startDate, endDate);
+        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchTerm, section, block, status, startDate, endDate);
         if (result.success && result.data) {
             currentRecords = result.data;
             if (result.pagination) {
@@ -219,7 +223,7 @@ function renderPagination(pagination) {
     
     let html = `
         <div class="pagination-info">
-            Showing <strong>${(current_page - 1) * itemsPerPage + 1}</strong> to <strong>${Math.min(current_page * itemsPerPage, total_records)}</strong> of <strong>${total_records}</strong> records
+            Showing ${(current_page - 1) * itemsPerPage + 1} to ${Math.min(current_page * itemsPerPage, total_records)} of ${total_records} records
         </div>
         <div class="pagination-controls">
             <button class="pagination-btn" ${current_page === 1 ? 'disabled' : ''} onclick="changePage(${current_page - 1})">
@@ -293,7 +297,7 @@ function renderRecords(records) {
             <td>${record.lot_number || '—'}</td>
             <td>
                 ${record.layer ? `
-                    <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                    <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
                         Layer ${record.layer}
                     </span>
                 ` : '—'}
@@ -1403,6 +1407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
         const sectionFilter = document.getElementById('sectionFilter');
+        const blockFilter = document.getElementById('blockFilter');
         const statusFilter = document.getElementById('statusFilter');
         
         // Check for URL parameters (lot_id, layer)
@@ -1426,6 +1431,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (startDateInput) startDateInput.addEventListener('change', applyFilters);
         if (endDateInput) endDateInput.addEventListener('change', applyFilters);
         if (sectionFilter) sectionFilter.addEventListener('change', applyFilters);
+        if (blockFilter) blockFilter.addEventListener('change', applyFilters);
         if (statusFilter) statusFilter.addEventListener('change', applyFilters);
         
         // Archived view toggle

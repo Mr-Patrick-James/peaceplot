@@ -11,6 +11,12 @@ $database = new Database();
 $db = $database->getConnection();
 
 $sections = [];
+$stats = [
+    'total' => 0,
+    'with_lots' => 0,
+    'empty' => 0
+];
+
 if ($db) {
     try {
         // Ensure table exists (simple auto-migration)
@@ -22,7 +28,17 @@ if ($db) {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )");
 
-        $stmt = $db->query("SELECT * FROM sections ORDER BY name ASC");
+        // Fetch stats
+        $stats['total'] = $db->query("SELECT COUNT(*) FROM sections")->fetchColumn();
+        $stats['with_lots'] = $db->query("SELECT COUNT(DISTINCT section) FROM cemetery_lots WHERE section IS NOT NULL AND section != ''")->fetchColumn();
+        $stats['empty'] = max(0, $stats['total'] - $stats['with_lots']);
+
+        $stmt = $db->query("
+            SELECT s.*, 
+                   (SELECT COUNT(*) FROM cemetery_lots WHERE section = s.name) as lot_count
+            FROM sections s 
+            ORDER BY s.name ASC
+        ");
         $sections = $stmt->fetchAll();
     } catch (PDOException $e) {
         $error = $e->getMessage();
@@ -37,30 +53,236 @@ if ($db) {
   <title>PeacePlot Admin - Section Management</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
   <style>
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); transition: all 0.3s ease; }
-    .modal-content { background-color: #fff; margin: 5% auto; padding: 0; border-radius: 16px; width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; border: none; }
+    /* Specific styles for the modern sections UI */
+    .dashboard-header {
+      background: #fff;
+      padding: 24px 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-left .title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+    .header-left .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0 0 16px 0;
+    }
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .breadcrumbs a { color: #94a3b8; text-decoration: none; }
+    .breadcrumbs .current { color: #1e293b; font-weight: 600; }
+    
+    /* Universal Search Styles */
+    .search-container {
+      position: relative;
+      width: 400px;
+    }
+    .universal-search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .universal-search-wrapper svg {
+      position: absolute;
+      left: 16px;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    .universal-search-input {
+      width: 100%;
+      padding: 12px 16px 12px 48px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+      background: #f8fafc;
+    }
+    .universal-search-input:focus {
+      background: #fff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    .search-results-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+      border: 1px solid #e2e8f0;
+      z-index: 1000;
+      display: none;
+      overflow: hidden;
+    }
+    .search-result-item {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+      border-bottom: 1px solid #f1f5f9;
+      text-align: left;
+    }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: #f8fafc; }
+    .result-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon-lot { background: #eff6ff; color: #3b82f6; }
+    .icon-deceased { background: #fef2f2; color: #ef4444; }
+    .result-info { flex: 1; min-width: 0; }
+    .result-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .result-subtitle {
+      font-size: 12px;
+      color: #64748b;
+      display: block;
+    }
+
+    .btn-blue {
+      background: #3b82f6;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-blue:hover { background: #2563eb; transform: translateY(-1px); }
+
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    .dash-stat-card {
+      background: #fff;
+      padding: 24px;
+      border-radius: 16px;
+      border-left: 5px solid #0e1f35;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    .dash-stat-info .label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .dash-stat-info .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1;
+    }
+    .dash-stat-icon {
+      width: 48px;
+      height: 48px;
+      background: #eff6ff;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #3b82f6;
+    }
+
+    .content-section {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      overflow: hidden;
+    }
+    .content-header {
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .content-title-wrap .title { font-size: 18px; font-weight: 700; color: #1e293b; margin: 0 0 4px 0; }
+    .content-title-wrap .subtitle { font-size: 13px; color: #94a3b8; margin: 0; }
+    .filter-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .table thead th {
+      background: #f8fafc;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 16px 32px;
+    }
+    .table tbody td { padding: 16px 32px; font-size: 14px; color: #475569; vertical-align: middle; }
+    
+    .section-name-cell { display: flex; align-items: center; gap: 16px; }
+    .section-icon {
+      width: 36px;
+      height: 36px;
+      background: #3b82f6;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .section-info .name { font-weight: 600; color: #1e293b; display: block; }
+    .section-info .sub { font-size: 12px; color: #94a3b8; }
+
+    /* Modal Overrides */
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+    .modal-content { background-color: #fff; border-radius: 16px; width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; border: none; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; }
     .modal-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0; }
-    .close { font-size: 24px; cursor: pointer; color: #64748b; transition: color 0.2s; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; }
-    .close:hover { background: #f1f5f9; color: #0f172a; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; }
     .modal-body { padding: 24px; }
     .form-group { margin-bottom: 20px; }
     .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #475569; font-size: 14px; }
-    .form-group input, .form-group textarea { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; transition: all 0.2s; outline: none; }
+    .form-group input, .form-group textarea { width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 15px; outline: none; transition: all 0.2s; }
     .form-group input:focus, .form-group textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
     .modal-footer { padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; }
-    .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-primary { background: #3b82f6; color: #fff; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4); }
-    .btn-primary:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 6px 12px -2px rgba(59, 130, 246, 0.4); }
-    .btn-secondary { background: #fff; color: #475569; border: 2px solid #e2e8f0; }
-    .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
-
-    /* Dropdown Styles */
-    .dropdown-content { display: none; padding-left: 20px; }
-    .dropdown.active .dropdown-content { display: block; }
-    .dropdown-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-    .arrow { transition: transform 0.2s; }
-    .dropdown.active .arrow { transform: rotate(180deg); }
   </style>
 </head>
 <body>
@@ -142,11 +364,10 @@ if ($db) {
         <a href="burial-records.php">
           <span class="icon">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10 9 9 9 8 9" />
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              <path d="M8 6h8" />
+              <path d="M8 10h8" />
             </svg>
           </span>
           <span>Burial Records</span>
@@ -155,8 +376,11 @@ if ($db) {
         <a href="reports.php">
           <span class="icon">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-              <path d="M22 12A10 10 0 0 0 12 2v10z" />
+              <path d="M3 3v18h18" />
+              <path d="M7 14v4" />
+              <path d="M11 10v8" />
+              <path d="M15 6v12" />
+              <path d="M19 12v6" />
             </svg>
           </span>
           <span>Reports</span>
@@ -164,22 +388,9 @@ if ($db) {
 
         <a href="history.php">
           <span class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </span>
           <span>History</span>
-        </a>
-
-        <a href="settings.php">
-          <span class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </span>
-          <span>Settings</span>
         </a>
       </nav>
 
@@ -200,24 +411,66 @@ if ($db) {
     </aside>
 
     <main class="main">
-      <div class="page-header">
-        <h1 class="page-title">Section Management</h1>
-        <button class="btn-primary" onclick="openAddModal()">
-          <span class="icon" style="color:#fff">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 5v14" />
-              <path d="M5 12h14" />
-            </svg>
-          </span>
-          <span>Add New Section</span>
-        </button>
+      <header class="dashboard-header">
+        <div class="header-left">
+          <h1 class="title">Section Management</h1>
+          <p class="subtitle">Manage and categorize cemetery lots by sections</p>
+          <div class="breadcrumbs">
+            <a href="dashboard.php">Dashboard</a>
+            <span>&rsaquo;</span>
+            <span class="current">Manage Sections</span>
+          </div>
+        </div>
+        
+        <div class="header-actions">
+          <button class="btn-blue" onclick="openAddModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add New Section
+          </button>
+        </div>
+      </header>
+
+      <div class="dashboard-stats">
+        <div class="dash-stat-card">
+          <div class="dash-stat-info">
+            <div class="label">Total Sections</div>
+            <div class="value"><?php echo $stats['total']; ?></div>
+          </div>
+          <div class="dash-stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></svg>
+          </div>
+        </div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-info">
+            <div class="label">With Assigned Lots</div>
+            <div class="value"><?php echo $stats['with_lots']; ?></div>
+          </div>
+          <div class="dash-stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+        </div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-info">
+            <div class="label">Unused Sections</div>
+            <div class="value"><?php echo $stats['empty']; ?></div>
+          </div>
+          <div class="dash-stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+        </div>
       </div>
 
-      <section class="card">
-        <div class="card-head">
-          <div>
-            <h2 class="card-title">Cemetery Sections</h2>
-            <p class="card-sub">Manage and categorize cemetery lots by sections</p>
+      <section class="content-section">
+        <div class="content-header">
+          <div class="content-title-wrap">
+            <h2 class="title">Section List</h2>
+            <p class="subtitle">All cemetery sections and their assigned lots</p>
+          </div>
+          <div class="filter-controls">
+            <div class="search-wrapper" style="position: relative;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input id="sectionSearch" type="text" placeholder="Search sections..." style="padding: 10px 16px 10px 40px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; width: 280px; outline: none; transition: all 0.2s;">
+            </div>
           </div>
         </div>
 
@@ -225,8 +478,9 @@ if ($db) {
           <table class="table">
             <thead>
               <tr>
-                <th align="left">Section Name</th>
+                <th align="left">Section Details</th>
                 <th align="left">Description</th>
+                <th align="center">Lot Count</th>
                 <th align="left">Created At</th>
                 <th align="right">Actions</th>
               </tr>
@@ -234,21 +488,35 @@ if ($db) {
             <tbody id="sectionsTableBody">
               <?php foreach ($sections as $section): ?>
                 <tr>
-                  <td><strong><?php echo htmlspecialchars($section['name'] ?? ''); ?></strong></td>
-                  <td><?php echo htmlspecialchars($section['description'] ?? ''); ?></td>
+                  <td>
+                    <div class="section-name-cell">
+                      <div class="section-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></svg>
+                      </div>
+                      <div class="section-info">
+                        <span class="name"><?php echo htmlspecialchars($section['name'] ?? ''); ?></span>
+                        <span class="sub">ID: #<?php echo $section['id']; ?></span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><?php echo htmlspecialchars($section['description'] ?? 'No description provided'); ?></td>
+                  <td align="center">
+                    <span style="background: #eff6ff; color: #3b82f6; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 12px;">
+                      <?php echo $section['lot_count']; ?> Lots
+                    </span>
+                  </td>
                   <td><?php echo date('M d, Y', strtotime($section['created_at'])); ?></td>
                   <td align="right">
                     <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                      <button class="btn-action btn-edit" onclick='openEditModal(<?php echo json_encode($section); ?>)'>
+                      <button class="btn-action btn-edit" onclick='openEditModal(<?php echo json_encode($section); ?>)' title="Edit Section">
                         <span class="icon">
                           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 20h9" />
                             <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                           </svg>
                         </span>
-                        <span>Edit</span>
                       </button>
-                      <button class="btn-action btn-delete" onclick="deleteSection(<?php echo $section['id']; ?>)">
+                      <button class="btn-action btn-delete" onclick="deleteSection(<?php echo $section['id']; ?>)" title="Delete Section">
                         <span class="icon">
                           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6h18" />
@@ -258,7 +526,6 @@ if ($db) {
                             <path d="M14 11v6" />
                           </svg>
                         </span>
-                        <span>Delete</span>
                       </button>
                     </div>
                   </td>
@@ -266,9 +533,9 @@ if ($db) {
               <?php endforeach; ?>
               <?php if (empty($sections)): ?>
                 <tr>
-                  <td colspan="4" style="text-align: center; padding: 60px; color: #64748b;">
+                  <td colspan="5" style="text-align: center; padding: 60px; color: #94a3b8;">
                     <div style="margin-bottom: 12px; opacity: 0.5;">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/><path d="M8 7v10"/><path d="M16 7v10"/></svg>
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
                     </div>
                     No sections found. Add your first section to get started!
                   </td>
@@ -286,7 +553,7 @@ if ($db) {
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modalTitle" class="modal-title">Add New Section</h2>
-        <span class="close" onclick="closeModal()">&times;</span>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
       </div>
       <form id="sectionForm">
         <div class="modal-body">
@@ -301,13 +568,37 @@ if ($db) {
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Section</button>
+          <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn-blue">Save Section</button>
         </div>
       </form>
     </div>
   </div>
 
+  <script>
+    // Local Table Search Logic
+    const sectionSearch = document.getElementById('sectionSearch');
+    const tableBody = document.getElementById('sectionsTableBody');
+
+    if (sectionSearch && tableBody) {
+      sectionSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const rows = tableBody.querySelectorAll('tr');
+
+        rows.forEach(row => {
+          if (row.cells.length < 2) return; // Skip empty row
+          const name = row.querySelector('.section-info .name')?.textContent.toLowerCase() || '';
+          const desc = row.cells[1]?.textContent.toLowerCase() || '';
+          
+          if (name.includes(query) || desc.includes(query)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      });
+    }
+  </script>
   <script src="../assets/js/sections.js"></script>
 </body>
 </html>

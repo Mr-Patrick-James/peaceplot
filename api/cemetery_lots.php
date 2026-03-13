@@ -83,6 +83,7 @@ function handleGet($conn) {
             if ($conn) {
                 $status = isset($_GET['status']) && $_GET['status'] !== '' ? $_GET['status'] : null;
                 $section = isset($_GET['section']) && $_GET['section'] !== '' ? $_GET['section'] : null;
+                $block = isset($_GET['block']) && $_GET['block'] !== '' ? $_GET['block'] : null;
                 $all = isset($_GET['all']) && $_GET['all'] === 'true';
                 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
                 
@@ -97,6 +98,11 @@ function handleGet($conn) {
                 if ($section) {
                     $whereClauses[] = "cl.section = :section";
                     $params[':section'] = $section;
+                }
+
+                if ($block) {
+                    $whereClauses[] = "cl.block = :block";
+                    $params[':block'] = $block;
                 }
                 
                 if ($search) {

@@ -11,8 +11,10 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $sections = [];
+$blocks = [];
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : 'Vacant';
 $filterSection = isset($_GET['section']) ? $_GET['section'] : '';
+$filterBlock = isset($_GET['block']) ? $_GET['block'] : '';
 
 if ($conn) {
     try {
@@ -28,6 +30,10 @@ if ($conn) {
             ORDER BY section
         ");
         $sections = $stmt->fetchAll();
+
+        // Get unique blocks
+        $blockStmt = $conn->query("SELECT DISTINCT block FROM cemetery_lots WHERE block IS NOT NULL AND block != '' ORDER BY LENGTH(block), block");
+        $blocks = $blockStmt->fetchAll(PDO::FETCH_COLUMN);
         
         // Pagination parameters
         $itemsPerPage = 20;
@@ -39,10 +45,16 @@ if ($conn) {
         if ($filterSection) {
             $countQuery .= " AND section = :section";
         }
+        if ($filterBlock) {
+            $countQuery .= " AND block = :block";
+        }
         $countStmt = $conn->prepare($countQuery);
         $countStmt->bindParam(':status', $filterStatus);
         if ($filterSection) {
             $countStmt->bindParam(':section', $filterSection);
+        }
+        if ($filterBlock) {
+            $countStmt->bindParam(':block', $filterBlock);
         }
         $countStmt->execute();
         $totalItems = $countStmt->fetchColumn();
@@ -57,6 +69,9 @@ if ($conn) {
         if ($filterSection) {
             $query .= " AND cl.section = :section";
         }
+        if ($filterBlock) {
+            $query .= " AND cl.block = :block";
+        }
         
         $query .= " GROUP BY cl.id ORDER BY LENGTH(cl.lot_number), cl.lot_number LIMIT :limit OFFSET :offset";
         
@@ -64,6 +79,9 @@ if ($conn) {
         $lotsStmt->bindParam(':status', $filterStatus);
         if ($filterSection) {
             $lotsStmt->bindParam(':section', $filterSection);
+        }
+        if ($filterBlock) {
+            $lotsStmt->bindParam(':block', $filterBlock);
         }
         $lotsStmt->bindParam(':limit', $itemsPerPage, PDO::PARAM_INT);
         $lotsStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
@@ -196,6 +214,15 @@ if ($conn) {
             </p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
+            <select id="blockFilter" style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;">
+              <option value="">All Blocks</option>
+              <?php foreach ($blocks as $block): ?>
+                <option value="<?php echo htmlspecialchars($block); ?>" 
+                        <?php echo $filterBlock === $block ? 'selected' : ''; ?>>
+                  <?php echo htmlspecialchars($block); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
             <select id="sectionFilter" style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;">
               <option value="">All Sections</option>
               <?php foreach ($sections as $section): ?>
@@ -233,7 +260,7 @@ if ($conn) {
               <?php else: ?>
                 <?php foreach ($filteredLots as $lot): ?>
                   <tr>
-                    <td><strong><?php echo htmlspecialchars($lot['lot_number']); ?></strong></td>
+                    <td><?php echo htmlspecialchars($lot['lot_number']); ?></td>
                     <td><?php echo htmlspecialchars($lot['section']); ?></td>
                     <td><?php echo htmlspecialchars($lot['block'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></td>
@@ -265,7 +292,9 @@ if ($conn) {
         <?php if ($totalPages > 1): ?>
         <div class="pagination-wrap" style="padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; align-items: center;">
           <?php
-            $base_url = "?status=" . urlencode($filterStatus) . ($filterSection ? "&section=" . urlencode($filterSection) : "");
+            $base_url = "?status=" . urlencode($filterStatus) . 
+                        ($filterSection ? "&section=" . urlencode($filterSection) : "") .
+                        ($filterBlock ? "&block=" . urlencode($filterBlock) : "");
           ?>
           
           <a href="<?php echo $base_url; ?>&page=<?php echo $currentPage - 1; ?>" 
@@ -335,7 +364,15 @@ if ($conn) {
     document.getElementById('sectionFilter')?.addEventListener('change', function() {
       const section = this.value;
       const status = '<?php echo $filterStatus; ?>';
-      window.location.href = '?status=' + status + (section ? '&section=' + encodeURIComponent(section) : '');
+      const block = '<?php echo $filterBlock; ?>';
+      window.location.href = '?status=' + status + (section ? '&section=' + encodeURIComponent(section) : '') + (block ? '&block=' + encodeURIComponent(block) : '');
+    });
+
+    document.getElementById('blockFilter')?.addEventListener('change', function() {
+      const block = this.value;
+      const status = '<?php echo $filterStatus; ?>';
+      const section = '<?php echo $filterSection; ?>';
+      window.location.href = '?status=' + status + (section ? '&section=' + encodeURIComponent(section) : '') + (block ? '&block=' + encodeURIComponent(block) : '');
     });
   </script>
   <script src="../assets/js/app.js"></script>

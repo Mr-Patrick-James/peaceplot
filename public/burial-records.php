@@ -12,12 +12,17 @@ $conn = $database->getConnection();
 
 $availableLots = [];
 $sections = [];
+$blocks = [];
 
 if ($conn) {
     try {
         // Fetch unique sections for filtering
         $sectionStmt = $conn->query("SELECT DISTINCT section FROM cemetery_lots WHERE section IS NOT NULL AND section != '' ORDER BY LENGTH(section), section");
         $sections = $sectionStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Fetch unique blocks for filtering
+        $blockStmt = $conn->query("SELECT DISTINCT block FROM cemetery_lots WHERE block IS NOT NULL AND block != '' ORDER BY LENGTH(block), block");
+        $blocks = $blockStmt->fetchAll(PDO::FETCH_COLUMN);
 
         $lotsStmt = $conn->query("
             SELECT id, lot_number, section, block 
@@ -189,6 +194,12 @@ if ($conn) {
             <p class="card-sub">Manage deceased person records and burial information</p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
+            <select id="blockFilter" style="padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#475569; outline:none; transition:all 0.2s; background:white; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6';" onblur="this.style.borderColor='#e2e8f0';">
+              <option value="">All Blocks</option>
+              <?php foreach ($blocks as $block): ?>
+                <option value="<?php echo htmlspecialchars($block); ?>"><?php echo htmlspecialchars($block); ?></option>
+              <?php endforeach; ?>
+            </select>
             <select id="sectionFilter" style="padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#475569; outline:none; transition:all 0.2s; background:white; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6';" onblur="this.style.borderColor='#e2e8f0';">
               <option value="">All Sections</option>
               <?php foreach ($sections as $section): ?>

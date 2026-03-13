@@ -175,8 +175,8 @@ if ($conn) {
                       data-action="<?php echo strtolower(htmlspecialchars($log['action'])); ?>"
                       data-desc="<?php echo strtolower(htmlspecialchars($log['description'])); ?>"
                       data-date="<?php echo date('Y-m-d', strtotime($log['created_at'])); ?>">
-                    <td style="white-space: nowrap;"><span style="font-weight: 500; color: #1f2937;"><?php echo date('M d, Y h:i A', strtotime($log['created_at'])); ?></span></td>
-                    <td><strong style="color: #4b5563;"><?php echo htmlspecialchars($log['user_name'] ?: 'System'); ?></strong></td>
+                    <td style="white-space: nowrap;"><span style="font-weight: 400; color: #1f2937;"><?php echo date('M d, Y h:i A', strtotime($log['created_at'])); ?></span></td>
+                    <td><span style="color: #4b5563; font-weight: 400;"><?php echo htmlspecialchars($log['user_name'] ?: 'System'); ?></span></td>
                     <td>
                       <?php 
                         $badgeClass = 'badge-info';
@@ -184,7 +184,7 @@ if ($conn) {
                         if (strpos($log['action'], 'ADD') !== false) $badgeClass = 'badge-success';
                         if (strpos($log['action'], 'UPDATE') !== false) $badgeClass = 'badge-warning';
                       ?>
-                      <span class="badge <?php echo $badgeClass; ?>" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                      <span class="badge <?php echo $badgeClass; ?>" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; text-transform: uppercase;">
                         <?php echo htmlspecialchars($log['action']); ?>
                       </span>
                     </td>

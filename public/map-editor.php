@@ -11,10 +11,20 @@ $database = new Database();
 $conn = $database->getConnection();
 
 $lots = [];
+$sections = [];
+$blocks = [];
 $mapImage = 'cemetery.jpg';
 
 if ($conn) {
     try {
+        // Fetch sections
+        $sectionStmt = $conn->query("SELECT * FROM sections ORDER BY name ASC");
+        $sections = $sectionStmt->fetchAll();
+
+        // Fetch blocks
+        $blockStmt = $conn->query("SELECT * FROM blocks ORDER BY name ASC");
+        $blocks = $blockStmt->fetchAll();
+
         $stmt = $conn->query("
             SELECT cl.*, 
                    (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
@@ -527,11 +537,28 @@ if ($conn) {
             </div>
             
             <div class="form-group">
-              <label>Section *</label>
-              <input type="text" id="newSection" placeholder="e.g., Section A" required>
+              <label>Block *</label>
+              <select id="newBlock" required>
+                <option value="">Select Block</option>
+                <?php foreach ($blocks as $block): ?>
+                  <option value="<?php echo htmlspecialchars($block['name']); ?>">
+                    <?php echo htmlspecialchars($block['name']); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
             </div>
-            
 
+            <div class="form-group">
+              <label>Section *</label>
+              <select id="newSection" required>
+                <option value="">Select Section</option>
+                <?php foreach ($sections as $section): ?>
+                  <option value="<?php echo htmlspecialchars($section['name']); ?>">
+                    <?php echo htmlspecialchars($section['name']); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
             
             <div class="form-group">
               <label>Position</label>
@@ -922,17 +949,19 @@ if ($conn) {
         // Create new lot
         const lotNumber = document.getElementById('newLotNumber').value.trim();
         const section = document.getElementById('newSection').value.trim();
+        const block = document.getElementById('newBlock').value.trim();
         const position = document.getElementById('newPosition').value.trim();
         const status = document.getElementById('newStatus').value;
 
-        if (!lotNumber || !section) {
-          alert('Please fill in required fields (Lot Number and Section)');
+        if (!lotNumber || !section || !block) {
+          alert('Please fill in required fields (Lot Number, Section, and Block)');
           return;
         }
 
         const newLotData = {
           lot_number: lotNumber,
           section: section,
+          block: block,
           position: position || null,
           status: status
         };
