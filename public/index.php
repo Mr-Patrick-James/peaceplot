@@ -265,6 +265,132 @@ if ($conn) {
       background: #fff;
     }
 
+    /* Advanced Filter Control Styles */
+    .btn-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+      transition: all 0.2s;
+      position: relative;
+    }
+    .btn-filter:hover { background: #2563eb; transform: translateY(-1px); }
+    .filter-badge {
+      background: #fff;
+      color: #3b82f6;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .filter-popover {
+      position: absolute;
+      top: calc(100% + 12px);
+      right: 0;
+      width: 320px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      border: 1px solid #e2e8f0;
+      z-index: 1000;
+      display: none;
+      overflow: hidden;
+      color: #1e293b;
+      text-align: left;
+    }
+    .filter-popover.active { display: block; }
+    .popover-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .popover-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
+    .btn-save-view { font-size: 13px; color: #3b82f6; text-decoration: none; font-weight: 600; }
+    .popover-body { padding: 12px 0; max-height: 400px; overflow-y: auto; }
+    
+    .filter-category { border-bottom: 1px solid #f8fafc; }
+    .filter-category:last-child { border-bottom: none; }
+    .category-toggle {
+      width: 100%;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      transition: background 0.2s;
+    }
+    .category-toggle:hover { background: #f8fafc; }
+    .category-toggle svg { 
+      width: 16px; height: 16px; color: #94a3b8; 
+      transition: transform 0.2s;
+    }
+    .filter-category.active .category-toggle svg { transform: rotate(90deg); }
+    
+    .category-content { display: none; padding: 0 20px 12px 46px; }
+    .filter-category.active .category-content { display: block; }
+    
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      cursor: pointer;
+      font-size: 13.5px;
+      color: #475569;
+    }
+    .filter-option input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 2px solid #cbd5e1;
+      cursor: pointer;
+    }
+    
+    .active-filters-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 32px 0 32px;
+    }
+    .filter-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #eff6ff;
+      color: #3b82f6;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .filter-chip .remove {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+    }
+    .filter-chip .remove:hover { opacity: 1; }
+
     .table thead th {
       background: #f8fafc;
       color: #94a3b8;
@@ -556,22 +682,78 @@ if ($conn) {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               <input id="lotSearch" type="text" placeholder="Search lots...">
             </div>
-            <select id="blockFilter" class="select-styled">
-              <option value="">All Blocks</option>
-              <?php foreach ($blocks as $block): ?>
-                <option value="<?php echo htmlspecialchars($block); ?>"><?php echo htmlspecialchars($block); ?></option>
-              <?php endforeach; ?>
-            </select>
-            <select id="sectionFilter" class="select-styled">
-              <option value="">All Sections</option>
-              <?php foreach ($sections as $section): ?>
-                <option value="<?php echo htmlspecialchars($section); ?>"><?php echo htmlspecialchars($section); ?></option>
-              <?php endforeach; ?>
-            </select>
-            <button class="icon-btn-outline">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-            </button>
+            
+            <div style="position: relative;">
+              <button class="btn-filter" id="filterBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                Filters
+                <span class="filter-badge" id="filterBadge" style="display: none;">0</span>
+              </button>
+              
+              <div class="filter-popover" id="filterPopover">
+                <div class="popover-header">
+                  <h3>Filters</h3>
+                  <a href="#" class="btn-save-view">Save view</a>
+                </div>
+                <div class="popover-body">
+                  <!-- Blocks Category -->
+                  <div class="filter-category active">
+                    <button class="category-toggle" onclick="toggleCategory(this)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Blocks
+                    </button>
+                    <div class="category-content">
+                      <?php foreach ($blocks as $block): ?>
+                        <label class="filter-option">
+                          <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block); ?>" onchange="updateFilters()">
+                          <?php echo htmlspecialchars($block); ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
+
+                  <!-- Sections Category -->
+                  <div class="filter-category">
+                    <button class="category-toggle" onclick="toggleCategory(this)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Sections
+                    </button>
+                    <div class="category-content">
+                      <?php foreach ($sections as $section): ?>
+                        <label class="filter-option">
+                          <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section); ?>" onchange="updateFilters()">
+                          <?php echo htmlspecialchars($section); ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
+                  
+                  <!-- Status Category -->
+                  <div class="filter-category">
+                    <button class="category-toggle" onclick="toggleCategory(this)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Status
+                    </button>
+                    <div class="category-content">
+                      <label class="filter-option">
+                        <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
+                      </label>
+                      <label class="filter-option">
+                        <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
+                      </label>
+                      <label class="filter-option">
+                        <input type="checkbox" name="status" value="Maintenance" onchange="updateFilters()"> Maintenance
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div class="active-filters-row" id="activeFilters">
+          <!-- Chips will be injected here -->
         </div>
 
         <div class="table-wrap">

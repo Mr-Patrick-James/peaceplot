@@ -101,18 +101,36 @@ function handleGet($conn) {
             }
 
             if ($filterSection) {
-                $whereClause .= " AND cl.section = :section";
-                $params[':section'] = $filterSection;
+                $sectionArray = explode(',', $filterSection);
+                $placeholders = [];
+                foreach ($sectionArray as $i => $s) {
+                    $placeholder = ":section_$i";
+                    $placeholders[] = $placeholder;
+                    $params[$placeholder] = trim($s);
+                }
+                $whereClause .= " AND cl.section IN (" . implode(',', $placeholders) . ")";
             }
 
             if ($filterBlock) {
-                $whereClause .= " AND cl.block = :block";
-                $params[':block'] = $filterBlock;
+                $blockArray = explode(',', $filterBlock);
+                $placeholders = [];
+                foreach ($blockArray as $i => $b) {
+                    $placeholder = ":block_$i";
+                    $placeholders[] = $placeholder;
+                    $params[$placeholder] = trim($b);
+                }
+                $whereClause .= " AND cl.block IN (" . implode(',', $placeholders) . ")";
             }
 
             if ($filterStatus) {
-                $whereClause .= " AND cl.status = :status";
-                $params[':status'] = $filterStatus;
+                $statusArray = explode(',', $filterStatus);
+                $placeholders = [];
+                foreach ($statusArray as $i => $s) {
+                    $placeholder = ":status_$i";
+                    $placeholders[] = $placeholder;
+                    $params[$placeholder] = trim($s);
+                }
+                $whereClause .= " AND cl.status IN (" . implode(',', $placeholders) . ")";
             }
 
             if ($startDate) {

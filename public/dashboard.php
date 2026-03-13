@@ -248,6 +248,170 @@ if ($conn) {
       color: #1e293b;
       margin: 0;
     }
+
+    /* Advanced Filter Control Styles */
+    .dashboard-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+    .controls-left {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .controls-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+      transition: all 0.2s;
+      position: relative;
+    }
+    .btn-filter:hover { background: #2563eb; transform: translateY(-1px); }
+    .filter-badge {
+      background: #fff;
+      color: #3b82f6;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .filter-popover {
+      position: absolute;
+      top: calc(100% + 12px);
+      left: 0;
+      width: 320px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      border: 1px solid #e2e8f0;
+      z-index: 1000;
+      display: none;
+      overflow: hidden;
+      color: #1e293b;
+      text-align: left;
+    }
+    .filter-popover.active { display: block; }
+    .popover-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .popover-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
+    .btn-save-view { font-size: 13px; color: #3b82f6; text-decoration: none; font-weight: 600; }
+    .popover-body { padding: 12px 0; max-height: 400px; overflow-y: auto; }
+    
+    .filter-category { border-bottom: 1px solid #f8fafc; }
+    .filter-category:last-child { border-bottom: none; }
+    .category-toggle {
+      width: 100%;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      transition: background 0.2s;
+    }
+    .category-toggle:hover { background: #f8fafc; }
+    .category-toggle svg { 
+      width: 16px; height: 16px; color: #94a3b8; 
+      transition: transform 0.2s;
+    }
+    .filter-category.active .category-toggle svg { transform: rotate(90deg); }
+    
+    .category-content { display: none; padding: 0 20px 12px 46px; }
+    .filter-category.active .category-content { display: block; }
+    
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      cursor: pointer;
+      font-size: 13.5px;
+      color: #475569;
+    }
+    .filter-option input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 2px solid #cbd5e1;
+      cursor: pointer;
+    }
+    
+    .active-filters-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .filter-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #eff6ff;
+      color: #3b82f6;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .filter-chip .remove {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+    }
+    .filter-chip .remove:hover { opacity: 1; }
+
+    .search-inline-wrapper {
+      position: relative;
+      width: 240px;
+    }
+    .search-inline-wrapper input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+    .search-inline-wrapper svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+    }
   </style>
 </head>
 <body>
@@ -322,6 +486,76 @@ if ($conn) {
           </div>
         </div>
       </header>
+
+      <div class="dashboard-controls">
+        <div class="controls-left">
+          <div style="position: relative;">
+            <button class="btn-filter" id="filterBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+              Filters
+              <span class="filter-badge" id="filterBadge">0</span>
+            </button>
+            
+            <div class="filter-popover" id="filterPopover">
+              <div class="popover-header">
+                <h3>Filters</h3>
+                <a href="#" class="btn-save-view">Save view</a>
+              </div>
+              <div class="popover-body">
+                <!-- Sections Category -->
+                <div class="filter-category active">
+                  <button class="category-toggle" onclick="toggleCategory(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    Sections
+                  </button>
+                  <div class="category-content">
+                    <?php foreach ($stats['sections'] as $section): ?>
+                      <label class="filter-option">
+                        <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section['section']); ?>" onchange="updateFilters()">
+                        <?php echo htmlspecialchars($section['section']); ?>
+                      </label>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+                
+                <!-- Status Category -->
+                <div class="filter-category">
+                  <button class="category-toggle" onclick="toggleCategory(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    Status
+                  </button>
+                  <div class="category-content">
+                    <label class="filter-option">
+                      <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
+                    </label>
+                    <label class="filter-option">
+                      <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="search-inline-wrapper">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Search in results..." id="inlineSearch">
+          </div>
+        </div>
+        
+        <div class="controls-right">
+          <select class="form-group" style="margin:0; width: 160px; padding: 8px 12px; border-radius: 10px;">
+            <option>Last 30 days</option>
+            <option>Last 90 days</option>
+            <option>Last year</option>
+            <option>All time</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="active-filters-row" id="activeFilters">
+        <!-- Chips will be injected here -->
+      </div>
 
       <?php if (isset($error)): ?>
         <div class="card" style="padding:20px; color:#ef4444;">
@@ -530,7 +764,110 @@ if ($conn) {
       if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
         searchResults.style.display = 'none';
       }
+      
+      // Close filter popover when clicking outside
+      const filterBtn = document.getElementById('filterBtn');
+      const filterPopover = document.getElementById('filterPopover');
+      if (filterBtn && filterPopover && !filterBtn.contains(e.target) && !filterPopover.contains(e.target)) {
+        filterPopover.classList.remove('active');
+      }
     });
+
+    // Advanced Filter Control Logic
+    const filterBtn = document.getElementById('filterBtn');
+    const filterPopover = document.getElementById('filterPopover');
+    const filterBadge = document.getElementById('filterBadge');
+    const activeFiltersRow = document.getElementById('activeFilters');
+    const inlineSearch = document.getElementById('inlineSearch');
+
+    if (filterBtn) {
+      filterBtn.addEventListener('click', () => {
+        filterPopover.classList.toggle('active');
+      });
+    }
+
+    function toggleCategory(btn) {
+      btn.parentElement.classList.toggle('active');
+    }
+
+    function updateFilters() {
+      const checkboxes = document.querySelectorAll('.filter-popover input[type="checkbox"]:checked');
+      const activeFilters = [];
+      
+      checkboxes.forEach(cb => {
+        activeFilters.push({
+          name: cb.name,
+          value: cb.value
+        });
+      });
+
+      // Update badge
+      filterBadge.textContent = activeFilters.length;
+      filterBadge.style.display = activeFilters.length > 0 ? 'flex' : 'none';
+
+      // Update chips
+      activeFiltersRow.innerHTML = activeFilters.map(filter => `
+        <div class="filter-chip">
+          ${filter.value}
+          <span class="remove" onclick="removeFilter('${filter.name}', '${filter.value}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </span>
+        </div>
+      `).join('');
+
+      // Filter the table rows (Section Summary)
+      filterDashboardData();
+    }
+
+    function removeFilter(name, value) {
+      const cb = document.querySelector(`.filter-popover input[name="${name}"][value="${value}"]`);
+      if (cb) {
+        cb.checked = false;
+        updateFilters();
+      }
+    }
+
+    function filterDashboardData() {
+      const activeSections = Array.from(document.querySelectorAll('input[name="section"]:checked')).map(cb => cb.value);
+      const activeStatuses = Array.from(document.querySelectorAll('input[name="status"]:checked')).map(cb => cb.value);
+      const searchTerm = inlineSearch.value.toLowerCase();
+
+      const tableRows = document.querySelectorAll('.content-card table tbody tr');
+      tableRows.forEach(row => {
+        if (row.cells.length < 2) return;
+        
+        const sectionName = row.cells[0].textContent.trim();
+        const matchesSection = activeSections.length === 0 || activeSections.includes(sectionName);
+        const matchesSearch = sectionName.toLowerCase().includes(searchTerm);
+
+        if (matchesSection && matchesSearch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      // Also filter the chart groups
+      const chartGroups = document.querySelectorAll('.chart-bar-group');
+      chartGroups.forEach(group => {
+        const label = group.querySelector('.chart-label').textContent.trim();
+        const matchesSection = activeSections.length === 0 || activeSections.includes(label);
+        const matchesSearch = label.toLowerCase().includes(searchTerm);
+
+        if (matchesSection && matchesSearch) {
+          group.style.display = 'flex';
+        } else {
+          group.style.display = 'none';
+        }
+      });
+    }
+
+    if (inlineSearch) {
+      inlineSearch.addEventListener('input', filterDashboardData);
+    }
+
+    // Initialize badge state
+    filterBadge.style.display = 'none';
   </script>
   <script src="../assets/js/app.js"></script>
 </body>

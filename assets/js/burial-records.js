@@ -161,33 +161,86 @@ let currentPage = 1;
 let itemsPerPage = 10;
 let totalPages = 1;
 
+let searchQuery = '';
+let statusFilter = '';
+let sectionFilter = '';
+let blockFilter = '';
+let startDate = '';
+let endDate = '';
+
+// Advanced Filter Control Logic
+function toggleCategory(btn) {
+    btn.parentElement.classList.toggle('active');
+}
+
+function updateFilters() {
+    const activeBlocks = Array.from(document.querySelectorAll('input[name="block"]:checked')).map(cb => cb.value);
+    const activeSections = Array.from(document.querySelectorAll('input[name="section"]:checked')).map(cb => cb.value);
+    const activeStatuses = Array.from(document.querySelectorAll('input[name="status"]:checked')).map(cb => cb.value);
+
+    blockFilter = activeBlocks.join(',');
+    sectionFilter = activeSections.join(',');
+    statusFilter = activeStatuses.join(',');
+
+    // Update badge
+    const filterBadge = document.getElementById('filterBadge');
+    const totalActive = activeBlocks.length + activeSections.length + activeStatuses.length;
+    if (filterBadge) {
+        filterBadge.textContent = totalActive;
+        filterBadge.style.display = totalActive > 0 ? 'flex' : 'none';
+    }
+
+    // Update chips
+    const activeFiltersRow = document.getElementById('activeFilters');
+    if (activeFiltersRow) {
+        const allFilters = [
+            ...activeBlocks.map(v => ({ name: 'block', value: v })),
+            ...activeSections.map(v => ({ name: 'section', value: v })),
+            ...activeStatuses.map(v => ({ name: 'status', value: v }))
+        ];
+
+        activeFiltersRow.innerHTML = allFilters.map(filter => `
+            <div class="filter-chip">
+                ${filter.value}
+                <span class="remove" onclick="removeFilter('${filter.name}', '${filter.value}')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </span>
+            </div>
+        `).join('');
+    }
+
+    loadBurialRecords();
+}
+
+function removeFilter(name, value) {
+    const cb = document.querySelector(`.filter-popover input[name="${name}"][value="${value}"]`);
+    if (cb) {
+        cb.checked = false;
+        updateFilters();
+    }
+}
+
+function clearAllFilters() {
+    document.querySelectorAll('.filter-popover input[type="checkbox"]').forEach(cb => cb.checked = false);
+    updateFilters();
+}
+
 async function loadBurialRecords() {
     console.log('loadBurialRecords() called, archived:', showingArchived, 'page:', currentPage);
     const tbody = document.querySelector('.table tbody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading records...</td></tr>';
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" style="text-align:center; padding: 60px; color:#94a3b8;">
+                <div class="loading-spinner" style="display: inline-block; width: 24px; height: 24px; border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
+                <div style="margin-top: 12px; font-size: 13px;">Loading records...</div>
+            </td>
+        </tr>
+    `;
 
     try {
-        const searchInput = document.getElementById('recordSearch');
-        const searchTerm = searchInput ? searchInput.value : '';
-
-        const sectionFilter = document.getElementById('sectionFilter');
-        const section = sectionFilter ? sectionFilter.value : '';
-
-        const blockFilter = document.getElementById('blockFilter');
-        const block = blockFilter ? blockFilter.value : '';
-
-        const statusFilter = document.getElementById('statusFilter');
-        const status = statusFilter ? statusFilter.value : '';
-
-        const startDateInput = document.getElementById('startDate');
-        const startDate = startDateInput ? startDateInput.value : '';
-
-        const endDateInput = document.getElementById('endDate');
-        const endDate = endDateInput ? endDateInput.value : '';
-        
-        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchTerm, section, block, status, startDate, endDate);
+        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchQuery, sectionFilter, blockFilter, statusFilter, startDate, endDate);
         if (result.success && result.data) {
             currentRecords = result.data;
             if (result.pagination) {
@@ -197,11 +250,11 @@ async function loadBurialRecords() {
             renderRecords(result.data);
             renderPagination(result.pagination);
         } else {
-            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#ef4444;">Failed to load records: ${result.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding: 40px;">Failed to load records: ${result.message}</td></tr>`;
         }
     } catch (error) {
         console.error('Error loading records:', error);
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#ef4444;">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding: 40px;">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -276,96 +329,79 @@ window.changePage = function(page) {
 function renderRecords(records) {
     console.log('renderRecords() called with', records.length, 'records');
     const tbody = document.querySelector('.table tbody');
-    console.log('tbody found in renderRecords:', !!tbody);
     if (!tbody) return;
 
     if (records.length === 0) {
-        const q = (document.getElementById('recordSearch')?.value || '').trim();
+        const q = searchQuery.trim();
         const msg = q ? 'No matching records found' : 'No burial records found';
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#6b7280;">${msg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 60px; color:#6b7280;">${msg}</td></tr>`;
         return;
     }
 
-    console.log('Rendering records...');
     const html = records.map(record => {
         const deathDate = record.date_of_death ? new Date(record.date_of_death).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
         const burialDate = record.date_of_burial ? new Date(record.date_of_burial).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
         
         return `
-        <tr data-record-id="${record.id}" data-death-date="${record.date_of_death || ''}">
-            <td>${record.full_name}</td>
-            <td>${record.lot_number || '—'}</td>
+        <tr data-record-id="${record.id}">
+            <td>
+                <div style="font-weight: 600; color: #1e293b;">${record.full_name}</div>
+                <div style="font-size: 12px; color: #94a3b8;">ID: ${record.id}</div>
+            </td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; background: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #3b82f6;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: #1e293b;">Lot ${record.lot_number || '—'}</div>
+                        <div style="font-size: 12px; color: #94a3b8;">${record.section || '—'}</div>
+                    </div>
+                </div>
+            </td>
             <td>
                 ${record.layer ? `
-                    <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                    <span style="background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
                         Layer ${record.layer}
                     </span>
                 ` : '—'}
             </td>
-            <td>${record.section || '—'}</td>
-            <td>${deathDate}</td>
-            <td>${burialDate}</td>
-            <td>${record.age || '—'}</td>
-            <td style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
-                ${record.deceased_info || '—'}
-            </td>
-            <td style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; font-size: 13px;">
-                ${record.remarks || '—'}
+            <td>
+                <div style="color: #475569;">${record.block || '—'}</div>
             </td>
             <td>
-                <div class="actions">
-                    <button class="btn-action btn-edit" data-action="view" data-record-id="${record.id}">
-                        <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                            </svg>
-                        </span>
-                        <span>View</span>
+                <div style="font-size: 13px; color: #475569;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span style="color: #94a3b8; font-weight: 600; font-size: 10px; text-transform: uppercase; width: 45px;">Died:</span>
+                        <span>${deathDate}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span style="color: #94a3b8; font-weight: 600; font-size: 10px; text-transform: uppercase; width: 45px;">Buried:</span>
+                        <span>${burialDate}</span>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div style="font-weight: 600; color: #1e293b;">${record.age || '—'}</div>
+            </td>
+            <td align="right">
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                    <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center;" data-action="view" data-record-id="${record.id}" title="View Details">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
                     ${!showingArchived ? `
-                        <button class="btn-action btn-edit" data-action="edit" data-record-id="${record.id}">
-                            <span class="icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 20h9" />
-                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                                </svg>
-                            </span>
-                            <span>Edit</span>
+                        <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center;" data-action="edit" data-record-id="${record.id}" title="Edit Record">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         </button>
-                        <button class="btn-action btn-delete" data-action="delete" data-record-id="${record.id}">
-                            <span class="icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 6h18" />
-                                    <path d="M8 6V4h8v2" />
-                                    <path d="M19 6l-1 14H6L5 6" />
-                                    <path d="M10 11v6" />
-                                    <path d="M14 11v6" />
-                                </svg>
-                            </span>
-                            <span>Delete</span>
+                        <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #ef4444; border-color: #fee2e2;" data-action="delete" data-record-id="${record.id}" title="Archive Record">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     ` : `
-                        <button class="btn-action btn-restore" data-action="restore" data-record-id="${record.id}" style="color: #059669; border-color: #059669;">
-                            <span class="icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                    <path d="M3 3v5h5" />
-                                </svg>
-                            </span>
-                            <span>Restore</span>
+                        <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #10b981; border-color: #dcfce7;" data-action="restore" data-record-id="${record.id}" title="Restore Record">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                         </button>
-                        <button class="btn-action btn-delete-perm" data-action="permanent_delete" data-record-id="${record.id}" style="color: #dc2626; border-color: #dc2626;">
-                            <span class="icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 6h18" />
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                    <line x1="14" y1="11" x2="14" y2="17" />
-                                </svg>
-                            </span>
-                            <span>Delete Permanent</span>
+                        <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #ef4444; border-color: #fee2e2;" data-action="permanent_delete" data-record-id="${record.id}" title="Delete Permanently">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     `}
                 </div>
@@ -374,9 +410,7 @@ function renderRecords(records) {
     `;
     }).join('');
     
-    console.log('HTML generated, setting innerHTML');
     tbody.innerHTML = html;
-    console.log('innerHTML set successfully');
 }
 
 async function handleDelete(recordId, action = null) {
@@ -1403,13 +1437,74 @@ document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     if (path.includes('burial-records')) {
         loadBurialRecords();
+        
+        // Search Input
         const searchInput = document.getElementById('recordSearch');
+        if (searchInput) {
+            let timeout = null;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    searchQuery = e.target.value.trim();
+                    currentPage = 1;
+                    loadBurialRecords();
+                }, 300);
+            });
+        }
+
+        // Date Filters
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
-        const sectionFilter = document.getElementById('sectionFilter');
-        const blockFilter = document.getElementById('blockFilter');
-        const statusFilter = document.getElementById('statusFilter');
         
+        if (startDateInput) {
+            startDateInput.addEventListener('change', (e) => {
+                startDate = e.target.value;
+                currentPage = 1;
+                loadBurialRecords();
+            });
+        }
+        
+        if (endDateInput) {
+            endDateInput.addEventListener('change', (e) => {
+                endDate = e.target.value;
+                currentPage = 1;
+                loadBurialRecords();
+            });
+        }
+
+        // Popover Logic
+        const filterBtn = document.getElementById('filterBtn');
+        const filterPopover = document.getElementById('filterPopover');
+        if (filterBtn && filterPopover) {
+            filterBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                filterPopover.classList.toggle('active');
+            });
+        }
+
+        // View Archived Toggle
+        const viewArchivedBtn = document.getElementById('viewArchivedBtn');
+        if (viewArchivedBtn) {
+            viewArchivedBtn.addEventListener('click', () => {
+                showingArchived = !showingArchived;
+                const text = document.getElementById('viewArchivedText');
+                if (text) text.textContent = showingArchived ? 'View Active' : 'View Archived';
+                
+                // Update header text
+                const cardTitle = document.querySelector('.content-section .title');
+                const cardSub = document.querySelector('.content-section .subtitle');
+                if (cardTitle) cardTitle.textContent = showingArchived ? 'Archived Burial Records' : 'Burial Records List';
+                if (cardSub) cardSub.textContent = showingArchived ? 'Manage permanently deleted and archived records' : 'Manage and filter deceased person records';
+                
+                // Hide/show Add button
+                const addBtn = document.querySelector('button[data-action="add"]');
+                if (addBtn) addBtn.style.display = showingArchived ? 'none' : 'flex';
+
+                currentPage = 1;
+                loadBurialRecords();
+            });
+        }
+
         // Check for URL parameters (lot_id, layer)
         const urlParams = new URLSearchParams(window.location.search);
         const lotId = urlParams.get('lot_id');
@@ -1421,47 +1516,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clean up URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }
-
-        function applyFilters() {
-            currentPage = 1;
-            loadBurialRecords();
-        }
-
-        if (searchInput) searchInput.addEventListener('input', applyFilters);
-        if (startDateInput) startDateInput.addEventListener('change', applyFilters);
-        if (endDateInput) endDateInput.addEventListener('change', applyFilters);
-        if (sectionFilter) sectionFilter.addEventListener('change', applyFilters);
-        if (blockFilter) blockFilter.addEventListener('change', applyFilters);
-        if (statusFilter) statusFilter.addEventListener('change', applyFilters);
-        
-        // Archived view toggle
-        const viewArchivedBtn = document.getElementById('viewArchivedBtn');
-        if (viewArchivedBtn) {
-            viewArchivedBtn.addEventListener('click', () => {
-                showingArchived = !showingArchived;
-                const text = document.getElementById('viewArchivedText');
-                if (text) text.textContent = showingArchived ? 'View Active Records' : 'View Archived Records';
-                viewArchivedBtn.classList.toggle('btn-primary');
-                viewArchivedBtn.classList.toggle('btn-secondary');
-                
-                // Update titles
-                const cardTitle = document.querySelector('.card-title');
-                const cardSub = document.querySelector('.card-sub');
-                if (cardTitle) cardTitle.textContent = showingArchived ? 'Archived Burial Records' : 'All Burial Records';
-                if (cardSub) cardSub.textContent = showingArchived ? 'Manage permanently deleted and archived records' : 'Manage deceased person records and burial information';
-                
-                // Hide/show Add button
-                const addBtn = document.querySelector('button[data-action="add"]');
-                if (addBtn) addBtn.style.display = showingArchived ? 'none' : 'flex';
-                
-                currentPage = 1; // Reset to first page
-                loadBurialRecords();
-            });
-        }
     }
 });
 
 document.addEventListener('click', (e) => {
+    // Close popover when clicking outside
+    const filterBtn = document.getElementById('filterBtn');
+    const filterPopover = document.getElementById('filterPopover');
+    if (filterBtn && filterPopover && !filterBtn.contains(e.target) && !filterPopover.contains(e.target)) {
+        filterPopover.classList.remove('active');
+    }
+
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
     

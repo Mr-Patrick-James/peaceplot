@@ -7,6 +7,58 @@ let statusFilter = '';
 let sectionFilter = '';
 let blockFilter = '';
 
+// Advanced Filter Control Logic
+function toggleCategory(btn) {
+    btn.parentElement.classList.toggle('active');
+}
+
+function updateFilters() {
+    const activeBlocks = Array.from(document.querySelectorAll('input[name="block"]:checked')).map(cb => cb.value);
+    const activeSections = Array.from(document.querySelectorAll('input[name="section"]:checked')).map(cb => cb.value);
+    const activeStatuses = Array.from(document.querySelectorAll('input[name="status"]:checked')).map(cb => cb.value);
+
+    blockFilter = activeBlocks.join(',');
+    sectionFilter = activeSections.join(',');
+    statusFilter = activeStatuses.join(',');
+
+    // Update badge
+    const filterBadge = document.getElementById('filterBadge');
+    const totalActive = activeBlocks.length + activeSections.length + activeStatuses.length;
+    if (filterBadge) {
+        filterBadge.textContent = totalActive;
+        filterBadge.style.display = totalActive > 0 ? 'flex' : 'none';
+    }
+
+    // Update chips
+    const activeFiltersRow = document.getElementById('activeFilters');
+    if (activeFiltersRow) {
+        const allFilters = [
+            ...activeBlocks.map(v => ({ name: 'block', value: v })),
+            ...activeSections.map(v => ({ name: 'section', value: v })),
+            ...activeStatuses.map(v => ({ name: 'status', value: v }))
+        ];
+
+        activeFiltersRow.innerHTML = allFilters.map(filter => `
+            <div class="filter-chip">
+                ${filter.value}
+                <span class="remove" onclick="removeFilter('${filter.name}', '${filter.value}')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </span>
+            </div>
+        `).join('');
+    }
+
+    loadCemeteryLots(1);
+}
+
+function removeFilter(name, value) {
+    const cb = document.querySelector(`.filter-popover input[name="${name}"][value="${value}"]`);
+    if (cb) {
+        cb.checked = false;
+        updateFilters();
+    }
+}
+
 async function loadCemeteryLots(page = 1) {
     const tbody = document.querySelector('.table tbody');
     if (!tbody) return;
@@ -306,33 +358,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        const statusFilterSelect = document.getElementById('statusFilter');
-        if (statusFilterSelect) {
-            statusFilterSelect.addEventListener('change', (e) => {
-                statusFilter = e.target.value;
-                loadCemeteryLots(1);
-            });
-        }
-
-        const sectionFilterSelect = document.getElementById('sectionFilter');
-        if (sectionFilterSelect) {
-            sectionFilterSelect.addEventListener('change', (e) => {
-                sectionFilter = e.target.value;
-                loadCemeteryLots(1);
-            });
-        }
-
-        const blockFilterSelect = document.getElementById('blockFilter');
-        if (blockFilterSelect) {
-            blockFilterSelect.addEventListener('change', (e) => {
-                blockFilter = e.target.value;
-                loadCemeteryLots(1);
+        const filterBtn = document.getElementById('filterBtn');
+        const filterPopover = document.getElementById('filterPopover');
+        if (filterBtn) {
+            filterBtn.addEventListener('click', () => {
+                filterPopover.classList.toggle('active');
             });
         }
     }
 });
 
 document.addEventListener('click', (e) => {
+    const filterBtn = document.getElementById('filterBtn');
+    const filterPopover = document.getElementById('filterPopover');
+    if (filterBtn && filterPopover && !filterBtn.contains(e.target) && !filterPopover.contains(e.target)) {
+        filterPopover.classList.remove('active');
+    }
+
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
     

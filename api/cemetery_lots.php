@@ -91,18 +91,36 @@ function handleGet($conn) {
                 $params = [];
                 
                 if ($status) {
-                    $whereClauses[] = "cl.status = :status";
-                    $params[':status'] = $status;
+                    $statusArray = explode(',', $status);
+                    $placeholders = [];
+                    foreach ($statusArray as $i => $s) {
+                        $placeholder = ":status_$i";
+                        $placeholders[] = $placeholder;
+                        $params[$placeholder] = trim($s);
+                    }
+                    $whereClauses[] = "cl.status IN (" . implode(',', $placeholders) . ")";
                 }
 
                 if ($section) {
-                    $whereClauses[] = "cl.section = :section";
-                    $params[':section'] = $section;
+                    $sectionArray = explode(',', $section);
+                    $placeholders = [];
+                    foreach ($sectionArray as $i => $s) {
+                        $placeholder = ":section_$i";
+                        $placeholders[] = $placeholder;
+                        $params[$placeholder] = trim($s);
+                    }
+                    $whereClauses[] = "cl.section IN (" . implode(',', $placeholders) . ")";
                 }
 
                 if ($block) {
-                    $whereClauses[] = "cl.block = :block";
-                    $params[':block'] = $block;
+                    $blockArray = explode(',', $block);
+                    $placeholders = [];
+                    foreach ($blockArray as $i => $b) {
+                        $placeholder = ":block_$i";
+                        $placeholders[] = $placeholder;
+                        $params[$placeholder] = trim($b);
+                    }
+                    $whereClauses[] = "cl.block IN (" . implode(',', $placeholders) . ")";
                 }
                 
                 if ($search) {
