@@ -729,7 +729,235 @@ function showEditModal(recordId) {
     }
 }
 
+function injectModalStyles() {
+    if (document.getElementById('modal-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'modal-styles';
+    style.textContent = `
+        .info-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: #2563eb;
+        }
+        
+        .section-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .info-item.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .info-item label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-item span {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+        
+        .remarks-content {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            line-height: 1.6;
+        }
+        
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .image-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #2563eb;
+        }
+        
+        .image-wrapper {
+            position: relative;
+            height: 150px;
+            overflow: hidden;
+        }
+        
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .image-card:hover .image-wrapper img {
+            transform: scale(1.05);
+        }
+        
+        .primary-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .image-info {
+            padding: 12px;
+        }
+        
+        .image-caption {
+            margin: 0;
+            font-size: 13px;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+        
+        .no-images {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+        
+        .no-images svg {
+            margin-bottom: 10px;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* Layer Selection Styles */
+        .layer-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .layer-option {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: white;
+        }
+        
+        .layer-option:hover {
+            border-color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .layer-option.vacant {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.05);
+        }
+        
+        .layer-option.vacant:hover {
+            border-color: #16a34a;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .layer-option.occupied {
+            border-color: #f97316;
+            background: rgba(249, 115, 22, 0.05);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .layer-option.selected {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+        
+        .layer-number {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        
+        .layer-status {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.3;
+        }
+        
+        .layer-locked {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 16px;
+            opacity: 0.6;
+        }
+        
+        .layer-option.vacant .layer-status {
+            color: #16a34a;
+            font-weight: 500;
+        }
+        
+        .layer-option.occupied .layer-status {
+            color: #ea580c;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 function createViewModal(record) {
+    injectModalStyles();
     const modal = document.createElement('div');
     modal.className = 'modal';
     
@@ -798,7 +1026,10 @@ function createViewModal(record) {
                                 <label>Section</label>
                                 <span>${record.section || 'N/A'}</span>
                             </div>
-
+                            <div class="info-item">
+                                <label>Layer</label>
+                                <span>${record.layer ? 'Layer ' + record.layer : 'N/A'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -863,7 +1094,7 @@ function createViewModal(record) {
                             <circle cx="8.5" cy="8.5" r="1.5"/>
                             <polyline points="21 15 16 10 5 21"/>
                         </svg>
-                        <h3>Grave Images</h3>
+                        <h3>Grave Photos</h3>
                         ${record.images && record.images.length > 0 ? `
                             <button class="btn-primary btn-sm" onclick="showImageGallery('${record.id}')" style="margin-left:auto;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -888,7 +1119,7 @@ function createViewModal(record) {
                             </div>
                         `).join('') : `
                             <div class="no-images">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
                                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                                     <circle cx="8.5" cy="8.5" r="1.5"/>
                                     <polyline points="21 15 16 10 5 21"/>
@@ -905,229 +1136,6 @@ function createViewModal(record) {
             </div>
         </div>
     `;
-    
-    // Add modern styles
-    const style = document.createElement('style');
-    style.textContent = `
-        .info-section {
-            background: var(--page);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--border);
-        }
-        
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            color: var(--primary);
-        }
-        
-        .section-header h3 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        
-        .info-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        
-        .info-item.full-width {
-            grid-column: 1 / -1;
-        }
-        
-        .info-item label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .info-item span {
-            font-size: 14px;
-            color: var(--text);
-            font-weight: 500;
-        }
-        
-        .remarks-content {
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            line-height: 1.6;
-        }
-        
-        .images-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        .image-card {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-        }
-        
-        .image-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            border-color: var(--primary);
-        }
-        
-        .image-wrapper {
-            position: relative;
-            height: 150px;
-            overflow: hidden;
-        }
-        
-        .image-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        
-        .image-card:hover .image-wrapper img {
-            transform: scale(1.05);
-        }
-        
-        .primary-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: var(--primary);
-            color: white;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .image-info {
-            padding: 12px;
-        }
-        
-        .image-caption {
-            margin: 0;
-            font-size: 13px;
-            color: var(--text);
-            line-height: 1.4;
-        }
-        
-        .no-images {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 40px;
-            color: var(--muted);
-        }
-        
-        .no-images svg {
-            margin-bottom: 10px;
-        }
-        
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        /* Layer Selection Styles */
-        .layer-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-            margin-top: 8px;
-        }
-        
-        .layer-option {
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            background: white;
-        }
-        
-        .layer-option:hover {
-            border-color: var(--primary);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
-        .layer-option.vacant {
-            border-color: #22c55e;
-            background: rgba(34, 197, 94, 0.05);
-        }
-        
-        .layer-option.vacant:hover {
-            border-color: #16a34a;
-            background: rgba(34, 197, 94, 0.1);
-        }
-        
-        .layer-option.occupied {
-            border-color: #f97316;
-            background: rgba(249, 115, 22, 0.05);
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        
-        .layer-option.selected {
-            border-color: var(--primary);
-            background: rgba(47, 109, 246, 0.1);
-            box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.2);
-        }
-        
-        .layer-number {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text);
-            margin-bottom: 4px;
-        }
-        
-        .layer-status {
-            font-size: 12px;
-            color: var(--muted);
-            line-height: 1.3;
-        }
-        
-        .layer-locked {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            font-size: 16px;
-            opacity: 0.6;
-        }
-        
-        .layer-option.vacant .layer-status {
-            color: #16a34a;
-            font-weight: 500;
-        }
-        
-        .layer-option.occupied .layer-status {
-            color: #ea580c;
-        }
-    `;
-    document.head.appendChild(style);
 
     modal.querySelector('.modal-close').onclick = () => closeModal(modal);
     modal.querySelectorAll('.modal-close').forEach(btn => {
@@ -1139,106 +1147,163 @@ function createViewModal(record) {
 }
 
 function createRecordModal(record = null) {
+    injectModalStyles();
     const isEdit = record !== null;
     
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
-        <div class="modal-content" style="max-width:700px;">
+        <div class="modal-content" style="max-width:850px;">
             <div class="modal-header">
                 <h2>${isEdit ? 'Edit Burial Record' : 'Add New Burial Record'}</h2>
                 <button class="modal-close">&times;</button>
             </div>
             <form id="recordForm" class="modal-body">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label>Full Name *</label>
-                        <input type="text" name="full_name" value="${record?.full_name || ''}" required>
+                <!-- Personal Information Section -->
+                <div class="info-section" style="margin-bottom: 25px;">
+                    <div class="section-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <h3>Personal Information</h3>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>Cemetery Lot</label>
-                        <select name="lot_id">
-                            <option value="">Unassigned</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group" id="layerSelectionGroup" style="display: none;">
-                        <label>Burial Layer</label>
-                        <select name="layer" id="selectedLayer">
-                            <option value="">Select a layer...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Age</label>
-                        <input type="number" name="age" value="${record?.age || ''}" min="0">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Date of Birth</label>
-                        <input type="date" name="date_of_birth" value="${record?.date_of_birth || ''}">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Date of Death</label>
-                        <input type="date" name="date_of_death" value="${record?.date_of_death || ''}">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Date of Burial</label>
-                        <input type="date" name="date_of_burial" value="${record?.date_of_burial || ''}">
-                    </div>
-                    
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label>Cause of Death</label>
-                        <input type="text" name="cause_of_death" value="${record?.cause_of_death || ''}">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Next of Kin</label>
-                        <input type="text" name="next_of_kin" value="${record?.next_of_kin || ''}">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Next of Kin Contact</label>
-                        <input type="text" name="next_of_kin_contact" value="${record?.next_of_kin_contact || ''}">
-                    </div>
-                    
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label>Notes</label>
-                        <textarea name="deceased_info" placeholder="Enter brief info/notes about the deceased person (e.g., 'Farewell notes')">${record?.deceased_info || ''}</textarea>
-                    </div>
-                    
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label>Relationship</label>
-                        <textarea name="remarks" placeholder="Enter relationship to others in this lot (e.g., 'Juan moved with Martinez')">${record?.remarks || ''}</textarea>
-                    </div>
-                    
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label>Grave Images</label>
-                        <div id="existingImagesContainer" style="margin-bottom:15px;">
-                            <!-- Existing images will be loaded here -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Full Name *</label>
+                            <input type="text" name="full_name" value="${record?.full_name || ''}" required placeholder="e.g. John Doe">
                         </div>
-                        <div id="imageUploadArea" style="border:2px dashed var(--border); border-radius:8px; padding:20px; text-align:center; margin-bottom:15px;">
-                            <input type="file" id="imageInput" accept="image/*" multiple style="display:none;">
-                            <div id="uploadPrompt">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                    <polyline points="17 8 12 3 7 8"/>
-                                    <line x1="12" y1="3" x2="12" y2="15"/>
-                                </svg>
-                                <p style="margin:10px 0 5px; color:var(--muted);">Click to upload images or drag and drop</p>
-                                <p style="margin:0; font-size:12px; color:var(--muted);">JPEG, PNG, GIF, WebP (max 10MB)</p>
-                            </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" name="date_of_birth" value="${record?.date_of_birth || ''}">
                         </div>
-                        <div id="imagePreviewContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:10px;"></div>
+                        <div class="form-group">
+                            <label>Date of Death</label>
+                            <input type="date" name="date_of_death" value="${record?.date_of_death || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="number" name="age" value="${record?.age || ''}" min="0" placeholder="e.g. 75">
+                        </div>
+                        <div class="form-group">
+                            <label>Cause of Death</label>
+                            <input type="text" name="cause_of_death" value="${record?.cause_of_death || ''}" placeholder="e.g. Natural Causes">
+                        </div>
                     </div>
+                </div>
+
+                <!-- Burial & Lot Information -->
+                <div class="info-section" style="margin-bottom: 25px;">
+                    <div class="section-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <h3>Burial & Location Information</h3>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="form-group">
+                            <label>Date of Burial</label>
+                            <input type="date" name="date_of_burial" value="${record?.date_of_burial || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Cemetery Lot</label>
+                            <select name="lot_id">
+                                <option value="">Unassigned</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="layerSelectionGroup" style="display: none; grid-column: 1 / -1;">
+                            <label>Burial Layer *</label>
+                            <select name="layer" id="selectedLayer">
+                                <option value="">Select a layer...</option>
+                            </select>
+                            <p style="font-size:11px; color:#64748b; margin-top:4px;">Multi-layer lots require a layer assignment.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next of Kin Section -->
+                <div class="info-section" style="margin-bottom: 25px;">
+                    <div class="section-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="8.5" cy="7" r="4"/>
+                            <line x1="20" y1="8" x2="20" y2="14"/>
+                            <line x1="23" y1="11" x2="17" y2="11"/>
+                        </svg>
+                        <h3>Next of Kin Information</h3>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="form-group">
+                            <label>Next of Kin Name</label>
+                            <input type="text" name="next_of_kin" value="${record?.next_of_kin || ''}" placeholder="Contact Person Name">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number / Address</label>
+                            <input type="text" name="next_of_kin_contact" value="${record?.next_of_kin_contact || ''}" placeholder="Phone or Email">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes & Relationship Section -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:25px; margin-bottom:25px;">
+                    <div class="info-section">
+                        <div class="section-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            <h3>Farewell Notes</h3>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <textarea name="deceased_info" style="min-height:100px;" placeholder="Brief info about the deceased person...">${record?.deceased_info || ''}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="section-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-3-3.87M9 21v-2a4 4 0 0 1 3-3.87M12 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>
+                            </svg>
+                            <h3>Relationship Context</h3>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <textarea name="remarks" style="min-height:100px;" placeholder="Relationship to others in this lot (e.g., 'Spouse of...')">${record?.remarks || ''}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Upload Section -->
+                <div class="info-section">
+                    <div class="section-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <h3>Grave Photos</h3>
+                    </div>
+                    <div id="existingImagesContainer" style="margin-bottom:15px;">
+                        <!-- Existing images will be loaded here -->
+                    </div>
+                    <div id="imageUploadArea" style="border:2px dashed #e2e8f0; border-radius:12px; padding:30px; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+                        <input type="file" id="imageInput" accept="image/*" multiple style="display:none;">
+                        <div id="uploadPrompt">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="margin-bottom:12px;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <p style="margin:0; font-weight:600; color:#1e293b;">Click or Drag images to upload</p>
+                            <p style="margin:4px 0 0; font-size:12px; color:#64748b;">JPEG, PNG, GIF, WebP (max 10MB)</p>
+                        </div>
+                    </div>
+                    <div id="imagePreviewContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:12px; margin-top:15px;"></div>
                 </div>
             </form>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary modal-cancel">Cancel</button>
-                <button type="submit" form="recordForm" class="btn-primary">${isEdit ? 'Update' : 'Create'}</button>
+                <button type="submit" form="recordForm" class="btn-primary">${isEdit ? 'Update Record' : 'Create Record'}</button>
             </div>
         </div>
     `;
@@ -1328,19 +1393,19 @@ function createRecordModal(record = null) {
     // Drag and drop
     imageUploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
-        imageUploadArea.style.borderColor = 'var(--primary)';
-        imageUploadArea.style.backgroundColor = 'rgba(47, 109, 246, 0.05)';
+        imageUploadArea.style.borderColor = '#2563eb';
+        imageUploadArea.style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
     });
     
     imageUploadArea.addEventListener('dragleave', (e) => {
         e.preventDefault();
-        imageUploadArea.style.borderColor = 'var(--border)';
+        imageUploadArea.style.borderColor = '#e2e8f0';
         imageUploadArea.style.backgroundColor = 'transparent';
     });
     
     imageUploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
-        imageUploadArea.style.borderColor = 'var(--border)';
+        imageUploadArea.style.borderColor = '#e2e8f0';
         imageUploadArea.style.backgroundColor = 'transparent';
         handleFiles(e.dataTransfer.files);
     });
@@ -1374,10 +1439,10 @@ function createRecordModal(record = null) {
     
     function createImagePreview(src, filename) {
         const preview = document.createElement('div');
-        preview.style.cssText = 'position:relative; border:1px solid var(--border); border-radius:8px; overflow:hidden;';
+        preview.style.cssText = 'position:relative; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;';
         preview.innerHTML = `
             <img src="${src}" style="width:100%; height:120px; object-fit:cover;">
-            <div style="padding:8px; font-size:12px; color:var(--muted); word-break:break-all;">${filename}</div>
+            <div style="padding:8px; font-size:12px; color:#64748b; word-break:break-all;">${filename}</div>
             <button type="button" style="position:absolute; top:5px; right:5px; background:rgba(239,68,68,0.9); color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="this.parentElement.remove()">×</button>
         `;
         return preview;
@@ -1474,14 +1539,14 @@ function loadExistingImages(burialRecordId) {
         if (result.success && result.data && result.data.length > 0) {
             existingImagesContainer.innerHTML = `
                 <div style="margin-bottom:10px;">
-                    <h4 style="margin:0 0 10px; font-size:14px; color:var(--text);">Current Images (${result.data.length})</h4>
+                    <h4 style="margin:0 0 10px; font-size:14px; color:#1e293b;">Current Images (${result.data.length})</h4>
                     <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
                         ${result.data.map(img => `
-                            <div class="existing-image-item" style="position:relative; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+                            <div class="existing-image-item" style="position:relative; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
                                 <img src="../${img.image_path}" alt="${img.image_caption || 'Grave image'}" style="width:100%; height:100px; object-fit:cover;">
-                                <div style="padding:8px; font-size:11px; color:var(--muted); word-break:break-all;">${img.image_caption || 'No caption'}</div>
+                                <div style="padding:8px; font-size:11px; color:#64748b; word-break:break-all;">${img.image_caption || 'No caption'}</div>
                                 <button type="button" onclick="removeExistingImage(${img.id}, '${burialRecordId}')" style="position:absolute; top:5px; right:5px; background:rgba(239,68,68,0.9); color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px;">×</button>
-                                ${img.is_primary ? '<span style="position:absolute; top:5px; left:5px; background:var(--primary); color:white; font-size:9px; padding:2px 4px; border-radius:3px;">PRIMARY</span>' : ''}
+                                ${img.is_primary ? '<span style="position:absolute; top:5px; left:5px; background:#2563eb; color:white; font-size:9px; padding:2px 4px; border-radius:3px;">PRIMARY</span>' : ''}
                             </div>
                         `).join('')}
                     </div>

@@ -1317,13 +1317,14 @@ if ($conn) {
                 <th align="left">Position</th>
                 <th align="left">Occupant</th>
                 <th align="left">Status</th>
+                <th align="left">Layer Vacancy</th>
                 <th align="right">Actions</th>
               </tr>
             </thead>
             <tbody>
               <!-- Data will be loaded via JS -->
               <tr>
-                <td colspan="6" style="text-align:center; padding: 60px; color:#94a3b8;">
+                <td colspan="7" style="text-align:center; padding: 60px; color:#94a3b8;">
                   <div class="loading-spinner" style="display: inline-block; width: 24px; height: 24px; border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #fbbf24; animation: spin 1s ease-in-out infinite;"></div>
                   <div style="margin-top: 12px; font-size: 13px;">Loading data...</div>
                 </td>

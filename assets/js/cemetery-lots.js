@@ -83,7 +83,7 @@ async function loadCemeteryLots(page = 1) {
     // Show loading state
     tbody.innerHTML = `
         <tr>
-            <td colspan="6" style="text-align:center; padding: 40px; color:#6b7280;">
+            <td colspan="7" style="text-align:center; padding: 40px; color:#6b7280;">
                 <div class="loading-spinner" style="display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
                 <div style="margin-top: 10px;">Loading cemetery lots...</div>
             </td>
@@ -99,11 +99,11 @@ async function loadCemeteryLots(page = 1) {
             renderLots(result.data);
             renderPagination(result.pagination);
         } else {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ef4444;">Failed to load cemetery lots</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#ef4444;">Failed to load cemetery lots</td></tr>';
         }
     } catch (error) {
         console.error('Error loading lots:', error);
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ef4444;">Error loading data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#ef4444;">Error loading data</td></tr>';
     }
 }
 
@@ -154,13 +154,17 @@ function renderLots(lots) {
 
     if (lots.length === 0) {
         const msg = searchQuery ? 'No matching lots found' : 'No cemetery lots found';
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 60px; color:#94a3b8;">${msg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 60px; color:#94a3b8;">${msg}</td></tr>`;
         return;
     }
 
     tbody.innerHTML = lots.map(lot => {
         const statusClass = lot.status.toLowerCase();
         const badgeClass = statusClass === 'occupied' ? 'active' : statusClass;
+        
+        const total = parseInt(lot.total_layers_count) || 1;
+        const occupied = parseInt(lot.occupied_layers_count) || 0;
+        const available = total - occupied;
         
         return `
         <tr data-lot-id="${lot.id}">
@@ -181,6 +185,14 @@ function renderLots(lots) {
                 ${lot.deceased_name || 'Unassigned'}
             </td>
             <td><span class="status-badge ${badgeClass}">${lot.status}</span></td>
+            <td>
+                <div style="font-size: 13px; font-weight: 600; color: #475569;">
+                    ${available} / ${total} layers
+                </div>
+                <div style="font-size: 11px; color: #94a3b8;">
+                    ${available > 0 ? 'Vacant' : 'Fully Occupied'}
+                </div>
+            </td>
             <td>
                 <div class="actions">
                     ${(lot.occupied_layers_count < lot.total_layers_count || !lot.deceased_name) ? `
@@ -904,6 +916,15 @@ async function showAssignBurialModal(lotId) {
                         ${vacantLayers.length === 0 ? '<option value="" disabled selected>No vacant layers available</option>' : ''}
                     </select>
                     ${vacantLayers.length === 0 ? '<p style="color: #ef4444; font-size: 12px; margin-top: 4px;">This lot has no available space.</p>' : ''}
+                </div>
+
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">Don't see the record? Create a new one for this lot:</p>
+                    <button type="button" class="btn-outline" style="margin: 0 auto; width: auto; padding: 10px 20px;" 
+                            onclick="window.location.href='burial-records.php?lot_id=${lot.id}&layer=' + document.getElementById('layerSelect').value">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 8px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Create New Burial Record
+                    </button>
                 </div>
             </div>
             <div class="modal-footer">

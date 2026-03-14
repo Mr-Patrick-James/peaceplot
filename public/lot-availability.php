@@ -61,9 +61,11 @@ if ($conn) {
         $totalPages = ceil($totalItems / $itemsPerPage);
 
         // Get filtered and paginated lots
-        $query = "SELECT cl.*, GROUP_CONCAT(dr.full_name, ', ') as deceased_name 
+        $query = "SELECT cl.*, 
+                         (SELECT GROUP_CONCAT(full_name, ', ') FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC)) as deceased_name,
+                         (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers_count,
+                         (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers_count
                   FROM cemetery_lots cl 
-                  LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
                   WHERE cl.status = :status";
         
         if ($filterSection) {
@@ -244,6 +246,7 @@ if ($conn) {
                 <th align="left">Block</th>
                 <th align="left">Position</th>
                 <th align="left">Status</th>
+                <th align="left">Layer Vacancy</th>
                 <?php if ($filterStatus === 'Occupied'): ?>
                   <th align="left">Deceased Name</th>
                 <?php endif; ?>
@@ -253,7 +256,7 @@ if ($conn) {
             <tbody>
               <?php if (empty($filteredLots)): ?>
                 <tr>
-                  <td colspan="<?php echo $filterStatus === 'Occupied' ? '8' : '7'; ?>" style="text-align:center; color:#6b7280;">
+                  <td colspan="<?php echo $filterStatus === 'Occupied' ? '9' : '8'; ?>" style="text-align:center; color:#6b7280;">
                     No <?php echo strtolower($filterStatus); ?> lots found
                   </td>
                 </tr>
@@ -265,6 +268,14 @@ if ($conn) {
                     <td><?php echo htmlspecialchars($lot['block'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></td>
                     <td><span class="badge <?php echo strtolower($lot['status']); ?>"><?php echo htmlspecialchars($lot['status']); ?></span></td>
+                    <td>
+                      <?php 
+                        $total = intval($lot['total_layers_count'] ?: 1);
+                        $occupied = intval($lot['occupied_layers_count'] ?: 0);
+                        $available = $total - $occupied;
+                        echo "$available / $total layers";
+                      ?>
+                    </td>
                     <?php if ($filterStatus === 'Occupied'): ?>
                       <td><?php echo htmlspecialchars($lot['deceased_name'] ?: '—'); ?></td>
                     <?php endif; ?>
