@@ -29,6 +29,12 @@ if ($conn) {
             SELECT cl.*, 
                    (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
                    (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
+                   COUNT(DISTINCT dr.id) as burial_count,
+                   CASE 
+                       WHEN COUNT(DISTINCT dr.id) > 0 THEN 'Occupied'
+                       WHEN EXISTS (SELECT 1 FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) THEN 'Occupied'
+                       ELSE cl.status
+                   END as actual_status,
                    dr.full_name as deceased_name 
             FROM cemetery_lots cl 
             LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
@@ -204,8 +210,38 @@ if ($conn) {
     }
     
     .lot-rectangle.maintenance {
-      border-color: #64748b;
-      background: rgba(100, 116, 139, 0.4);
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.4);
+    }
+    
+    .hidden-marker {
+      display: none !important;
+    }
+    
+    .highlighted-marker {
+      z-index: 1000 !important;
+      border-width: calc(3px + 3px / var(--current-zoom, 1)) !important;
+      border-color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.3) !important;
+      box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 20px rgba(239, 68, 68, 0.8) !important;
+    }
+    
+    .highlighted-marker::after {
+      content: '📍';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      font-size: calc(14px + 14px / var(--current-zoom, 1));
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      animation: pinBounce 2s infinite;
+      pointer-events: none;
+      z-index: 1010;
+    }
+    
+    @keyframes pinBounce {
+      0%, 100% { transform: translate(-50%, -100%); }
+      50% { transform: translate(-50%, -120%); }
     }
     
     .lot-label {
@@ -386,6 +422,80 @@ if ($conn) {
       margin-right: 20px;
       font-weight: 500;
       cursor: pointer;
+    }
+
+    /* Notification Styles */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      min-width: 240px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      transform: translateX(120%);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success { background: #22c55e; } /* Vibrant Green */
+    .notification.error { background: #ef4444; }
+    .notification.warning { background: #f59e0b; }
+    .notification.info { background: #3b82f6; }
+
+    .notification-icon {
+      font-size: 16px;
+      background: rgba(255,255,255,0.25);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .notification-content {
+      flex-grow: 1;
+    }
+
+    .notification-title {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .notification-message {
+      font-size: 14px;
+      line-height: 1.4;
+      opacity: 0.95;
+    }
+
+    .notification-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 0 0 10px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .notification-close:hover {
+      opacity: 1;
     }
   </style>
 </head>
@@ -596,11 +706,41 @@ if ($conn) {
     let currentRect = null;
     let rectangles = [];
     let pendingRect = null;
+    let isAnimating = false;
 
     const mapWrapper = document.getElementById('mapWrapper');
     const mapCanvas = document.getElementById('mapCanvas');
     const mapImage = document.getElementById('mapImage');
     const rectanglesContainer = document.getElementById('rectanglesContainer');
+
+    // State persistence functions
+    function saveMapState() {
+      if (isAnimating) return;
+      const state = {
+        zoom: zoom,
+        panX: panX,
+        panY: panY,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('map_editor_state', JSON.stringify(state));
+    }
+
+    function loadMapState() {
+      const saved = sessionStorage.getItem('map_editor_state');
+      if (!saved) return null;
+      
+      try {
+        const state = JSON.parse(saved);
+        // Expire state after 30 minutes of inactivity
+        if (Date.now() - state.timestamp > 30 * 60 * 1000) {
+          sessionStorage.removeItem('map_editor_state');
+          return null;
+        }
+        return state;
+      } catch (e) {
+        return null;
+      }
+    }
 
     // Load existing rectangles from lots
     lotsData.forEach(lot => {
@@ -616,22 +756,37 @@ if ($conn) {
         const imgWidth = mapImage.naturalWidth;
         const imgHeight = mapImage.naturalHeight;
 
-        // Calculate zoom to fit width or height (whichever is smaller)
-        // Or set a fixed initial zoom for large images
-        if (imgWidth > 3000 || imgHeight > 3000) {
-            zoom = 0.2; // Start zoomed out for large maps
+        const urlParams = new URLSearchParams(window.location.search);
+        const highlightLotId = urlParams.get('highlight_lot');
+        const savedState = loadMapState();
+
+        if (highlightLotId) {
+            // If highlighting, let highlightLotOnMap handle it
+            zoom = 1;
+            panX = 0;
+            panY = 0;
+        } else if (savedState) {
+            zoom = savedState.zoom;
+            panX = savedState.panX;
+            panY = savedState.panY;
         } else {
-            const scaleX = containerWidth / imgWidth;
-            const scaleY = containerHeight / imgHeight;
-            zoom = Math.min(scaleX, scaleY, 1);
+            // Calculate zoom to fit width or height (whichever is smaller)
+            // Or set a fixed initial zoom for large images
+            if (imgWidth > 3000 || imgHeight > 3000) {
+                zoom = 0.2; // Start zoomed out for large maps
+            } else {
+                const scaleX = containerWidth / imgWidth;
+                const scaleY = containerHeight / imgHeight;
+                zoom = Math.min(scaleX, scaleY, 1);
+            }
+
+            // Center the map
+            const displayedWidth = imgWidth * zoom;
+            const displayedHeight = imgHeight * zoom;
+
+            panX = (containerWidth - displayedWidth) / 2;
+            panY = (containerHeight - displayedHeight) / 2;
         }
-
-        // Center the map
-        const displayedWidth = imgWidth * zoom;
-        const displayedHeight = imgHeight * zoom;
-
-        panX = (containerWidth - displayedWidth) / 2;
-        panY = (containerHeight - displayedHeight) / 2;
 
         updateTransform();
     };
@@ -639,6 +794,11 @@ if ($conn) {
     if (mapImage.complete) {
         mapImage.onload();
     }
+
+    // Check for highlight lot on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(highlightLotOnMap, 500);
+    });
 
     function setTool(tool) {
       currentTool = tool;
@@ -677,10 +837,79 @@ if ($conn) {
       updateTransform();
     }
 
+    /**
+     * Programmatically zoom to a specific percentage coordinate
+     */
+    function zoomToPoint(percentX, percentY, targetZoom = 1.8) {
+      const containerWidth = mapWrapper.clientWidth;
+      const containerHeight = mapWrapper.clientHeight;
+      const imgWidth = mapImage.naturalWidth;
+      const imgHeight = mapImage.naturalHeight;
+
+      // Target position in pixels on natural image
+      const targetPxX = (percentX / 100) * imgWidth;
+      const targetPxY = (percentY / 100) * imgHeight;
+
+      // Center it: targetPxX * targetZoom + panX = containerWidth / 2
+      panX = (containerWidth / 2) - (targetPxX * targetZoom);
+      panY = (containerHeight / 2) - (targetPxY * targetZoom);
+      zoom = targetZoom;
+
+      updateTransform();
+    }
+
+    function highlightLotOnMap() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const highlightLotId = urlParams.get('highlight_lot');
+      
+      if (!highlightLotId) return;
+
+      const lotRects = document.querySelectorAll('.lot-rectangle');
+      let targetRect = null;
+      
+      lotRects.forEach(rect => {
+        if (rect.getAttribute('data-lot-id') === highlightLotId) {
+          targetRect = rect;
+          rect.classList.add('highlighted-marker');
+        } else {
+          rect.classList.add('hidden-marker');
+        }
+      });
+      
+      if (targetRect) {
+        // Position relative to map canvas using percentages
+        const lotX = parseFloat(targetRect.style.left);
+        const lotY = parseFloat(targetRect.style.top);
+        const lotW = parseFloat(targetRect.style.width);
+        const lotH = parseFloat(targetRect.style.height);
+        
+        // Smoothly zoom to the lot
+        setTimeout(() => {
+          const centerX = lotX + (lotW / 2);
+          const centerY = lotY + (lotH / 2);
+          zoomToPoint(centerX, centerY, 2.5);
+        }, 300);
+
+        // Add clear highlight button
+        const toolbar = document.querySelector('.editor-toolbar');
+        if (toolbar && !document.getElementById('clearHighlightBtn')) {
+           const clearBtn = document.createElement('button');
+           clearBtn.id = 'clearHighlightBtn';
+           clearBtn.className = 'tool-btn';
+           clearBtn.style.background = '#6b7280';
+           clearBtn.style.color = 'white';
+           clearBtn.innerHTML = '✕ Clear Highlight';
+           clearBtn.onclick = () => window.location.href = 'map-editor.php';
+           toolbar.appendChild(clearBtn);
+        }
+      }
+    }
+
     function updateTransform() {
       mapCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
       document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
       mapWrapper.style.setProperty('--current-zoom', zoom);
+      saveMapState();
     }
 
     mapWrapper.addEventListener('wheel', (e) => {
@@ -775,7 +1004,9 @@ if ($conn) {
 
     function addRectangle(x, y, width, height, lotData) {
       const rect = document.createElement('div');
-      rect.className = 'lot-rectangle ' + lotData.status.toLowerCase();
+      const statusClass = (lotData.actual_status || lotData.status || 'vacant').toLowerCase();
+      rect.className = 'lot-rectangle ' + statusClass;
+      rect.setAttribute('data-lot-id', lotData.id);
       rect.style.left = x + '%';
       rect.style.top = y + '%';
       rect.style.width = width + '%';
@@ -898,6 +1129,56 @@ if ($conn) {
       }
     }
 
+    // Notification System
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      
+      const iconMap = {
+        success: '✓',
+        error: '✕',
+        warning: '!',
+        info: 'i'
+      };
+
+      const titleMap = {
+        success: 'Success',
+        error: 'Error',
+        warning: 'Warning',
+        info: 'Info'
+      };
+
+      notification.innerHTML = `
+        <div class="notification-icon">${iconMap[type]}</div>
+        <div class="notification-content">
+          <div class="notification-title">${titleMap[type]}</div>
+          <div class="notification-message">${message}</div>
+        </div>
+        ${type === 'error' ? '<button class="notification-close" onclick="this.parentElement.remove()">&times;</button>' : ''}
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Trigger animation
+      setTimeout(() => notification.classList.add('show'), 10);
+
+      // Auto-remove unless it's an error
+      if (type !== 'error') {
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => notification.remove(), 400);
+        }, 4000);
+      } else {
+        // Errors stay longer (10s) or until closed
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 400);
+          }
+        }, 10000);
+      }
+    }
+
     async function updateLotCoordinates(lotId, coordinates) {
       try {
         const response = await fetch('../api/save_map_coordinates.php', {
@@ -926,7 +1207,7 @@ if ($conn) {
 
     async function assignLot() {
       if (!pendingRect) {
-        alert('No rectangle to assign');
+        showNotification('No rectangle to assign', 'warning');
         return;
       }
 
@@ -939,7 +1220,7 @@ if ($conn) {
         lotId = select.value;
         
         if (!lotId) {
-          alert('Please select a lot');
+          showNotification('Please select a lot', 'warning');
           return;
         }
         
@@ -954,7 +1235,7 @@ if ($conn) {
         const status = document.getElementById('newStatus').value;
 
         if (!lotNumber || !section || !block) {
-          alert('Please fill in required fields (Lot Number, Section, and Block)');
+          showNotification('Please fill in required fields (Lot Number, Section, and Block)', 'warning');
           return;
         }
 
@@ -977,11 +1258,11 @@ if ($conn) {
               
               // We need to refresh the page or dynamically find the ID if it's not in the dropdown
               // For now, let's just alert them to select it from the list
-              alert("Please select '" + lotNumber + "' from the 'Assign Existing Lot' dropdown.");
+              showNotification("Please select '" + lotNumber + "' from the dropdown.", 'info');
               return;
             }
           } else {
-            alert('Failed to create lot: ' + createResult.message);
+            showNotification('Failed to create lot: ' + createResult.message, 'error');
           }
           return;
         }
@@ -999,7 +1280,7 @@ if ($conn) {
       // Update coordinates
       const updateResult = await updateLotCoordinates(lotId, pendingRect);
       if (!updateResult.success) {
-        alert('Failed to save coordinates: ' + updateResult.message);
+        showNotification('Failed to save coordinates: ' + updateResult.message, 'error');
         return;
       }
 
@@ -1017,7 +1298,7 @@ if ($conn) {
       lotsData.push(lotData);
 
       closeAssignModal();
-      alert(mode === 'existing' ? 'Lot assigned successfully!' : 'New lot created and assigned successfully!');
+      showNotification(mode === 'existing' ? 'Lot assigned successfully!' : 'New lot created and assigned successfully!', 'success');
       // window.location.reload(); // Refresh to update selection dropdown
     }
 
@@ -1039,12 +1320,12 @@ if ($conn) {
         
         const result = await response.json();
         if (result.success) {
-          if (!silent) alert('All lot positions saved successfully!');
+          if (!silent) showNotification('All lot positions saved successfully!', 'success');
         } else {
-          alert('Error saving: ' + result.message);
+          showNotification('Error saving: ' + result.message, 'error');
         }
       } catch (error) {
-        alert('Error: ' + error.message);
+        showNotification('Error: ' + error.message, 'error');
       }
     }
 
@@ -1091,11 +1372,12 @@ if ($conn) {
           select.innerHTML = '';
           options.forEach(opt => select.appendChild(opt));
           
+          showNotification('Mark removed successfully', 'success');
         } else {
-          alert('Error removing mark: ' + result.message);
+          showNotification('Error removing mark: ' + result.message, 'error');
         }
       } catch (error) {
-        alert('Error removing mark: ' + error.message);
+        showNotification('Error removing mark: ' + error.message, 'error');
       }
     }
   </script>

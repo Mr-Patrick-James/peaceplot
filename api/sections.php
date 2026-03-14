@@ -35,7 +35,11 @@ if ($method === 'GET') {
         echo json_encode(['id' => $db->lastInsertId(), 'message' => 'Section created successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
+        $error = $e->getMessage();
+        if (strpos($error, 'UNIQUE constraint failed: sections.name') !== false) {
+            $error = "Section '" . $data['name'] . "' already exists.";
+        }
+        echo json_encode(['error' => $error]);
     }
 } elseif ($method === 'PUT') {
     $data = json_decode(file_get_contents('php://input'), true);
@@ -52,7 +56,11 @@ if ($method === 'GET') {
         echo json_encode(['message' => 'Section updated successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
+        $error = $e->getMessage();
+        if (strpos($error, 'UNIQUE constraint failed: sections.name') !== false) {
+            $error = "Section '" . $data['name'] . "' already exists.";
+        }
+        echo json_encode(['error' => $error]);
     }
 } elseif ($method === 'DELETE') {
     $id = $_GET['id'] ?? null;

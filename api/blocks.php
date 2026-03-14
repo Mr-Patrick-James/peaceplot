@@ -40,7 +40,11 @@ if ($method === 'GET') {
         echo json_encode(['success' => true, 'id' => $lastId, 'message' => 'Block created successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        $message = $e->getMessage();
+        if (strpos($message, 'UNIQUE constraint failed: blocks.name') !== false) {
+            $message = "Block '" . $data['name'] . "' already exists.";
+        }
+        echo json_encode(['success' => false, 'message' => $message]);
     }
 } elseif ($method === 'PUT') {
     $data = json_decode(file_get_contents('php://input'), true);
@@ -60,7 +64,11 @@ if ($method === 'GET') {
         echo json_encode(['success' => true, 'message' => 'Block updated successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        $message = $e->getMessage();
+        if (strpos($message, 'UNIQUE constraint failed: blocks.name') !== false) {
+            $message = "Block '" . $data['name'] . "' already exists.";
+        }
+        echo json_encode(['success' => false, 'message' => $message]);
     }
 } elseif ($method === 'DELETE') {
     $id = $_GET['id'] ?? null;

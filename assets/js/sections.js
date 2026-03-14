@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTitle.innerText = 'Add New Section';
         sectionId.value = '';
         form.reset();
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
     };
 
     // Open Modal for Edit
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sectionId.value = section.id;
         nameInput.value = section.name;
         descInput.value = section.description;
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
     };
 
     // Close Modal
@@ -35,6 +35,56 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
         }
     };
+
+    // Notification System
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const iconMap = {
+            success: '✓',
+            error: '✕',
+            warning: '!',
+            info: 'i'
+        };
+
+        const titleMap = {
+            success: 'Success',
+            error: 'Error',
+            warning: 'Warning',
+            info: 'Info'
+        };
+
+        notification.innerHTML = `
+            <div class="notification-icon">${iconMap[type]}</div>
+            <div class="notification-content">
+                <div class="notification-title">${titleMap[type]}</div>
+                <div class="notification-message">${message}</div>
+            </div>
+            ${type === 'error' ? '<button class="notification-close" onclick="this.parentElement.remove()">&times;</button>' : ''}
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Trigger animation
+        setTimeout(() => notification.classList.add('show'), 10);
+
+        // Auto-remove unless it's an error
+        if (type !== 'error') {
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 400);
+            }, 4000);
+        } else {
+            // Errors stay longer (10s) or until closed
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 400);
+                }
+            }, 10000);
+        }
+    }
 
     // Form Submission
     form.addEventListener('submit', async (e) => {
@@ -58,14 +108,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                location.reload(); // Simple refresh to show changes
+                closeModal();
+                showNotification(sectionId.value ? 'Section updated successfully!' : 'Section added successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             } else {
                 const result = await response.json();
-                alert(result.error || 'Something went wrong');
+                showNotification(result.error || 'Something went wrong', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showNotification('An error occurred. Please try again.', 'error');
         }
     });
 
@@ -79,14 +133,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                location.reload();
+                showNotification('Section deleted successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             } else {
                 const result = await response.json();
-                alert(result.error || 'Something went wrong');
+                showNotification(result.error || 'Something went wrong', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showNotification('An error occurred. Please try again.', 'error');
         }
     };
 });
