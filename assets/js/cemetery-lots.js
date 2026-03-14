@@ -178,22 +178,25 @@ function renderLots(lots) {
                     ` : ''}
                     <button class="btn-action btn-edit" data-action="edit" data-lot-id="${lot.id}" title="Edit Lot">
                         <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 20h9" />
                                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                             </svg>
                         </span>
                     </button>
-                    ${(lot.map_x !== null && lot.map_y !== null) ? `
-                    <button class="btn-action btn-map" data-action="map" data-lot-id="${lot.id}" data-lot-number="${lot.lot_number}" title="View on Map">
+                    <button class="btn-action btn-map ${ (lot.map_x === null || lot.map_y === null) ? 'unassigned' : '' }" 
+                            data-action="map" 
+                            data-lot-id="${lot.id}" 
+                            data-lot-number="${lot.lot_number}" 
+                            data-assigned="${lot.map_x !== null && lot.map_y !== null}"
+                            title="${ (lot.map_x === null || lot.map_y === null) ? 'Not assigned on map - Click to assign' : 'View on Map' }">
                         <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                                 <circle cx="12" cy="10" r="3" />
                             </svg>
                         </span>
                     </button>
-                    ` : ''}
                     <button class="btn-action btn-delete" data-action="delete" data-lot-id="${lot.id}" title="Delete Lot">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -336,9 +339,69 @@ function closeModal(modal) {
     modal.remove();
 }
 
-function handleMapRedirect(lotId, lotNumber) {
-    // Redirect to cemetery map page with highlighted lot parameter
-    window.location.href = `cemetery-map.php?highlight_lot=${lotId}`;
+async function handleMapRedirect(lotId, lotNumber, isAssigned) {
+    if (isAssigned === 'true') {
+        // Redirect to cemetery map page with highlighted lot parameter
+        window.location.href = `cemetery-map.php?highlight_lot=${lotId}`;
+    } else {
+        // If not assigned, ask user if they want to assign it in the map editor
+        const confirmed = await showMapAssignModal(lotNumber);
+        if (confirmed) {
+            // Redirect to map editor with the lot ID to assign
+            window.location.href = `map-editor.php?assign_lot=${lotId}`;
+        }
+    }
+}
+
+function showMapAssignModal(lotNumber) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.zIndex = '3000';
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 450px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+                <div class="modal-header" style="background: #fff; border-bottom: 1px solid #f1f5f9; padding: 24px 32px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: #eff6ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #3b82f6;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                        </div>
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b;">Assign to Map</h2>
+                    </div>
+                    <button class="modal-close" style="background: #f8fafc; border: none; width: 32px; height: 32px; border-radius: 8px; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 32px;">
+                    <p style="margin: 0 0 12px 0; color: #1e293b; font-size: 15px; font-weight: 600;">
+                        Lot ${lotNumber} is not yet assigned on the map.
+                    </p>
+                    <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                        Would you like to open the Map Editor to assign its location now?
+                    </p>
+                </div>
+                <div class="modal-footer" style="background: #f8fafc; padding: 20px 32px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #f1f5f9;">
+                    <button type="button" class="btn-outline modal-cancel" style="padding: 10px 20px; font-weight: 600;">Not Now</button>
+                    <button type="button" id="confirmAssignBtn" class="btn-primary" style="padding: 10px 24px; background: #3b82f6; border: none; font-weight: 600;">Open Map Editor</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+
+        const close = (val) => {
+            modal.remove();
+            resolve(val);
+        };
+
+        modal.querySelector('.modal-close').onclick = () => close(false);
+        modal.querySelector('.modal-cancel').onclick = () => close(false);
+        modal.querySelector('#confirmAssignBtn').onclick = () => close(true);
+        
+        // Close on background click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) close(false);
+        });
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -386,7 +449,7 @@ document.addEventListener('click', (e) => {
     } else if (action === 'edit' && lotId) {
         showEditModal(lotId);
     } else if (action === 'map' && lotId) {
-        handleMapRedirect(lotId, btn.getAttribute('data-lot-number'));
+        handleMapRedirect(lotId, btn.getAttribute('data-lot-number'), btn.getAttribute('data-assigned'));
     } else if (action === 'add') {
         showAddModal();
     } else if (action === 'assign-burial' && lotId) {

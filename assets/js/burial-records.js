@@ -136,14 +136,15 @@ const BurialAPI = {
         }
     },
 
-    async deleteRecord(id, action = 'archive') {
+    async deleteRecord(id, action = 'archive', reason = '') {
         try {
+            const body = Array.isArray(id) ? { ids: id, action, reason } : { id, action, reason };
             const response = await fetch(`${API_BASE_URL}/burial_records.php`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id, action })
+                body: JSON.stringify(body)
             });
             const data = await response.json();
             return data;
@@ -167,6 +168,61 @@ let sectionFilter = '';
 let blockFilter = '';
 let startDate = '';
 let endDate = '';
+
+let selectedIds = new Set();
+
+function toggleRowSelection(id, checkbox) {
+    const idStr = id.toString();
+    if (selectedIds.has(idStr)) {
+        selectedIds.delete(idStr);
+        checkbox.classList.remove('active');
+    } else {
+        selectedIds.add(idStr);
+        checkbox.classList.add('active');
+    }
+    updateBulkActionBar();
+}
+
+function clearSelection() {
+    selectedIds.clear();
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => cb.classList.remove('active'));
+    
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) selectAll.classList.remove('active');
+    
+    updateBulkActionBar();
+}
+
+function updateBulkActionBar() {
+    const bar = document.getElementById('bulkActionBar');
+    const countDisplay = document.getElementById('selectedCount');
+    const archiveBtn = document.getElementById('bulkArchiveBtn');
+    
+    if (!bar || !countDisplay) return;
+    
+    const count = selectedIds.size;
+    countDisplay.textContent = count;
+    
+    if (count > 0) {
+        bar.classList.add('active');
+    } else {
+        bar.classList.remove('active');
+    }
+
+    if (archiveBtn) {
+        archiveBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg>
+            ${showingArchived ? 'Restore Selected' : 'Archive Selected'}
+        `;
+        archiveBtn.classList.toggle('btn-bulk-remove', !showingArchived);
+        if (showingArchived) {
+            archiveBtn.style.background = '#10b981';
+        } else {
+            archiveBtn.style.background = '';
+        }
+    }
+}
 
 // Advanced Filter Control Logic
 function toggleCategory(btn) {
@@ -232,7 +288,7 @@ async function loadBurialRecords() {
 
     tbody.innerHTML = `
         <tr>
-            <td colspan="7" style="text-align:center; padding: 60px; color:#94a3b8;">
+            <td colspan="8" style="text-align:center; padding: 60px; color:#94a3b8;">
                 <div class="loading-spinner" style="display: inline-block; width: 24px; height: 24px; border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
                 <div style="margin-top: 12px; font-size: 13px;">Loading records...</div>
             </td>
@@ -249,12 +305,15 @@ async function loadBurialRecords() {
             }
             renderRecords(result.data);
             renderPagination(result.pagination);
+            
+            // Clear selections when data reloads
+            clearSelection();
         } else {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding: 40px;">Failed to load records: ${result.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding: 40px;">Failed to load records: ${result.message}</td></tr>`;
         }
     } catch (error) {
         console.error('Error loading records:', error);
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding: 40px;">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding: 40px;">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -334,19 +393,31 @@ function renderRecords(records) {
     if (records.length === 0) {
         const q = searchQuery.trim();
         const msg = q ? 'No matching records found' : 'No burial records found';
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 60px; color:#6b7280;">${msg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 60px; color:#6b7280;">${msg}</td></tr>`;
         return;
     }
 
     const html = records.map(record => {
         const deathDate = record.date_of_death ? new Date(record.date_of_death).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
         const burialDate = record.date_of_burial ? new Date(record.date_of_burial).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        const isSelected = selectedIds.has(record.id.toString());
         
         return `
         <tr data-record-id="${record.id}">
+            <td class="checkbox-cell">
+                <div class="custom-checkbox row-checkbox ${isSelected ? 'active' : ''}" data-id="${record.id}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+            </td>
             <td>
                 <div style="font-weight: 600; color: #1e293b;">${record.full_name}</div>
                 <div style="font-size: 12px; color: #94a3b8;">ID: ${record.id}</div>
+                ${showingArchived && record.archive_reason ? `
+                    <div style="margin-top: 8px; padding: 6px 10px; background: #fff1f2; border-radius: 6px; border: 1px solid #fecdd3; color: #e11d48; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        REASON: ${record.archive_reason}
+                    </div>
+                ` : ''}
             </td>
             <td>
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -413,6 +484,50 @@ function renderRecords(records) {
     tbody.innerHTML = html;
 }
 
+async function handleBulkAction() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    const action = showingArchived ? 'restore' : 'archive';
+    const actionText = showingArchived ? 'restore' : 'archive';
+    
+    let reason = '';
+    if (action === 'archive') {
+        const names = ids.map(id => {
+            const r = currentRecords.find(rec => rec.id == id);
+            return r ? r.full_name : id;
+        });
+        reason = await showArchiveModal(ids, names);
+        if (reason === null) return; // User cancelled
+    } else {
+        if (!confirm(`Are you sure you want to ${actionText} ${ids.length} selected records?`)) {
+            return;
+        }
+    }
+
+    // Show loading state on button
+    const bulkBtn = document.getElementById('bulkArchiveBtn');
+    const originalContent = bulkBtn.innerHTML;
+    bulkBtn.disabled = true;
+    bulkBtn.innerHTML = `<div class="loading-spinner" style="width:14px; height:14px; border-width:2px; border-top-color:#fff;"></div> Processing...`;
+
+    try {
+        const result = await BurialAPI.deleteRecord(ids, action, reason);
+        if (result.success) {
+            clearSelection();
+            loadBurialRecords();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Bulk action error:', error);
+        alert('An error occurred during the bulk action.');
+    } finally {
+        bulkBtn.disabled = false;
+        bulkBtn.innerHTML = originalContent;
+    }
+}
+
 async function handleDelete(recordId, action = null) {
     const record = currentRecords.find(r => r.id == recordId);
     const name = record ? record.full_name : recordId;
@@ -444,11 +559,10 @@ async function handleDelete(recordId, action = null) {
         }
     } else {
         // Standard delete (moves to archive)
-        if (!confirm(`Are you sure you want to move the burial record for ${name} to archive?`)) {
-            return;
-        }
+        const reason = await showArchiveModal([recordId], [name]);
+        if (reason === null) return; // User cancelled
 
-        const result = await BurialAPI.deleteRecord(recordId, 'archive');
+        const result = await BurialAPI.deleteRecord(recordId, 'archive', reason);
         if (result.success) {
             loadBurialRecords();
         } else {
@@ -522,6 +636,79 @@ function showViewModal(recordId) {
     const modal = createViewModal(record);
     document.body.appendChild(modal);
     modal.style.display = 'flex';
+}
+
+function showArchiveModal(ids, names) {
+    return new Promise((resolve) => {
+        const isBulk = ids.length > 1;
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.zIndex = '3000';
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 450px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+                <div class="modal-header" style="background: #fff; border-bottom: 1px solid #f1f5f9; padding: 24px 32px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: #fff1f2; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #e11d48;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </div>
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b;">Archive ${isBulk ? 'Records' : 'Record'}</h2>
+                    </div>
+                    <button class="modal-close" style="background: #f8fafc; border: none; width: 32px; height: 32px; border-radius: 8px; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 32px;">
+                    <p style="margin: 0 0 20px 0; color: #475569; font-size: 14px; line-height: 1.6;">
+                        ${isBulk ? `You are about to archive <strong>${ids.length}</strong> burial records.` : `You are about to archive the record for <strong>${names[0]}</strong>.`}
+                    </p>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Reason for Archiving *</label>
+                        <select id="archiveReasonSelect" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; margin-bottom: 12px; background: #fff;">
+                            <option value="Old record removed">Old record removed</option>
+                            <option value="Lot needs to be demolished">Lot needs to be demolished</option>
+                            <option value="Relocated to another cemetery">Relocated to another cemetery</option>
+                            <option value="Administrative error">Administrative error</option>
+                            <option value="Other">Other (Type below)</option>
+                        </select>
+                        <textarea id="archiveReasonText" placeholder="Enter custom reason..." style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; min-height: 80px; resize: none; display: none;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: #f8fafc; padding: 20px 32px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #f1f5f9;">
+                    <button type="button" class="btn-outline modal-cancel" style="padding: 10px 20px; font-weight: 600;">Cancel</button>
+                    <button type="button" id="confirmArchiveBtn" class="btn-primary" style="padding: 10px 24px; background: #e11d48; border: none; font-weight: 600;">Archive Now</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+
+        const select = modal.querySelector('#archiveReasonSelect');
+        const textarea = modal.querySelector('#archiveReasonText');
+        
+        select.addEventListener('change', (e) => {
+            textarea.style.display = e.target.value === 'Other' ? 'block' : 'none';
+            if (e.target.value === 'Other') textarea.focus();
+        });
+
+        const close = () => {
+            modal.remove();
+            resolve(null);
+        };
+
+        modal.querySelector('.modal-close').onclick = close;
+        modal.querySelector('.modal-cancel').onclick = close;
+        
+        modal.querySelector('#confirmArchiveBtn').onclick = () => {
+            let reason = select.value === 'Other' ? textarea.value.trim() : select.value;
+            if (!reason) {
+                alert('Please provide a reason for archiving.');
+                return;
+            }
+            modal.remove();
+            resolve(reason);
+        };
+    });
 }
 
 function showEditModal(recordId) {
@@ -1525,6 +1712,43 @@ document.addEventListener('click', (e) => {
     const filterPopover = document.getElementById('filterPopover');
     if (filterBtn && filterPopover && !filterBtn.contains(e.target) && !filterPopover.contains(e.target)) {
         filterPopover.classList.remove('active');
+    }
+
+    // Handle Checkboxes
+    const selectAll = e.target.closest('#selectAll');
+    if (selectAll) {
+        const isActive = selectAll.classList.toggle('active');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        rowCheckboxes.forEach(cb => {
+            const id = cb.getAttribute('data-id');
+            if (isActive) {
+                selectedIds.add(id.toString());
+                cb.classList.add('active');
+            } else {
+                selectedIds.delete(id.toString());
+                cb.classList.remove('active');
+            }
+        });
+        updateBulkActionBar();
+        return;
+    }
+
+    const rowCheckbox = e.target.closest('.row-checkbox');
+    if (rowCheckbox) {
+        const id = rowCheckbox.getAttribute('data-id');
+        toggleRowSelection(id, rowCheckbox);
+        return;
+    }
+
+    // Bulk Actions
+    if (e.target.id === 'bulkClearBtn') {
+        clearSelection();
+        return;
+    }
+
+    if (e.target.id === 'bulkArchiveBtn') {
+        handleBulkAction();
+        return;
     }
 
     const btn = e.target.closest('button[data-action]');

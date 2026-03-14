@@ -441,6 +441,19 @@ if ($conn) {
     .status-badge.vacant { background: #eff6ff; color: #3b82f6; }
     .status-badge.maintenance { background: #f1f5f9; color: #64748b; }
 
+    /* Map Button Unassigned Styling */
+    .btn-action.btn-map.unassigned {
+      background: #f8fafc;
+      color: #94a3b8;
+      border-color: #e2e8f0;
+      opacity: 0.7;
+    }
+    .btn-action.btn-map.unassigned:hover {
+      background: #f1f5f9;
+      color: #64748b;
+      opacity: 1;
+    }
+
     .pagination-footer {
       padding: 20px 32px;
       display: flex;

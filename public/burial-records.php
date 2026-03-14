@@ -337,6 +337,110 @@ if ($conn) {
     .pagination-btn:hover:not(:disabled) { background: #f8fafc; color: #3b82f6; border-color: #3b82f6; }
     .pagination-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
     .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Bulk Action Bar (Control Bar) */
+    .bulk-action-bar {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      z-index: 2000;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity: 0;
+      visibility: hidden;
+    }
+    .bulk-action-bar.active {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+    .bulk-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      padding-right: 24px;
+    }
+    .bulk-badge {
+      background: #3b82f6;
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .bulk-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .btn-bulk {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .btn-bulk-remove {
+      background: #ef4444;
+      color: #fff;
+    }
+    .btn-bulk-remove:hover { background: #dc2626; }
+    .btn-bulk-outline {
+      background: transparent;
+      border-color: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .btn-bulk-outline:hover { background: rgba(255,255,255,0.1); }
+
+    /* Custom Checkbox */
+    .checkbox-cell {
+      width: 48px;
+      padding-left: 32px !important;
+      padding-right: 0 !important;
+    }
+    .custom-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #e2e8f0;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      background: #fff;
+    }
+    .custom-checkbox.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+    }
+    .custom-checkbox svg {
+      width: 12px;
+      height: 12px;
+      color: #fff;
+      display: none;
+    }
+    .custom-checkbox.active svg {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -552,10 +656,32 @@ if ($conn) {
           <!-- Chips will be injected here -->
         </div>
 
+        <!-- Bulk Action Bar -->
+        <div class="bulk-action-bar" id="bulkActionBar">
+          <div class="bulk-info">
+            <span class="bulk-badge" id="selectedCount">0</span>
+            <span>records selected</span>
+          </div>
+          <div class="bulk-actions">
+            <button class="btn-bulk btn-bulk-remove" id="bulkArchiveBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg>
+              Archive Selected
+            </button>
+            <button class="btn-bulk btn-bulk-outline" id="bulkClearBtn">
+              Clear Selection
+            </button>
+          </div>
+        </div>
+
         <div class="table-wrap">
           <table class="table">
             <thead>
               <tr>
+                <th class="checkbox-cell">
+                  <div class="custom-checkbox" id="selectAll">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                </th>
                 <th align="left">Full Name</th>
                 <th align="left">Lot Details</th>
                 <th align="left">Layer</th>
