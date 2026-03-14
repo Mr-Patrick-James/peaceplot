@@ -1,13 +1,24 @@
 -- PeacePlot Cemetery Management System Database Schema
 -- SQLite Database
 
--- Cemetery Lots Table
-CREATE TABLE IF NOT EXISTS sections (
+-- Blocks Table
+CREATE TABLE IF NOT EXISTS blocks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Cemetery Lots Table
+CREATE TABLE IF NOT EXISTS sections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    block_id INTEGER,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS cemetery_lots (

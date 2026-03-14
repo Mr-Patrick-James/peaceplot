@@ -11,6 +11,7 @@ $database = new Database();
 $db = $database->getConnection();
 
 $sections = [];
+$all_blocks = [];
 $stats = [
     'total' => 0,
     'with_lots' => 0,
@@ -19,14 +20,9 @@ $stats = [
 
 if ($db) {
     try {
-        // Ensure table exists (simple auto-migration)
-        $db->exec("CREATE TABLE IF NOT EXISTS sections (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(100) NOT NULL UNIQUE,
-            description TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )");
+        // Fetch all blocks for the dropdown
+        $blockStmt = $db->query("SELECT id, name FROM blocks ORDER BY name ASC");
+        $all_blocks = $blockStmt->fetchAll();
 
         // Fetch stats
         $stats['total'] = $db->query("SELECT COUNT(*) FROM sections")->fetchColumn();
@@ -34,9 +30,10 @@ if ($db) {
         $stats['empty'] = max(0, $stats['total'] - $stats['with_lots']);
 
         $stmt = $db->query("
-            SELECT s.*, 
+            SELECT s.*, b.name as block_name,
                    (SELECT COUNT(*) FROM cemetery_lots WHERE section = s.name) as lot_count
             FROM sections s 
+            LEFT JOIN blocks b ON s.block_id = b.id
             ORDER BY s.name ASC
         ");
         $sections = $stmt->fetchAll();
@@ -650,6 +647,7 @@ if ($db) {
             <thead>
               <tr>
                 <th align="left">Section Details</th>
+                <th align="left">Block</th>
                 <th align="left">Description</th>
                 <th align="center">Lot Count</th>
                 <th align="left">Created At</th>
@@ -669,6 +667,13 @@ if ($db) {
                         <span class="sub">ID: #<?php echo $section['id']; ?></span>
                       </div>
                     </div>
+                  </td>
+                  <td>
+                    <?php if (!empty($section['block_name'])): ?>
+                      <span style="color: #1e293b; font-weight: 500;"><?php echo htmlspecialchars($section['block_name']); ?></span>
+                    <?php else: ?>
+                      <span style="color: #94a3b8; font-style: italic;">No Block</span>
+                    <?php endif; ?>
                   </td>
                   <td><?php echo htmlspecialchars($section['description'] ?? 'No description provided'); ?></td>
                   <td align="center">
@@ -732,6 +737,15 @@ if ($db) {
           <div class="form-group">
             <label for="name">Section Name</label>
             <input type="text" id="name" name="name" required placeholder="e.g. Garden of Peace">
+          </div>
+          <div class="form-group">
+            <label for="block_id">Block</label>
+            <select id="block_id" name="block_id" required style="width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 15px; outline: none; transition: all 0.2s; background: white;">
+              <option value="">-- Select Block --</option>
+              <?php foreach ($all_blocks as $block): ?>
+                <option value="<?php echo $block['id']; ?>"><?php echo htmlspecialchars($block['name']); ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
           <div class="form-group">
             <label for="description">Description</label>

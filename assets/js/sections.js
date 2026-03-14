@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalTitle = document.getElementById('modalTitle');
     const sectionId = document.getElementById('sectionId');
     const nameInput = document.getElementById('name');
+    const blockIdInput = document.getElementById('block_id');
     const descInput = document.getElementById('description');
 
     // Open Modal for Add
@@ -12,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTitle.innerText = 'Add New Section';
         sectionId.value = '';
         form.reset();
+        if (blockIdInput) blockIdInput.value = '';
         modal.style.display = 'flex';
     };
 
@@ -20,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTitle.innerText = 'Edit Section';
         sectionId.value = section.id;
         nameInput.value = section.name;
+        if (blockIdInput) blockIdInput.value = section.block_id || '';
         descInput.value = section.description;
         modal.style.display = 'flex';
     };
@@ -102,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = {
             id: sectionId.value,
             name: nameInput.value,
+            block_id: blockIdInput ? blockIdInput.value : null,
             description: descInput.value
         };
 

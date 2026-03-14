@@ -13,7 +13,12 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     try {
-        $stmt = $db->query("SELECT * FROM sections ORDER BY name ASC");
+        $stmt = $db->query("
+            SELECT s.*, b.name as block_name 
+            FROM sections s 
+            LEFT JOIN blocks b ON s.block_id = b.id 
+            ORDER BY s.name ASC
+        ");
         $sections = $stmt->fetchAll();
         echo json_encode($sections);
     } catch (PDOException $e) {
@@ -29,9 +34,19 @@ if ($method === 'GET') {
         exit;
     }
 
+    if (empty($data['block_id'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Block selection is required']);
+        exit;
+    }
+
     try {
-        $stmt = $db->prepare("INSERT INTO sections (name, description) VALUES (?, ?)");
-        $stmt->execute([$data['name'], $data['description'] ?? '']);
+        $stmt = $db->prepare("INSERT INTO sections (name, description, block_id) VALUES (?, ?, ?)");
+        $stmt->execute([
+            $data['name'], 
+            $data['description'] ?? '',
+            $data['block_id']
+        ]);
         echo json_encode(['id' => $db->lastInsertId(), 'message' => 'Section created successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
@@ -50,9 +65,20 @@ if ($method === 'GET') {
         exit;
     }
 
+    if (empty($data['block_id'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Block selection is required']);
+        exit;
+    }
+
     try {
-        $stmt = $db->prepare("UPDATE sections SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-        $stmt->execute([$data['name'], $data['description'] ?? '', $data['id']]);
+        $stmt = $db->prepare("UPDATE sections SET name = ?, description = ?, block_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([
+            $data['name'], 
+            $data['description'] ?? '', 
+            $data['block_id'],
+            $data['id']
+        ]);
         echo json_encode(['message' => 'Section updated successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
