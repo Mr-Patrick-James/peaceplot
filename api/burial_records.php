@@ -596,6 +596,21 @@ function handleDelete($conn, $input) {
                 $stmt->bindParam(':id', $id);
                 if ($stmt->execute()) {
                     logActivity($conn, 'RESTORE_RECORD', 'deceased_records', $id, "Burial record for $recordName is restored ($lotInfo)");
+                    
+                    // Re-occupy the lot layer if it was previously assigned
+                    if ($record && $record['lot_id'] && $record['layer']) {
+                        $occStmt = $conn->prepare("
+                            UPDATE lot_layers 
+                            SET is_occupied = 1, burial_record_id = :burial_record_id 
+                            WHERE lot_id = :lot_id AND layer_number = :layer
+                        ");
+                        $occStmt->bindParam(':burial_record_id', $id);
+                        $occStmt->bindParam(':lot_id', $record['lot_id']);
+                        $occStmt->bindParam(':layer', $record['layer']);
+                        $occStmt->execute();
+                        
+                        updateLotStatus($conn, $record['lot_id']);
+                    }
                     $successCount++;
                 } else {
                     $errors[] = "Failed to restore record ID $id";
@@ -608,6 +623,20 @@ function handleDelete($conn, $input) {
                 $stmt->bindParam(':id', $id);
                 if ($stmt->execute()) {
                     logActivity($conn, 'DELETE_RECORD', 'deceased_records', $id, "Burial record for $recordName is permanently removed ($lotInfo)");
+                    
+                    // Free the lot layer
+                    if ($record && $record['lot_id'] && $record['layer']) {
+                        $freeStmt = $conn->prepare("
+                            UPDATE lot_layers 
+                            SET is_occupied = 0, burial_record_id = NULL 
+                            WHERE lot_id = :lot_id AND layer_number = :layer
+                        ");
+                        $freeStmt->bindParam(':lot_id', $record['lot_id']);
+                        $freeStmt->bindParam(':layer', $record['layer']);
+                        $freeStmt->execute();
+                        
+                        updateLotStatus($conn, $record['lot_id']);
+                    }
                     $successCount++;
                 } else {
                     $errors[] = "Failed to permanently delete record ID $id";

@@ -1282,6 +1282,22 @@ if ($conn) {
                       </label>
                     </div>
                   </div>
+
+                  <!-- Sorting Category -->
+                  <div class="filter-category">
+                    <button class="category-toggle" onclick="toggleCategory(this)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Sorting
+                    </button>
+                    <div class="category-content">
+                      <label class="filter-option">
+                        <input type="radio" name="sort_order" value="ASC" onchange="updateFilters()" checked> First to Last (ASC)
+                      </label>
+                      <label class="filter-option">
+                        <input type="radio" name="sort_order" value="DESC" onchange="updateFilters()"> Last to First (DESC)
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

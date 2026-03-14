@@ -85,6 +85,7 @@ function handleGet($conn) {
                 $section = isset($_GET['section']) && $_GET['section'] !== '' ? $_GET['section'] : null;
                 $block = isset($_GET['block']) && $_GET['block'] !== '' ? $_GET['block'] : null;
                 $occupancy = isset($_GET['occupancy']) && $_GET['occupancy'] !== '' ? $_GET['occupancy'] : null;
+                $sortOrder = isset($_GET['sort_order']) && in_array(strtoupper($_GET['sort_order']), ['ASC', 'DESC']) ? strtoupper($_GET['sort_order']) : 'ASC';
                 $all = isset($_GET['all']) && $_GET['all'] === 'true';
                 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
                 
@@ -186,7 +187,7 @@ function handleGet($conn) {
                 if ($search) {
                     $orderBy .= "CASE WHEN cl.lot_number = :exact_search THEN 0 ELSE 1 END, ";
                 }
-                $orderBy .= "LENGTH(cl.lot_number), cl.lot_number";
+                $orderBy .= "LENGTH(cl.lot_number) $sortOrder, cl.lot_number $sortOrder";
                 
                 if (!$all) {
                     $query .= $orderBy . " LIMIT :limit OFFSET :offset";
