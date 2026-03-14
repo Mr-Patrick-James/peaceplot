@@ -256,6 +256,8 @@ if ($conn) {
       align-items: center;
       margin-bottom: 24px;
       gap: 16px;
+      position: relative;
+      z-index: 1001;
     }
     .controls-left {
       display: flex;
@@ -300,7 +302,7 @@ if ($conn) {
       position: absolute;
       top: calc(100% + 12px);
       left: 0;
-      width: 320px;
+      width: 640px;
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.15);
@@ -321,7 +323,18 @@ if ($conn) {
     }
     .popover-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
     .btn-save-view { font-size: 13px; color: #3b82f6; text-decoration: none; font-weight: 600; }
-    .popover-body { padding: 12px 0; max-height: 400px; overflow-y: auto; }
+    .popover-body { 
+      display: flex;
+      max-height: 480px; 
+      overflow-y: auto; 
+    }
+    .popover-column {
+      flex: 1;
+      border-right: 1px solid #f1f5f9;
+    }
+    .popover-column:last-child {
+      border-right: none;
+    }
     
     .filter-category { border-bottom: 1px solid #f8fafc; }
     .filter-category:last-child { border-bottom: none; }
@@ -502,35 +515,39 @@ if ($conn) {
                 <a href="#" class="btn-save-view">Save view</a>
               </div>
               <div class="popover-body">
-                <!-- Sections Category -->
-                <div class="filter-category active">
-                  <button class="category-toggle" onclick="toggleCategory(this)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    Sections
-                  </button>
-                  <div class="category-content">
-                    <?php foreach ($stats['sections'] as $section): ?>
-                      <label class="filter-option">
-                        <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section['section']); ?>" onchange="updateFilters()">
-                        <?php echo htmlspecialchars($section['section']); ?>
-                      </label>
-                    <?php endforeach; ?>
+                <div class="popover-column">
+                  <!-- Sections Category -->
+                  <div class="filter-category active">
+                    <button class="category-toggle" onclick="toggleCategory(this)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Sections
+                    </button>
+                    <div class="category-content">
+                      <?php foreach ($stats['sections'] as $section): ?>
+                        <label class="filter-option">
+                          <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section['section']); ?>" onchange="updateFilters()">
+                          <?php echo htmlspecialchars($section['section']); ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
                   </div>
                 </div>
-                
-                <!-- Status Category -->
-                <div class="filter-category">
-                  <button class="category-toggle" onclick="toggleCategory(this)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    Status
-                  </button>
-                  <div class="category-content">
-                    <label class="filter-option">
-                      <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
-                    </label>
-                    <label class="filter-option">
-                      <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
-                    </label>
+
+                <div class="popover-column">
+                  <!-- Status Category -->
+                  <div class="filter-category active">
+                    <button class="category-toggle" onclick="toggleCategory(this)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Status
+                    </button>
+                    <div class="category-content">
+                      <label class="filter-option">
+                        <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
+                      </label>
+                      <label class="filter-option">
+                        <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>

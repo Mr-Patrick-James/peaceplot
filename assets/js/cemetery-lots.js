@@ -522,7 +522,7 @@ async function showBurialDetailModal(burialId, lotNumber, layerNumber) {
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'flex';
-    modal.style.zIndex = '2000'; // Higher than lot modal
+    modal.style.zIndex = '6000'; // Higher than lot modal
     
     modal.innerHTML = `
         <div class="modal-content" style="max-width: 600px;">
@@ -663,7 +663,7 @@ async function showMoveBurialModal(burialId, currentLotId, currentLayer) {
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'flex';
-    modal.style.zIndex = '3000'; // Above edit modal
+    modal.style.zIndex = '7000'; // Above edit modal
     
     modal.innerHTML = `
         <div class="modal-content" style="max-width: 500px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
@@ -990,7 +990,7 @@ function showMapAssignModal(lotNumber) {
     return new Promise((resolve) => {
         const modal = document.createElement('div');
         modal.className = 'modal';
-        modal.style.zIndex = '3000';
+        modal.style.zIndex = '7000';
         
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 450px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">

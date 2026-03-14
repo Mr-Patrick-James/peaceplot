@@ -194,7 +194,6 @@ if ($conn) {
       border-radius: 16px;
       padding: 0;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-      overflow: hidden;
     }
     .content-header {
       padding: 24px 32px;
@@ -202,6 +201,8 @@ if ($conn) {
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid #f1f5f9;
+      position: relative;
+      z-index: 1001;
     }
     .content-title-wrap .title {
       font-size: 18px;
@@ -299,7 +300,7 @@ if ($conn) {
       position: absolute;
       top: calc(100% + 12px);
       right: 0;
-      width: 320px;
+      width: 640px;
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.15);
@@ -320,7 +321,18 @@ if ($conn) {
     }
     .popover-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
     .btn-save-view { font-size: 13px; color: #3b82f6; text-decoration: none; font-weight: 600; }
-    .popover-body { padding: 12px 0; max-height: 400px; overflow-y: auto; }
+    .popover-body { 
+      display: flex;
+      max-height: 480px; 
+      overflow-y: auto; 
+    }
+    .popover-column {
+      flex: 1;
+      border-right: 1px solid #f1f5f9;
+    }
+    .popover-column:last-child {
+      border-right: none;
+    }
     
     .filter-category { border-bottom: 1px solid #f8fafc; }
     .filter-category:last-child { border-bottom: none; }
@@ -672,7 +684,7 @@ if ($conn) {
     .modal {
       display: none;
       position: fixed;
-      z-index: 1000;
+      z-index: 5000;
       left: 0;
       top: 0;
       width: 100%;
@@ -1216,86 +1228,90 @@ if ($conn) {
                   </div>
                 </div>
                 <div class="popover-body">
-                  <!-- Blocks Category -->
-                  <div class="filter-category active">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Blocks
-                    </button>
-                    <div class="category-content">
-                      <?php foreach ($blocks as $block): ?>
+                  <div class="popover-column">
+                    <!-- Blocks Category -->
+                    <div class="filter-category active">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Blocks
+                      </button>
+                      <div class="category-content">
+                        <?php foreach ($blocks as $block): ?>
+                          <label class="filter-option">
+                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block); ?>" onchange="updateFilters()">
+                            <?php echo htmlspecialchars($block); ?>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+
+                    <!-- Sections Category -->
+                    <div class="filter-category">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Sections
+                      </button>
+                      <div class="category-content">
+                        <?php foreach ($sections as $section): ?>
+                          <label class="filter-option">
+                            <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section); ?>" onchange="updateFilters()">
+                            <?php echo htmlspecialchars($section); ?>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+                    
+                    <!-- Status Category -->
+                    <div class="filter-category">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Status
+                      </button>
+                      <div class="category-content">
                         <label class="filter-option">
-                          <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block); ?>" onchange="updateFilters()">
-                          <?php echo htmlspecialchars($block); ?>
+                          <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
                         </label>
-                      <?php endforeach; ?>
-                    </div>
-                  </div>
-
-                  <!-- Sections Category -->
-                  <div class="filter-category">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Sections
-                    </button>
-                    <div class="category-content">
-                      <?php foreach ($sections as $section): ?>
                         <label class="filter-option">
-                          <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section); ?>" onchange="updateFilters()">
-                          <?php echo htmlspecialchars($section); ?>
+                          <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
                         </label>
-                      <?php endforeach; ?>
-                    </div>
-                  </div>
-                  
-                  <!-- Status Category -->
-                  <div class="filter-category">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Status
-                    </button>
-                    <div class="category-content">
-                      <label class="filter-option">
-                        <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
-                      </label>
-                      <label class="filter-option">
-                        <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
-                      </label>
-                      <label class="filter-option">
-                        <input type="checkbox" name="status" value="Maintenance" onchange="updateFilters()"> Maintenance
-                      </label>
+                        <label class="filter-option">
+                          <input type="checkbox" name="status" value="Maintenance" onchange="updateFilters()"> Maintenance
+                        </label>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Occupancy Category -->
-                  <div class="filter-category">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Occupancy
-                    </button>
-                    <div class="category-content">
-                      <label class="filter-option">
-                        <input type="checkbox" name="occupancy" value="Assigned" onchange="updateFilters()"> Assigned
-                      </label>
-                      <label class="filter-option">
-                        <input type="checkbox" name="occupancy" value="Unassigned" onchange="updateFilters()"> Unassigned
-                      </label>
+                  <div class="popover-column">
+                    <!-- Occupancy Category -->
+                    <div class="filter-category active">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Occupancy
+                      </button>
+                      <div class="category-content">
+                        <label class="filter-option">
+                          <input type="checkbox" name="occupancy" value="Assigned" onchange="updateFilters()"> Assigned
+                        </label>
+                        <label class="filter-option">
+                          <input type="checkbox" name="occupancy" value="Unassigned" onchange="updateFilters()"> Unassigned
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <!-- Sorting Category -->
-                  <div class="filter-category">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Sorting
-                    </button>
-                    <div class="category-content">
-                      <label class="filter-option">
-                        <input type="radio" name="sort_order" value="ASC" onchange="updateFilters()" checked> First to Last (ASC)
-                      </label>
-                      <label class="filter-option">
-                        <input type="radio" name="sort_order" value="DESC" onchange="updateFilters()"> Last to First (DESC)
-                      </label>
+                    <!-- Sorting Category -->
+                    <div class="filter-category">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Sorting
+                      </button>
+                      <div class="category-content">
+                        <label class="filter-option">
+                          <input type="radio" name="sort_order" value="ASC" onchange="updateFilters()" checked> First to Last (ASC)
+                        </label>
+                        <label class="filter-option">
+                          <input type="radio" name="sort_order" value="DESC" onchange="updateFilters()"> Last to First (DESC)
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>

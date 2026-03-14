@@ -248,14 +248,34 @@ function handleDelete($conn, $input) {
 }
 
 function updateLotStatus($conn, $lotId) {
-    // Check if any layers are occupied
-    $stmt = $conn->prepare("SELECT COUNT(*) as occupied_count FROM lot_layers WHERE lot_id = :lot_id AND is_occupied = 1");
-    $stmt->bindParam(':lot_id', $lotId);
-    $stmt->execute();
-    $result = $stmt->fetch();
+    // 1. Sync lot_layers with deceased_records for this lot
+    // First, reset all layers for this lot to vacant
+    $conn->prepare("UPDATE lot_layers SET is_occupied = 0, burial_record_id = NULL WHERE lot_id = :lot_id")
+         ->execute([':lot_id' => $lotId]);
+         
+    // Then, mark layers that have active burial records as occupied
+    $conn->prepare("
+        UPDATE lot_layers 
+        SET is_occupied = 1, 
+            burial_record_id = (
+                SELECT id FROM deceased_records 
+                WHERE lot_id = :lot_id AND layer = lot_layers.layer_number AND is_archived = 0 
+                ORDER BY created_at DESC LIMIT 1
+            )
+        WHERE lot_id = :lot_id 
+        AND EXISTS (
+            SELECT 1 FROM deceased_records 
+            WHERE lot_id = :lot_id AND layer = lot_layers.layer_number AND is_archived = 0
+        )
+    ")->execute([':lot_id' => $lotId]);
+
+    // 2. Determine and update the overall lot status
+    $checkStmt = $conn->prepare("SELECT COUNT(*) as occupied_count FROM deceased_records WHERE lot_id = :lot_id AND is_archived = 0");
+    $checkStmt->bindParam(':lot_id', $lotId);
+    $checkStmt->execute();
+    $result = $checkStmt->fetch();
     
-    $occupiedCount = $result['occupied_count'];
-    $status = $occupiedCount > 0 ? 'Occupied' : 'Vacant';
+    $status = (intval($result['occupied_count']) > 0) ? 'Occupied' : 'Vacant';
     
     // Update lot status
     $stmt = $conn->prepare("UPDATE cemetery_lots SET status = :status WHERE id = :lot_id");

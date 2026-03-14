@@ -35,6 +35,20 @@ switch ($method) {
 
 function handleGet($conn) {
     try {
+        if ($conn) {
+            // Force status sync based on active burials for all lots
+            $conn->exec("
+                UPDATE cemetery_lots 
+                SET status = CASE 
+                    WHEN EXISTS (
+                        SELECT 1 FROM deceased_records 
+                        WHERE lot_id = cemetery_lots.id AND is_archived = 0
+                    ) THEN 'Occupied' 
+                    ELSE 'Vacant' 
+                END
+            ");
+        }
+
         $id = isset($_GET['id']) ? intval($_GET['id']) : null;
         
         if ($id) {

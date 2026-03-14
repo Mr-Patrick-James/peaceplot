@@ -1,13 +1,16 @@
 const BurialAPI = {
-    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '', section = '', block = '', status = '', startDate = '', endDate = '') {
+    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '', section = '', block = '', status = '', assignment = '', startDate = '', endDate = '', sortBy = 'created_at', sortOrder = 'DESC') {
         try {
             let url = `${API_BASE_URL}/burial_records.php?archived=${showArchived ? '1' : '0'}&page=${page}&limit=${limit}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
             if (section) url += `&section=${encodeURIComponent(section)}`;
             if (block) url += `&block=${encodeURIComponent(block)}`;
             if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (assignment) url += `&assignment=${encodeURIComponent(assignment)}`;
             if (startDate) url += `&start_date=${encodeURIComponent(startDate)}`;
             if (endDate) url += `&end_date=${encodeURIComponent(endDate)}`;
+            if (sortBy) url += `&sort_by=${encodeURIComponent(sortBy)}`;
+            if (sortOrder) url += `&sort_order=${encodeURIComponent(sortOrder)}`;
             
             const response = await fetch(url);
             const data = await response.json();
@@ -164,10 +167,13 @@ let totalPages = 1;
 
 let searchQuery = '';
 let statusFilter = '';
+let assignmentFilter = '';
 let sectionFilter = '';
 let blockFilter = '';
 let startDate = '';
 let endDate = '';
+let currentSortBy = 'created_at';
+let currentSortOrder = 'DESC';
 
 let selectedIds = new Set();
 
@@ -233,14 +239,16 @@ function updateFilters() {
     const activeBlocks = Array.from(document.querySelectorAll('input[name="block"]:checked')).map(cb => cb.value);
     const activeSections = Array.from(document.querySelectorAll('input[name="section"]:checked')).map(cb => cb.value);
     const activeStatuses = Array.from(document.querySelectorAll('input[name="status"]:checked')).map(cb => cb.value);
+    const activeAssignments = Array.from(document.querySelectorAll('input[name="assignment"]:checked')).map(cb => cb.value);
 
     blockFilter = activeBlocks.join(',');
     sectionFilter = activeSections.join(',');
     statusFilter = activeStatuses.join(',');
+    assignmentFilter = activeAssignments.join(',');
 
     // Update badge
     const filterBadge = document.getElementById('filterBadge');
-    const totalActive = activeBlocks.length + activeSections.length + activeStatuses.length;
+    const totalActive = activeBlocks.length + activeSections.length + activeStatuses.length + activeAssignments.length;
     if (filterBadge) {
         filterBadge.textContent = totalActive;
         filterBadge.style.display = totalActive > 0 ? 'flex' : 'none';
@@ -252,7 +260,8 @@ function updateFilters() {
         const allFilters = [
             ...activeBlocks.map(v => ({ name: 'block', value: v })),
             ...activeSections.map(v => ({ name: 'section', value: v })),
-            ...activeStatuses.map(v => ({ name: 'status', value: v }))
+            ...activeStatuses.map(v => ({ name: 'status', value: v })),
+            ...activeAssignments.map(v => ({ name: 'assignment', value: v }))
         ];
 
         activeFiltersRow.innerHTML = allFilters.map(filter => `
@@ -278,7 +287,64 @@ function removeFilter(name, value) {
 
 function clearAllFilters() {
     document.querySelectorAll('.filter-popover input[type="checkbox"]').forEach(cb => cb.checked = false);
+    // Reset sorting to default
+    currentSortBy = 'created_at';
+    currentSortOrder = 'DESC';
+    
+    // Reset sorting inputs if they exist
+    const sortSelect = document.querySelector('select[name="sort_by"]');
+    const orderSelect = document.querySelector('select[name="sort_order"]');
+    if (sortSelect) sortSelect.value = 'created_at';
+    if (orderSelect) orderSelect.value = 'DESC';
+    
     updateFilters();
+}
+
+function handleSort(column) {
+    if (currentSortBy === column) {
+        currentSortOrder = currentSortOrder === 'ASC' ? 'DESC' : 'ASC';
+    } else {
+        currentSortBy = column;
+        currentSortOrder = 'ASC';
+    }
+    currentPage = 1;
+    
+    // Update sort inputs in filter popover if they exist
+    const sortSelect = document.querySelector('select[name="sort_by"]');
+    const orderSelect = document.querySelector('select[name="sort_order"]');
+    if (sortSelect) sortSelect.value = currentSortBy;
+    if (orderSelect) orderSelect.value = currentSortOrder;
+    
+    loadBurialRecords();
+}
+
+function updateSortFromFilter() {
+    const sortSelect = document.querySelector('select[name="sort_by"]');
+    const orderSelect = document.querySelector('select[name="sort_order"]');
+    
+    if (sortSelect) currentSortBy = sortSelect.value;
+    if (orderSelect) currentSortOrder = orderSelect.value;
+    
+    currentPage = 1;
+    loadBurialRecords();
+}
+
+function updateSortUI() {
+    document.querySelectorAll('.table th[data-sort]').forEach(th => {
+        const column = th.dataset.sort;
+        const iconContainer = th.querySelector('.sort-icon');
+        if (!iconContainer) return;
+
+        if (column === currentSortBy) {
+            th.classList.add('active-sort');
+            iconContainer.innerHTML = currentSortOrder === 'ASC' 
+                ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>'
+                : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+        } else {
+            th.classList.remove('active-sort');
+            iconContainer.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.3;"><polyline points="7 15 12 20 17 15"></polyline><polyline points="7 9 12 4 17 9"></polyline></svg>';
+        }
+    });
 }
 
 async function loadBurialRecords() {
@@ -288,15 +354,15 @@ async function loadBurialRecords() {
 
     tbody.innerHTML = `
         <tr>
-            <td colspan="8" style="text-align:center; padding: 60px; color:#94a3b8;">
-                <div class="loading-spinner" style="display: inline-block; width: 24px; height: 24px; border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
-                <div style="margin-top: 12px; font-size: 13px;">Loading records...</div>
+            <td colspan="8" style="text-align:center; padding: 40px; color:#94a3b8;">
+                <div class="loading-spinner" style="display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
+                <div style="margin-top: 8px; font-size: 13px;">Refreshing table...</div>
             </td>
         </tr>
     `;
 
     try {
-        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchQuery, sectionFilter, blockFilter, statusFilter, startDate, endDate);
+        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchQuery, sectionFilter, blockFilter, statusFilter, assignmentFilter, startDate, endDate, currentSortBy, currentSortOrder);
         if (result.success && result.data) {
             currentRecords = result.data;
             if (result.pagination) {
@@ -306,6 +372,9 @@ async function loadBurialRecords() {
             renderRecords(result.data);
             renderPagination(result.pagination);
             
+            // Sync sorting UI if it exists
+            updateSortUI();
+
             // Clear selections when data reloads
             clearSelection();
         } else {
@@ -319,12 +388,7 @@ async function loadBurialRecords() {
 
 function renderPagination(pagination) {
     let paginationContainer = document.querySelector('.pagination-container');
-    if (!paginationContainer) {
-        paginationContainer = document.createElement('div');
-        paginationContainer.className = 'pagination-container';
-        const main = document.querySelector('.main-content') || document.querySelector('.main');
-        if (main) main.appendChild(paginationContainer);
-    }
+    if (!paginationContainer) return;
 
     if (!pagination || pagination.total_pages <= 1) {
         paginationContainer.innerHTML = '';
@@ -649,7 +713,7 @@ function showArchiveModal(ids, names) {
         const isBulk = ids.length > 1;
         const modal = document.createElement('div');
         modal.className = 'modal';
-        modal.style.zIndex = '3000';
+        modal.style.zIndex = '5000';
         
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 450px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
@@ -1748,13 +1812,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const text = document.getElementById('viewArchivedText');
                 if (text) text.textContent = showingArchived ? 'View Active' : 'View Archived';
                 
-                // Update header text
-                const cardTitle = document.querySelector('.content-section .title');
-                const cardSub = document.querySelector('.content-section .subtitle');
-                if (cardTitle) cardTitle.textContent = showingArchived ? 'Archived Burial Records' : 'Burial Records List';
-                if (cardSub) cardSub.textContent = showingArchived ? 'Manage permanently deleted and archived records' : 'Manage and filter deceased person records';
-                
-                // Hide/show Add button
+                // Hide/show Add button if it's not archived view
                 const addBtn = document.querySelector('button[data-action="add"]');
                 if (addBtn) addBtn.style.display = showingArchived ? 'none' : 'flex';
 

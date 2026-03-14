@@ -272,7 +272,7 @@ if ($db) {
     .section-info .sub { font-size: 12px; color: #94a3b8; }
 
     /* Modal Overrides */
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+    .modal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
     .modal-content { background-color: #fff; border-radius: 16px; width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; border: none; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; }
     .modal-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0; }

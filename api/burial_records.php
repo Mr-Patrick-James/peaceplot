@@ -65,6 +65,9 @@ function handleGet($conn) {
         $filterSection = isset($_GET['section']) ? trim($_GET['section']) : '';
         $filterBlock = isset($_GET['block']) ? trim($_GET['block']) : '';
         $filterStatus = isset($_GET['status']) ? trim($_GET['status']) : '';
+        $filterAssignment = isset($_GET['assignment']) ? trim($_GET['assignment']) : '';
+        $sortBy = isset($_GET['sort_by']) ? trim($_GET['sort_by']) : 'created_at';
+        $sortOrder = isset($_GET['sort_order']) && strtoupper($_GET['sort_order']) === 'ASC' ? 'ASC' : 'DESC';
         $startDate = isset($_GET['start_date']) ? trim($_GET['start_date']) : '';
         $endDate = isset($_GET['end_date']) ? trim($_GET['end_date']) : '';
         
@@ -152,6 +155,22 @@ function handleGet($conn) {
                 $whereClause .= " AND cl.status IN (" . implode(',', $placeholders) . ")";
             }
 
+            if ($filterAssignment) {
+                $assignmentArray = explode(',', $filterAssignment);
+                $assignmentClauses = [];
+                foreach ($assignmentArray as $assignment) {
+                    $assignment = trim($assignment);
+                    if ($assignment === 'Assigned') {
+                        $assignmentClauses[] = "dr.lot_id IS NOT NULL";
+                    } elseif ($assignment === 'Unassigned') {
+                        $assignmentClauses[] = "dr.lot_id IS NULL";
+                    }
+                }
+                if (!empty($assignmentClauses)) {
+                    $whereClause .= " AND (" . implode(' OR ', $assignmentClauses) . ")";
+                }
+            }
+
             if ($startDate) {
                 $whereClause .= " AND dr.date_of_death >= :start_date";
                 $params[':start_date'] = $startDate;
@@ -175,12 +194,27 @@ function handleGet($conn) {
             $countStmt->execute();
             $totalRecords = intval($countStmt->fetchColumn());
             
+            // Validate sort_by column to prevent SQL injection
+            $allowedSortColumns = [
+                'full_name' => 'dr.full_name',
+                'date_of_death' => 'dr.date_of_death',
+                'date_of_birth' => 'dr.date_of_birth',
+                'date_of_burial' => 'dr.date_of_burial',
+                'age' => 'dr.age',
+                'created_at' => 'dr.created_at',
+                'lot_number' => 'cl.lot_number',
+                'section' => 'cl.section',
+                'block' => 'cl.block'
+            ];
+            
+            $sortColumn = $allowedSortColumns[$sortBy] ?? 'dr.created_at';
+            
             $sql = "
                 SELECT dr.*, cl.lot_number, cl.section, cl.block, cl.status as lot_status
                 FROM deceased_records dr 
                 LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
                 $whereClause
-                ORDER BY dr.created_at DESC, dr.id DESC
+                ORDER BY $sortColumn $sortOrder, dr.id DESC
             ";
             
             if ($page !== null) {
@@ -689,7 +723,31 @@ function handleDelete($conn, $input) {
 }
 
 function updateLotStatus($conn, $lotId) {
-    $checkStmt = $conn->prepare("SELECT COUNT(*) as occupied_count FROM lot_layers WHERE lot_id = :lot_id AND is_occupied = 1");
+    // 1. Sync lot_layers with deceased_records for this lot
+    // First, reset all layers for this lot to vacant
+    $conn->prepare("UPDATE lot_layers SET is_occupied = 0, burial_record_id = NULL WHERE lot_id = :lot_id")
+         ->execute([':lot_id' => $lotId]);
+         
+    // Then, mark layers that have active burial records as occupied
+    // We'll use the most recent record per layer to set burial_record_id
+    $conn->prepare("
+        UPDATE lot_layers 
+        SET is_occupied = 1, 
+            burial_record_id = (
+                SELECT id FROM deceased_records 
+                WHERE lot_id = :lot_id AND layer = lot_layers.layer_number AND is_archived = 0 
+                ORDER BY created_at DESC LIMIT 1
+            )
+        WHERE lot_id = :lot_id 
+        AND EXISTS (
+            SELECT 1 FROM deceased_records 
+            WHERE lot_id = :lot_id AND layer = lot_layers.layer_number AND is_archived = 0
+        )
+    ")->execute([':lot_id' => $lotId]);
+
+    // 2. Determine and update the overall lot status
+    // A lot is 'Occupied' if any non-archived record is assigned to it
+    $checkStmt = $conn->prepare("SELECT COUNT(*) as occupied_count FROM deceased_records WHERE lot_id = :lot_id AND is_archived = 0");
     $checkStmt->bindParam(':lot_id', $lotId);
     $checkStmt->execute();
     $result = $checkStmt->fetch();

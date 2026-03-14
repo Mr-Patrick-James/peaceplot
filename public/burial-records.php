@@ -150,7 +150,6 @@ if ($conn) {
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-      overflow: hidden;
     }
     .content-header {
       padding: 24px 32px;
@@ -158,6 +157,8 @@ if ($conn) {
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid #f1f5f9;
+      position: relative;
+      z-index: 1001;
     }
     .filter-controls { display: flex; gap: 12px; align-items: center; }
     
@@ -207,7 +208,7 @@ if ($conn) {
       position: absolute;
       top: calc(100% + 12px);
       right: 0;
-      width: 320px;
+      width: 640px;
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.15);
@@ -227,7 +228,18 @@ if ($conn) {
       align-items: center;
     }
     .popover-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
-    .popover-body { padding: 12px 0; max-height: 400px; overflow-y: auto; }
+    .popover-body { 
+      display: flex;
+      max-height: 480px; 
+      overflow-y: auto; 
+    }
+    .popover-column {
+      flex: 1;
+      border-right: 1px solid #f1f5f9;
+    }
+    .popover-column:last-child {
+      border-right: none;
+    }
     
     .filter-category { border-bottom: 1px solid #f8fafc; }
     .filter-category:last-child { border-bottom: none; }
@@ -441,6 +453,53 @@ if ($conn) {
     .custom-checkbox.active svg {
       display: block;
     }
+
+    /* Sorting UI Styles */
+    .table th[data-sort] {
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .table th[data-sort]:hover {
+      background: #f1f5f9 !important;
+      color: #3b82f6 !important;
+    }
+    .th-content {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sort-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+    }
+    .active-sort {
+      color: #3b82f6 !important;
+      background: #eff6ff !important;
+    }
+    
+    .sort-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 4px 0;
+    }
+    .sort-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #1e293b;
+      outline: none;
+      background: #fff;
+    }
+    .sort-select:focus {
+      border-color: #3b82f6;
+    }
   </style>
 </head>
 <body>
@@ -596,54 +655,101 @@ if ($conn) {
                   <a href="#" class="btn-save-view" onclick="clearAllFilters(); return false;">Clear all</a>
                 </div>
                 <div class="popover-body">
-                  <!-- Blocks Category -->
-                  <div class="filter-category active">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Blocks
-                    </button>
-                    <div class="category-content">
-                      <?php foreach ($blocks as $block): ?>
+                  <div class="popover-column">
+                    <!-- Blocks Category -->
+                    <div class="filter-category active">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Blocks
+                      </button>
+                      <div class="category-content">
+                        <?php foreach ($blocks as $block): ?>
+                          <label class="filter-option">
+                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block); ?>" onchange="updateFilters()">
+                            <?php echo htmlspecialchars($block); ?>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+
+                    <!-- Sections Category -->
+                    <div class="filter-category">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Sections
+                      </button>
+                      <div class="category-content">
+                        <?php foreach ($sections as $section): ?>
+                          <label class="filter-option">
+                            <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section); ?>" onchange="updateFilters()">
+                            <?php echo htmlspecialchars($section); ?>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+                    
+                    <!-- Status Category -->
+                    <div class="filter-category">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Lot Status
+                      </button>
+                      <div class="category-content">
                         <label class="filter-option">
-                          <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block); ?>" onchange="updateFilters()">
-                          <?php echo htmlspecialchars($block); ?>
+                          <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
                         </label>
-                      <?php endforeach; ?>
+                        <label class="filter-option">
+                          <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
+                        </label>
+                        <label class="filter-option">
+                          <input type="checkbox" name="status" value="Maintenance" onchange="updateFilters()"> Maintenance
+                        </label>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Sections Category -->
-                  <div class="filter-category">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Sections
-                    </button>
-                    <div class="category-content">
-                      <?php foreach ($sections as $section): ?>
+                  <div class="popover-column">
+                    <!-- Assignment Category -->
+                    <div class="filter-category active">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Burial Assignment
+                      </button>
+                      <div class="category-content">
                         <label class="filter-option">
-                          <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section); ?>" onchange="updateFilters()">
-                          <?php echo htmlspecialchars($section); ?>
+                          <input type="checkbox" name="assignment" value="Assigned" onchange="updateFilters()"> Assigned
                         </label>
-                      <?php endforeach; ?>
+                        <label class="filter-option">
+                          <input type="checkbox" name="assignment" value="Unassigned" onchange="updateFilters()"> Unassigned
+                        </label>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <!-- Status Category -->
-                  <div class="filter-category">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Lot Status
-                    </button>
-                    <div class="category-content">
-                      <label class="filter-option">
-                        <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
-                      </label>
-                      <label class="filter-option">
-                        <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
-                      </label>
-                      <label class="filter-option">
-                        <input type="checkbox" name="status" value="Maintenance" onchange="updateFilters()"> Maintenance
-                      </label>
+
+                    <!-- Sorting Category -->
+                    <div class="filter-category">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Sorting
+                      </button>
+                      <div class="category-content">
+                        <div class="sort-group">
+                          <label style="font-size: 12px; font-weight: 600; color: #64748b;">Sort By</label>
+                          <select class="sort-select" name="sort_by" onchange="updateSortFromFilter()">
+                            <option value="created_at">Date Created</option>
+                            <option value="full_name">Full Name</option>
+                            <option value="date_of_death">Date of Death</option>
+                            <option value="lot_number">Lot Number</option>
+                            <option value="age">Age</option>
+                          </select>
+                        </div>
+                        <div class="sort-group" style="margin-top: 10px;">
+                          <label style="font-size: 12px; font-weight: 600; color: #64748b;">Order</label>
+                          <select class="sort-select" name="sort_order" onchange="updateSortFromFilter()">
+                            <option value="DESC">Descending</option>
+                            <option value="ASC">Ascending</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -682,20 +788,40 @@ if ($conn) {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </div>
                 </th>
-                <th align="left">Full Name</th>
-                <th align="left">Lot Details</th>
+                <th align="left" data-sort="full_name" onclick="handleSort('full_name')">
+                  <div class="th-content">
+                    Full Name
+                    <span class="sort-icon"></span>
+                  </div>
+                </th>
+                <th align="left" data-sort="lot_number" onclick="handleSort('lot_number')">
+                  <div class="th-content">
+                    Lot Details
+                    <span class="sort-icon"></span>
+                  </div>
+                </th>
                 <th align="left">Layer</th>
                 <th align="left">Position</th>
-                <th align="left">Dates</th>
-                <th align="left">Age</th>
+                <th align="left" data-sort="date_of_death" onclick="handleSort('date_of_death')">
+                  <div class="th-content">
+                    Dates
+                    <span class="sort-icon"></span>
+                  </div>
+                </th>
+                <th align="left" data-sort="age" onclick="handleSort('age')">
+                  <div class="th-content">
+                    Age
+                    <span class="sort-icon"></span>
+                  </div>
+                </th>
                 <th align="right">Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="7" style="text-align:center; padding: 60px; color:#94a3b8;">
-                  <div class="loading-spinner" style="display: inline-block; width: 24px; height: 24px; border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
-                  <div style="margin-top: 12px; font-size: 13px;">Loading records...</div>
+                <td colspan="8" style="text-align:center; padding: 40px; color:#94a3b8;">
+                  <div class="loading-spinner" style="display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
+                  <div style="margin-top: 8px; font-size: 13px;">Refreshing table...</div>
                 </td>
               </tr>
             </tbody>
