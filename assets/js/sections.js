@@ -29,7 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'none';
     };
 
-    // Close Modal on outside click
+    // Confirmation Modal
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+    window.closeConfirmModal = () => {
+        confirmModal.style.display = 'none';
+    };
+
+    // Form Submission Modal on outside click
     window.onclick = (event) => {
         if (event.target == modal) {
             closeModal();
@@ -124,26 +133,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Delete Section
-    window.deleteSection = async (id) => {
-        if (!confirm('Are you sure you want to delete this section?')) return;
-
-        try {
-            const response = await fetch(`../api/sections.php?id=${id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                showNotification('Section deleted successfully!', 'success');
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                const result = await response.json();
-                showNotification(result.error || 'Something went wrong', 'error');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification('An error occurred. Please try again.', 'error');
+    window.deleteSection = async (section) => {
+        // Validation check: check if section has lots
+        const lotCount = parseInt(section.lot_count) || 0;
+        
+        if (lotCount > 0) {
+            showNotification(`Cannot delete Section '${section.name}' because it contains ${lotCount} lot(s). Please reassign or delete the lots first.`, 'warning');
+            return;
         }
+
+        // Show confirmation modal
+        confirmMessage.innerText = `Are you sure you want to delete Section '${section.name}'? This action cannot be undone.`;
+        confirmModal.style.display = 'flex';
+
+        // Set up one-time click handler for delete button
+        confirmDeleteBtn.onclick = async () => {
+            closeConfirmModal();
+            try {
+                const response = await fetch(`../api/sections.php?id=${section.id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showNotification('Section deleted successfully!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    const result = await response.json();
+                    showNotification(result.error || 'Something went wrong', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.', 'error');
+            }
+        };
     };
 });

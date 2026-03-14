@@ -275,6 +275,177 @@ if ($db) {
     .form-group input, .form-group textarea { width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 15px; outline: none; transition: all 0.2s; }
     .form-group input:focus, .form-group textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
     .modal-footer { padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; }
+
+    /* Notification Styles */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      min-width: 240px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      transform: translateX(120%);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success { background: #22c55e; }
+    .notification.error { background: #ef4444; }
+    .notification.warning { background: #f59e0b; }
+    .notification.info { background: #3b82f6; }
+
+    .notification-icon {
+      font-size: 16px;
+      background: rgba(255,255,255,0.25);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .notification-content {
+      flex-grow: 1;
+    }
+
+    .notification-title {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .notification-message {
+      font-size: 14px;
+      line-height: 1.4;
+      opacity: 0.95;
+    }
+
+    .notification-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 0 0 10px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .notification-close:hover {
+      opacity: 1;
+    }
+
+    /* Confirmation Modal Styles */
+    .confirm-modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .confirm-modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalScaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .confirm-icon {
+      width: 64px;
+      height: 64px;
+      background: #fee2e2;
+      color: #ef4444;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+    }
+
+    .confirm-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+
+    .confirm-message {
+      font-size: 15px;
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn-confirm-delete {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-delete:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-confirm-cancel {
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-cancel:hover {
+      background: #e2e8f0;
+    }
   </style>
 </head>
 <body>
@@ -503,7 +674,7 @@ if ($db) {
                           </svg>
                         </span>
                       </button>
-                      <button class="btn-action btn-delete" onclick="deleteBlock(<?php echo $block['id']; ?>)" title="Delete Block">
+                      <button class="btn-action btn-delete" onclick='deleteBlock(<?php echo json_encode($block); ?>)' title="Delete Block">
                         <span class="icon">
                           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6h18" />
@@ -559,6 +730,19 @@ if ($db) {
           <button type="submit" class="btn-blue">Save Block</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="confirm-modal">
+    <div class="confirm-modal-content">
+      <div class="confirm-icon">⚠</div>
+      <h3 class="confirm-title">Delete Block?</h3>
+      <p id="confirmMessage" class="confirm-message">Are you sure you want to delete this block? This action cannot be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn-confirm-cancel" onclick="closeConfirmModal()">Cancel</button>
+        <button id="confirmDeleteBtn" class="btn-confirm-delete">Delete</button>
+      </div>
     </div>
   </div>
 

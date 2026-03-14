@@ -357,6 +357,103 @@ if ($db) {
     .notification-close:hover {
       opacity: 1;
     }
+
+    /* Confirmation Modal Styles */
+    .confirm-modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .confirm-modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalScaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .confirm-icon {
+      width: 64px;
+      height: 64px;
+      background: #fee2e2;
+      color: #ef4444;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+    }
+
+    .confirm-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+
+    .confirm-message {
+      font-size: 15px;
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn-confirm-delete {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-delete:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-confirm-cancel {
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-cancel:hover {
+      background: #e2e8f0;
+    }
   </style>
 </head>
 <body>
@@ -590,7 +687,7 @@ if ($db) {
                           </svg>
                         </span>
                       </button>
-                      <button class="btn-action btn-delete" onclick="deleteSection(<?php echo $section['id']; ?>)" title="Delete Section">
+                      <button class="btn-action btn-delete" onclick='deleteSection(<?php echo json_encode($section); ?>)' title="Delete Section">
                         <span class="icon">
                           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6h18" />
@@ -646,6 +743,19 @@ if ($db) {
           <button type="submit" class="btn-blue">Save Section</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="confirm-modal">
+    <div class="confirm-modal-content">
+      <div class="confirm-icon">⚠</div>
+      <h3 class="confirm-title">Delete Section?</h3>
+      <p id="confirmMessage" class="confirm-message">Are you sure you want to delete this section? This action cannot be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn-confirm-cancel" onclick="closeConfirmModal()">Cancel</button>
+        <button id="confirmDeleteBtn" class="btn-confirm-delete">Delete</button>
+      </div>
     </div>
   </div>
 

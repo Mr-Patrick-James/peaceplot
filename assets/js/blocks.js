@@ -28,12 +28,71 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'none';
     };
 
-    // Close Modal on outside click
+    // Confirmation Modal
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+    window.closeConfirmModal = () => {
+        confirmModal.style.display = 'none';
+    };
+
+    // Form Submission Modal on outside click
     window.onclick = (event) => {
         if (event.target == modal) {
             closeModal();
         }
     };
+
+    // Notification System
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const iconMap = {
+            success: '✓',
+            error: '✕',
+            warning: '!',
+            info: 'i'
+        };
+
+        const titleMap = {
+            success: 'Success',
+            error: 'Error',
+            warning: 'Warning',
+            info: 'Info'
+        };
+
+        notification.innerHTML = `
+            <div class="notification-icon">${iconMap[type]}</div>
+            <div class="notification-content">
+                <div class="notification-title">${titleMap[type]}</div>
+                <div class="notification-message">${message}</div>
+            </div>
+            ${type === 'error' ? '<button class="notification-close" onclick="this.parentElement.remove()">&times;</button>' : ''}
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Trigger animation
+        setTimeout(() => notification.classList.add('show'), 10);
+
+        // Auto-remove unless it's an error
+        if (type !== 'error') {
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 400);
+            }, 4000);
+        } else {
+            // Errors stay longer (10s) or until closed
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 400);
+                }
+            }, 10000);
+        }
+    }
 
     // Form Submission
     form.addEventListener('submit', async (e) => {
@@ -54,31 +113,52 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (result.success) {
-                location.reload(); // Simple refresh to show changes
+                closeModal();
+                showNotification(id ? 'Block updated successfully!' : 'Block added successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             } else {
-                alert(result.message || 'Something went wrong');
+                showNotification(result.message || 'Something went wrong', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showNotification('An error occurred. Please try again.', 'error');
         }
     });
 
     // Delete Block
-    window.deleteBlock = async (id) => {
-        if (!confirm('Are you sure you want to delete this block?')) return;
-
-        try {
-            const result = await API.deleteBlock(id);
-
-            if (result.success) {
-                location.reload();
-            } else {
-                alert(result.message || 'Something went wrong');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+    window.deleteBlock = async (block) => {
+        // Validation check: check if block has lots
+        const lotCount = parseInt(block.lot_count) || 0;
+        
+        if (lotCount > 0) {
+            showNotification(`Cannot delete Block '${block.name}' because it contains ${lotCount} lot(s). Please reassign or delete the lots first.`, 'warning');
+            return;
         }
+
+        // Show confirmation modal
+        confirmMessage.innerText = `Are you sure you want to delete Block '${block.name}'? This action cannot be undone.`;
+        confirmModal.style.display = 'flex';
+
+        // Set up one-time click handler for delete button
+        confirmDeleteBtn.onclick = async () => {
+            closeConfirmModal();
+            try {
+                const result = await API.deleteBlock(block.id);
+
+                if (result.success) {
+                    showNotification('Block deleted successfully!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showNotification(result.message || 'Something went wrong', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.', 'error');
+            }
+        };
     };
 });
