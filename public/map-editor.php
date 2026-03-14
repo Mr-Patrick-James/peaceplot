@@ -258,12 +258,40 @@ if ($conn) {
       display: flex;
       flex-direction: column;
       line-height: 1.1;
+      z-index: 2;
+    }
+
+    .lot-rectangle.vertical .lot-label {
+      width: auto;
+      max-width: 100%;
     }
 
     .lot-label .section-tag {
       font-size: 0.7em;
       opacity: 0.9;
       font-weight: 500;
+    }
+
+    .lot-rectangle.vertical .section-tag {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.85);
+      padding: calc(0.2px + 0.3px / var(--current-zoom, 1)) 0;
+      border-radius: 0 0 calc(0.5px + 0.5px / var(--current-zoom, 1)) calc(0.5px + 0.5px / var(--current-zoom, 1));
+      text-align: center;
+      font-size: calc(2.5px + 2.5px / var(--current-zoom, 1));
+      opacity: 1;
+      font-weight: 600;
+      line-height: 1;
+      z-index: 2;
+      box-sizing: border-box;
+      color: white;
+    }
+
+    .lot-rectangle.vertical .lot-label .section-tag {
+      display: none;
     }
 
     .lot-layer-indicator {
@@ -1116,7 +1144,8 @@ if ($conn) {
     function addRectangle(x, y, width, height, lotData) {
       const rect = document.createElement('div');
       const statusClass = (lotData.actual_status || lotData.status || 'vacant').toLowerCase();
-      rect.className = 'lot-rectangle ' + statusClass;
+      const isVertical = parseFloat(height) > parseFloat(width);
+      rect.className = 'lot-rectangle ' + statusClass + (isVertical ? ' vertical' : '');
       rect.setAttribute('data-lot-id', lotData.id);
       rect.style.left = x + '%';
       rect.style.top = y + '%';
@@ -1127,6 +1156,13 @@ if ($conn) {
       label.className = 'lot-label';
       label.innerHTML = `<span>${lotData.lot_number}</span><span class="section-tag">${lotData.section}</span>`;
       rect.appendChild(label);
+
+      if (isVertical) {
+        const sectionTag = document.createElement('div');
+        sectionTag.className = 'section-tag';
+        sectionTag.textContent = lotData.section;
+        rect.appendChild(sectionTag);
+      }
 
       // Add layer indicator if multiple layers exist
       const totalLayers = parseInt(lotData.total_layers) || 1;

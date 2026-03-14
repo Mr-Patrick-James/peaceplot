@@ -149,12 +149,39 @@ if ($conn) {
       display: flex;
       flex-direction: column;
       line-height: 1.1;
+      z-index: 2;
+    }
+
+    .lot-marker.vertical .lot-label {
+      width: auto;
+      max-width: 100%;
     }
 
     .lot-label .section-tag {
       font-size: 0.65em;
       opacity: 0.8;
       font-weight: 400;
+    }
+
+    .lot-marker.vertical .section-tag {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.85);
+      padding: 0.5px 1.5px;
+      border-radius: 0 0 0.5px 0.5px;
+      text-align: center;
+      font-size: 0.6em;
+      opacity: 1;
+      font-weight: 600;
+      line-height: 1;
+      z-index: 2;
+      box-sizing: border-box;
+    }
+    
+    .lot-marker.vertical .lot-label .section-tag {
+      display: none;
     }
     
     .hidden-marker {
@@ -1182,8 +1209,9 @@ if ($conn) {
                 $occupiedLayers = isset($lot['occupied_layers']) ? $lot['occupied_layers'] : 0;
                 $actualStatus = isset($lot['actual_status']) ? $lot['actual_status'] : $lot['status'];
                 $deceasedName = isset($lot['deceased_name']) ? $lot['deceased_name'] : null;
+                $isVertical = isset($lot['map_height']) && isset($lot['map_width']) && $lot['map_height'] > $lot['map_width'];
                 ?>
-                <div class="lot-marker <?php echo strtolower($actualStatus); ?>"
+                <div class="lot-marker <?php echo strtolower($actualStatus); ?> <?php echo $isVertical ? 'vertical' : ''; ?>"
                      data-lot-id="<?php echo $lot['id']; ?>"
                      style="left: <?php echo $lot['map_x']; ?>%; 
                             top: <?php echo $lot['map_y']; ?>%;
@@ -1195,6 +1223,9 @@ if ($conn) {
                     <span><?php echo htmlspecialchars($lot['lot_number']); ?></span>
                     <span class="section-tag"><?php echo htmlspecialchars($lot['section']); ?></span>
                   </div>
+                  <?php if ($isVertical): ?>
+                    <div class="section-tag"><?php echo htmlspecialchars($lot['section']); ?></div>
+                  <?php endif; ?>
                   <?php if ($totalLayers > 1): ?>
                     <div class="lot-layer-indicator" title="<?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?> layers occupied"><?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?></div>
                   <?php endif; ?>
