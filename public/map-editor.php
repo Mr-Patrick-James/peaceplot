@@ -497,6 +497,117 @@ if ($conn) {
     .notification-close:hover {
       opacity: 1;
     }
+
+    /* Confirmation Modal Styles */
+    .confirm-modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .confirm-modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalScaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .confirm-icon {
+      width: 64px;
+      height: 64px;
+      background: #eff6ff;
+      color: #3b82f6;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+    }
+
+    .confirm-icon.danger {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+
+    .confirm-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+
+    .confirm-message {
+      font-size: 15px;
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn-confirm-action {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-action:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-confirm-action.danger {
+      background: #ef4444;
+    }
+
+    .btn-confirm-action.danger:hover {
+      background: #dc2626;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-confirm-cancel {
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-cancel:hover {
+      background: #e2e8f0;
+    }
   </style>
 </head>
 <body>
@@ -1179,6 +1290,42 @@ if ($conn) {
       }
     }
 
+    // Confirmation Modal System
+    function showConfirmModal(options) {
+      const modal = document.getElementById('confirmModal');
+      const title = document.getElementById('confirmTitle');
+      const message = document.getElementById('confirmMessage');
+      const icon = document.getElementById('confirmIcon');
+      const confirmBtn = document.getElementById('confirmBtn');
+      
+      title.textContent = options.title || 'Confirm Action';
+      message.textContent = options.message || 'Are you sure you want to proceed?';
+      confirmBtn.textContent = options.confirmText || 'Confirm';
+      
+      // Reset classes
+      icon.className = 'confirm-icon';
+      confirmBtn.className = 'btn-confirm-action';
+      
+      if (options.type === 'danger') {
+        icon.classList.add('danger');
+        confirmBtn.classList.add('danger');
+        icon.textContent = '⚠';
+      } else {
+        icon.textContent = options.icon || 'ℹ';
+      }
+      
+      modal.style.display = 'flex';
+      
+      confirmBtn.onclick = () => {
+        closeConfirmModal();
+        if (options.onConfirm) options.onConfirm();
+      };
+    }
+    
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').style.display = 'none';
+    }
+
     async function updateLotCoordinates(lotId, coordinates) {
       try {
         const response = await fetch('../api/save_map_coordinates.php', {
@@ -1250,17 +1397,20 @@ if ($conn) {
         const createResult = await createNewLot(newLotData);
         if (!createResult.success) {
           if (createResult.message.includes('already exists')) {
-            const useExisting = confirm(createResult.message + "\n\nWould you like to search for this existing lot and assign it to the map instead?");
-            if (useExisting) {
-              // Switch to existing mode and try to select it
-              document.querySelector('input[name="assignMode"][value="existing"]').checked = true;
-              toggleAssignMode();
-              
-              // We need to refresh the page or dynamically find the ID if it's not in the dropdown
-              // For now, let's just alert them to select it from the list
-              showNotification("Please select '" + lotNumber + "' from the dropdown.", 'info');
-              return;
-            }
+            showConfirmModal({
+              title: 'Lot Already Exists',
+              message: createResult.message + "\n\nWould you like to search for this existing lot and assign it to the map instead?",
+              confirmText: 'Search Existing',
+              onConfirm: () => {
+                // Switch to existing mode and try to select it
+                document.querySelector('input[name="assignMode"][value="existing"]').checked = true;
+                toggleAssignMode();
+                
+                // We need to refresh the page or dynamically find the ID if it's not in the dropdown
+                // For now, let's just alert them to select it from the list
+                showNotification("Please select '" + lotNumber + "' from the dropdown.", 'info');
+              }
+            });
           } else {
             showNotification('Failed to create lot: ' + createResult.message, 'error');
           }
@@ -1334,53 +1484,71 @@ if ($conn) {
       if (targetIndex === -1) return;
 
       const target = rectangles[targetIndex];
-      const ok = confirm(`Remove mark for Lot ${target.lotData.lot_number}?`);
-      if (!ok) return;
+      showConfirmModal({
+        title: 'Remove Map Mark',
+        message: `Are you sure you want to remove the mark for Lot ${target.lotData.lot_number}?`,
+        type: 'danger',
+        confirmText: 'Remove Mark',
+        onConfirm: async () => {
+          target.rect.remove();
+          rectangles.splice(targetIndex, 1);
 
-      target.rect.remove();
-      rectangles.splice(targetIndex, 1);
+          try {
+            const response = await fetch('../api/save_map_coordinates.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                lots: [{ id: target.lotData.id, map_x: null, map_y: null, map_width: null, map_height: null }]
+              })
+            });
 
-      try {
-        const response = await fetch('../api/save_map_coordinates.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lots: [{ id: target.lotData.id, map_x: null, map_y: null, map_width: null, map_height: null }]
-          })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-          // Restore to dropdown
-          const select = document.getElementById('lotSelect');
-          const option = document.createElement('option');
-          option.value = target.lotData.id;
-          option.textContent = `${target.lotData.lot_number} - ${target.lotData.section} (${target.lotData.status})`;
-          
-          const resetLotData = { ...target.lotData, map_x: null, map_y: null, map_width: null, map_height: null };
-          option.setAttribute('data-lot', JSON.stringify(resetLotData));
-          
-          select.appendChild(option);
-          
-          // Sort options
-          const options = Array.from(select.options);
-          options.sort((a, b) => {
-              if (a.value === "") return -1;
-              if (b.value === "") return 1;
-              return a.text.localeCompare(b.text, undefined, { numeric: true, sensitivity: 'base' });
-          });
-          select.innerHTML = '';
-          options.forEach(opt => select.appendChild(opt));
-          
-          showNotification('Mark removed successfully', 'success');
-        } else {
-          showNotification('Error removing mark: ' + result.message, 'error');
+            const result = await response.json();
+            if (result.success) {
+              // Restore to dropdown
+              const select = document.getElementById('lotSelect');
+              const option = document.createElement('option');
+              option.value = target.lotData.id;
+              option.textContent = `${target.lotData.lot_number} - ${target.lotData.section} (${target.lotData.status})`;
+              
+              const resetLotData = { ...target.lotData, map_x: null, map_y: null, map_width: null, map_height: null };
+              option.setAttribute('data-lot', JSON.stringify(resetLotData));
+              
+              select.appendChild(option);
+              
+              // Sort options
+              const options = Array.from(select.options);
+              options.sort((a, b) => {
+                  if (a.value === "") return -1;
+                  if (b.value === "") return 1;
+                  return a.text.localeCompare(b.text, undefined, { numeric: true, sensitivity: 'base' });
+              });
+              select.innerHTML = '';
+              options.forEach(opt => select.appendChild(opt));
+              
+              showNotification('Mark removed successfully', 'success');
+            } else {
+              showNotification('Error removing mark: ' + result.message, 'error');
+            }
+          } catch (error) {
+            showNotification('Error removing mark: ' + error.message, 'error');
+          }
         }
-      } catch (error) {
-        showNotification('Error removing mark: ' + error.message, 'error');
-      }
+      });
     }
   </script>
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="confirm-modal">
+    <div class="confirm-modal-content">
+      <div id="confirmIcon" class="confirm-icon">⚠</div>
+      <h3 id="confirmTitle" class="confirm-title">Confirm Action</h3>
+      <p id="confirmMessage" class="confirm-message">Are you sure you want to proceed?</p>
+      <div class="confirm-actions">
+        <button class="btn-confirm-cancel" onclick="closeConfirmModal()">Cancel</button>
+        <button id="confirmBtn" class="btn-confirm-action">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../assets/js/app.js"></script>
 </body>
 </html>

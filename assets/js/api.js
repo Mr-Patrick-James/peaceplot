@@ -1,7 +1,7 @@
 const API_BASE_URL = '/peaceplot/api';
 
 const API = {
-    async fetchLots(page = 1, limit = 20, search = '', status = '', section = '', block = '') {
+    async fetchLots(page = 1, limit = 20, search = '', status = '', section = '', block = '', occupancy = '') {
         try {
             const url = new URL(`${window.location.origin}${API_BASE_URL}/cemetery_lots.php`);
             url.searchParams.append('page', page);
@@ -10,6 +10,7 @@ const API = {
             if (status) url.searchParams.append('status', status);
             if (section) url.searchParams.append('section', section);
             if (block) url.searchParams.append('block', block);
+            if (occupancy) url.searchParams.append('occupancy', occupancy);
             
             const response = await fetch(url.toString());
             const data = await response.json();

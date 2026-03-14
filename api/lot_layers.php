@@ -43,7 +43,7 @@ function handleGet($conn) {
         if ($lotId) {
             // Get layers for a specific lot with burial information
             $stmt = $conn->prepare("
-                SELECT ll.*, dr.full_name as deceased_name, dr.id as burial_record_id
+                SELECT ll.*, dr.full_name as deceased_name, dr.id as burial_record_id, dr.date_of_burial
                 FROM lot_layers ll
                 LEFT JOIN deceased_records dr ON ll.burial_record_id = dr.id
                 WHERE ll.lot_id = :lot_id
@@ -84,7 +84,7 @@ function handleGet($conn) {
         } else {
             // Get all layers
             $stmt = $conn->query("
-                SELECT ll.*, cl.lot_number, dr.full_name as deceased_name
+                SELECT ll.*, cl.lot_number, dr.full_name as deceased_name, dr.date_of_burial
                 FROM lot_layers ll
                 LEFT JOIN cemetery_lots cl ON ll.lot_id = cl.id
                 LEFT JOIN deceased_records dr ON ll.burial_record_id = dr.id

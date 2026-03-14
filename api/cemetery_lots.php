@@ -84,6 +84,7 @@ function handleGet($conn) {
                 $status = isset($_GET['status']) && $_GET['status'] !== '' ? $_GET['status'] : null;
                 $section = isset($_GET['section']) && $_GET['section'] !== '' ? $_GET['section'] : null;
                 $block = isset($_GET['block']) && $_GET['block'] !== '' ? $_GET['block'] : null;
+                $occupancy = isset($_GET['occupancy']) && $_GET['occupancy'] !== '' ? $_GET['occupancy'] : null;
                 $all = isset($_GET['all']) && $_GET['all'] === 'true';
                 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
                 
@@ -121,6 +122,21 @@ function handleGet($conn) {
                         $params[$placeholder] = trim($b);
                     }
                     $whereClauses[] = "cl.block IN (" . implode(',', $placeholders) . ")";
+                }
+
+                if ($occupancy) {
+                    $occArray = explode(',', $occupancy);
+                    $occClauses = [];
+                    foreach ($occArray as $occ) {
+                        if (trim($occ) === 'Assigned') {
+                            $occClauses[] = "EXISTS (SELECT 1 FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1)";
+                        } elseif (trim($occ) === 'Unassigned') {
+                            $occClauses[] = "NOT EXISTS (SELECT 1 FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1)";
+                        }
+                    }
+                    if (count($occClauses) > 0) {
+                        $whereClauses[] = "(" . implode(" OR ", $occClauses) . ")";
+                    }
                 }
                 
                 if ($search) {

@@ -878,6 +878,191 @@ if ($conn) {
       pointer-events: none;
       line-height: 1;
     }
+
+    /* Notification Styles */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      min-width: 240px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      transform: translateX(120%);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success { background: #22c55e; }
+    .notification.error { background: #ef4444; }
+    .notification.warning { background: #f59e0b; }
+    .notification.info { background: #3b82f6; }
+
+    .notification-icon {
+      font-size: 16px;
+      background: rgba(255,255,255,0.25);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .notification-content {
+      flex-grow: 1;
+    }
+
+    .notification-title {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .notification-message {
+      font-size: 14px;
+      line-height: 1.4;
+      opacity: 0.95;
+    }
+
+    .notification-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 0 0 10px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .notification-close:hover {
+      opacity: 1;
+    }
+
+    /* Confirmation Modal Styles */
+    .confirm-modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .confirm-modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalScaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .confirm-icon {
+      width: 64px;
+      height: 64px;
+      background: #eff6ff;
+      color: #3b82f6;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+    }
+
+    .confirm-icon.danger {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+
+    .confirm-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+
+    .confirm-message {
+      font-size: 15px;
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn-confirm-action {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-action:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-confirm-action.danger {
+      background: #ef4444;
+    }
+
+    .btn-confirm-action.danger:hover {
+      background: #dc2626;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-confirm-cancel {
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-cancel:hover {
+      background: #e2e8f0;
+    }
   </style>
 </head>
 <body>
@@ -1528,12 +1713,12 @@ if ($conn) {
             document.body.appendChild(modal);
             modal.style.display = 'flex';
           } else {
-            alert('No images available for this burial record');
+            showNotification('No images available for this burial record', 'warning');
           }
         })
         .catch(error => {
           console.error('Error fetching images:', error);
-          alert('Error loading images');
+          showNotification('Error loading images', 'error');
         });
     }
     
@@ -1647,7 +1832,7 @@ if ($conn) {
         const data = await response.json();
         
         if (!data.success || !data.data || data.data.length === 0) {
-          alert('No layers found for this lot');
+          showNotification('No layers found for this lot', 'warning');
           return;
         }
         
@@ -1658,41 +1843,50 @@ if ($conn) {
         // Check if the highest layer is occupied
         const highestLayerData = layers.find(l => l.layer_number === highestLayer);
         if (highestLayerData.is_occupied) {
-          alert(`Cannot remove Layer ${highestLayer} - it is occupied by ${highestLayerData.deceased_name || 'someone'}`);
+          showNotification(`Cannot remove Layer ${highestLayer} - it is occupied by ${highestLayerData.deceased_name || 'someone'}`, 'error');
           return;
         }
         
-        if (!confirm(`Are you sure you want to remove Layer ${highestLayer}? This action cannot be undone.`)) {
-          return;
-        }
-        
-        // Delete the highest layer
-        const deleteResponse = await fetch(`../api/lot_layers.php`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            lot_id: lotId,
-            layer_number: highestLayer
-          })
+        showConfirmModal({
+          title: 'Remove Burial Layer',
+          message: `Are you sure you want to remove Layer ${highestLayer}? This action cannot be undone.`,
+          type: 'danger',
+          confirmText: 'Remove Layer',
+          onConfirm: async () => {
+            try {
+              // Delete the highest layer
+              const deleteResponse = await fetch(`../api/lot_layers.php`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  lot_id: lotId,
+                  layer_number: highestLayer
+                })
+              });
+              
+              const deleteResult = await deleteResponse.json();
+              
+              if (deleteResult.success) {
+                showNotification(`Layer ${highestLayer} has been removed successfully`, 'success');
+                // Reload layers and lot details
+                loadLotLayers(lotId);
+                // Update the map marker dynamically
+                updateLotMarkerOnMap(lotId);
+              } else {
+                showNotification('Failed to remove layer: ' + deleteResult.message, 'error');
+              }
+            } catch (error) {
+              console.error('Error removing layer:', error);
+              showNotification('Error removing layer: ' + error.message, 'error');
+            }
+          }
         });
-        
-        const deleteResult = await deleteResponse.json();
-        
-        if (deleteResult.success) {
-          alert(`Layer ${highestLayer} has been removed successfully`);
-          // Reload layers and lot details
-          loadLotLayers(lotId);
-          // Update the map marker dynamically
-          updateLotMarkerOnMap(lotId);
-        } else {
-          alert('Failed to remove layer: ' + deleteResult.message);
-        }
         
       } catch (error) {
         console.error('Error removing layer:', error);
-        alert('Error removing layer: ' + error.message);
+        showNotification('Error removing layer: ' + error.message, 'error');
       }
     }
     
@@ -1715,7 +1909,7 @@ if ($conn) {
         const data = await response.json();
         
         if (!data.success || !data.data) {
-          alert('Error loading burial records');
+          showNotification('Error loading burial records', 'error');
           return;
         }
         
@@ -1725,7 +1919,7 @@ if ($conn) {
         );
         
         if (!burialRecord) {
-          alert('Burial record not found for this layer');
+          showNotification('Burial record not found for this layer', 'warning');
           return;
         }
         
@@ -1916,7 +2110,7 @@ if ($conn) {
         
       } catch (error) {
         console.error('Error loading layer details:', error);
-        alert('Error loading layer details: ' + error.message);
+        showNotification('Error loading layer details: ' + error.message, 'error');
       }
     }
     
@@ -2142,36 +2336,40 @@ if ($conn) {
     }
     
     async function addNewLayer(lotId) {
-      if (!confirm('Add a new burial layer to this lot? This will allow additional burials in the same location.')) {
-        return;
-      }
-      
-      try {
-        const response = await fetch('../api/lot_layers.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            lot_id: lotId,
-            action: 'add_layer'
-          })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          alert('New layer added successfully!');
-          loadLotLayers(lotId); // Reload the layer display
-          // Update the map marker dynamically
-          updateLotMarkerOnMap(lotId);
-        } else {
-          alert('Error adding layer: ' + data.message);
+      showConfirmModal({
+        title: 'Add New Layer',
+        message: 'Add a new burial layer to this lot? This will allow additional burials in the same location.',
+        confirmText: 'Add Layer',
+        icon: '➕',
+        onConfirm: async () => {
+          try {
+            const response = await fetch('../api/lot_layers.php', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                lot_id: lotId,
+                action: 'add_layer'
+              })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              showNotification('New layer added successfully!', 'success');
+              loadLotLayers(lotId); // Reload the layer display
+              // Update the map marker dynamically
+              updateLotMarkerOnMap(lotId);
+            } else {
+              showNotification('Error adding layer: ' + data.message, 'error');
+            }
+          } catch (error) {
+            console.error('Error adding layer:', error);
+            showNotification('Error adding layer', 'error');
+          }
         }
-      } catch (error) {
-        console.error('Error adding layer:', error);
-        alert('Error adding layer');
-      }
+      });
     }
     
     // Close modal when clicking outside
@@ -2230,56 +2428,89 @@ if ($conn) {
       }
     }
     
-    function showNotification(message, type = 'info') {
-      // Create notification element
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 16px 20px;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        z-index: 10000;
-        max-width: 300px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-      `;
+    // Confirmation Modal System
+    function showConfirmModal(options) {
+      const modal = document.getElementById('confirmModal');
+      const title = document.getElementById('confirmTitle');
+      const message = document.getElementById('confirmMessage');
+      const icon = document.getElementById('confirmIcon');
+      const confirmBtn = document.getElementById('confirmBtn');
       
-      // Set background color based on type
-      switch(type) {
-        case 'success':
-          notification.style.background = '#22c55e';
-          break;
-        case 'warning':
-          notification.style.background = '#f59e0b';
-          break;
-        case 'error':
-          notification.style.background = '#ef4444';
-          break;
-        default:
-          notification.style.background = '#3b82f6';
+      title.textContent = options.title || 'Confirm Action';
+      message.textContent = options.message || 'Are you sure you want to proceed?';
+      confirmBtn.textContent = options.confirmText || 'Confirm';
+      
+      // Reset classes
+      icon.className = 'confirm-icon';
+      confirmBtn.className = 'btn-confirm-action';
+      
+      if (options.type === 'danger') {
+        icon.classList.add('danger');
+        confirmBtn.classList.add('danger');
+        icon.textContent = '⚠';
+      } else {
+        icon.textContent = options.icon || 'ℹ';
       }
       
-      notification.textContent = message;
+      modal.style.display = 'flex';
+      
+      confirmBtn.onclick = () => {
+        closeConfirmModal();
+        if (options.onConfirm) options.onConfirm();
+      };
+    }
+    
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').style.display = 'none';
+    }
+    
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      
+      const iconMap = {
+        success: '✓',
+        error: '✕',
+        warning: '!',
+        info: 'i'
+      };
+
+      const titleMap = {
+        success: 'Success',
+        error: 'Error',
+        warning: 'Warning',
+        info: 'Info'
+      };
+
+      notification.innerHTML = `
+        <div class="notification-icon">${iconMap[type]}</div>
+        <div class="notification-content">
+          <div class="notification-title">${titleMap[type]}</div>
+          <div class="notification-message">${message}</div>
+        </div>
+        ${type === 'error' ? '<button class="notification-close" onclick="this.parentElement.remove()">&times;</button>' : ''}
+      `;
+      
       document.body.appendChild(notification);
       
-      // Slide in
-      setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-      }, 100);
-      
-      // Remove after 4 seconds
-      setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
+      // Trigger animation
+      setTimeout(() => notification.classList.add('show'), 10);
+
+      // Auto-remove unless it's an error
+      if (type !== 'error') {
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => notification.remove(), 400);
+        }, 4000);
+      } else {
+        // Errors stay longer (10s) or until closed
         setTimeout(() => {
           if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 400);
           }
-        }, 300);
-      }, 4000);
+        }, 10000);
+      }
     }
     
     // Initialize highlighting when page loads
@@ -2287,6 +2518,19 @@ if ($conn) {
       setTimeout(highlightLotOnMap, 500); // Small delay to ensure map is loaded
     });
   </script>
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="confirm-modal">
+    <div class="confirm-modal-content">
+      <div id="confirmIcon" class="confirm-icon">⚠</div>
+      <h3 id="confirmTitle" class="confirm-title">Confirm Action</h3>
+      <p id="confirmMessage" class="confirm-message">Are you sure you want to proceed?</p>
+      <div class="confirm-actions">
+        <button class="btn-confirm-cancel" onclick="closeConfirmModal()">Cancel</button>
+        <button id="confirmBtn" class="btn-confirm-action">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../assets/js/app.js"></script>
 </body>
 </html>
