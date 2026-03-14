@@ -387,6 +387,7 @@ function handlePut($conn, $input) {
 
         $lotIdRaw = $input['lot_id'] ?? null;
         $newLotId = ($lotIdRaw === '' || $lotIdRaw === null) ? null : intval($lotIdRaw);
+        $moveNotes = $input['move_notes'] ?? '';
 
         if ($newLotId === null) {
             $stmt = $conn->prepare("
@@ -438,7 +439,11 @@ function handlePut($conn, $input) {
                     $updateStmt->execute();
                     updateLotStatus($conn, $oldLotId);
 
-                    logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], ($input['full_name'] ?? 'Record') . " is unassigned from lot $oldLotNum");
+                    $logMsg = ($input['full_name'] ?? 'Record') . " is unassigned from lot $oldLotNum";
+                    if ($moveNotes) {
+                        $logMsg .= " (Reason: $moveNotes)";
+                    }
+                    logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], $logMsg);
                 } else {
                     logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], ($input['full_name'] ?? 'Record') . " is updated (lot unassigned)");
                 }
@@ -539,7 +544,11 @@ function handlePut($conn, $input) {
 
             $name = $input['full_name'] ?? 'Record';
             if ($oldLotId !== null && ($oldLotId !== $newLotId || $oldLayer !== $newLayer)) {
-                logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], "$name is move in $lotNum layer $newLayer ($lotNum occupied)");
+                $logMsg = "$name is moved to $lotNum layer $newLayer";
+                if ($moveNotes) {
+                    $logMsg .= " (Reason: $moveNotes)";
+                }
+                logActivity($conn, 'MOVE_RECORD', 'deceased_records', $input['id'], $logMsg);
             } else {
                 logActivity($conn, 'UPDATE_RECORD', 'deceased_records', $input['id'], "$name assigned on $lotNum ($lotNum occupied)");
             }

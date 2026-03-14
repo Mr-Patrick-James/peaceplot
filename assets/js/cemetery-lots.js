@@ -474,8 +474,8 @@ async function showLotModal(lot = null) {
                                             <button type="button" class="btn-action" onclick="showBurialDetailModal('${layer.burial_record_id}', '${lot.lot_number}', ${layer.layer_number})" title="View Burial Details" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #eff6ff; color: #3b82f6; border: none; font-weight: 600;">
                                                 View Details
                                             </button>
-                                            <button type="button" class="btn-action" onclick="unassignBurial('${layer.burial_record_id}', '${lot.id}')" title="Unassign Burial" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #fee2e2; color: #ef4444; border: none; font-weight: 600;">
-                                                Unassign
+                                            <button type="button" class="btn-action" onclick="showMoveBurialModal('${layer.burial_record_id}', '${lot.id}', ${layer.layer_number})" title="Move Burial" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #fef3c7; color: #d97706; border: none; font-weight: 600;">
+                                                Move
                                             </button>
                                         </div>
                                     ` : ''}
@@ -657,92 +657,310 @@ async function showBurialDetailModal(burialId, lotNumber, layerNumber) {
 }
 
 /**
- * Unassign a burial from a lot
+ * Move a burial to a different lot/layer with notes
  */
-async function unassignBurial(burialId, lotId) {
-    showConfirmModal({
-        title: 'Unassign Burial',
-        message: 'Are you sure you want to unassign this burial from the lot? The record will be kept but will no longer be linked to this location.',
-        type: 'danger',
-        confirmText: 'Unassign',
-        onConfirm: async () => {
-            try {
-                const response = await fetch('../api/burial_records.php', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: burialId, lot_id: null })
-                });
-                
-                const result = await response.json();
-                if (result.success) {
-                    showNotification('Burial unassigned successfully', 'success');
-                    
-                    // Real-time refresh:
-                    // 1. Refresh the main lot list in the background
-                    loadCemeteryLots(currentPage);
-                    
-                    // 2. Refresh the current edit modal's burial info
-                    const lot = currentLots.find(l => l.id == lotId);
-                    if (lot) {
-                        // We need to wait a bit for the backend to finish its work
-                        setTimeout(() => {
-                            // Find the existing modal and refresh its layer list
-                            const container = document.getElementById('burialInfoContainer');
-                            if (container) {
-                                fetch(`../api/lot_layers.php?lot_id=${lotId}`)
-                                    .then(r => r.json())
-                                    .then(layersRes => {
-                                        if (layersRes.success) {
-                                            const layers = layersRes.data || [];
-                                            container.innerHTML = `
-                                                <div class="burial-info-section">
-                                                    <div class="section-title">
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                                        Burial Details by Layer
-                                                    </div>
-                                                    <div class="layers-list">
-                                                        ${layers.map(layer => `
-                                                            <div class="layer-card">
-                                                                <div class="layer-number">${layer.layer_number}</div>
-                                                                <div class="layer-details">
-                                                                    <div class="layer-name">${layer.deceased_name || 'Vacant Layer'}</div>
-                                                                    <div class="layer-sub">
-                                                                        ${layer.deceased_name ? (layer.date_of_burial ? `Buried on ${new Date(layer.date_of_burial).toLocaleDateString()}` : 'Burial record assigned') : 'No burial record assigned'}
-                                                                    </div>
-                                                                </div>
-                                                                ${layer.is_occupied ? `
-                                                                    <div style="display: flex; gap: 8px;">
-                                                                        <button type="button" class="btn-action" onclick="showBurialDetailModal('${layer.burial_record_id}', '${lot.lot_number}', ${layer.layer_number})" title="View Burial Details" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #eff6ff; color: #3b82f6; border: none; font-weight: 600;">
-                                                                            View Details
-                                                                        </button>
-                                                                        <button type="button" class="btn-action" onclick="unassignBurial('${layer.burial_record_id}', '${lot.id}')" title="Unassign Burial" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #fee2e2; color: #ef4444; border: none; font-weight: 600;">
-                                                                            Unassign
-                                                                        </button>
-                                                                    </div>
-                                                                ` : ''}
-                                                                <div class="layer-status ${layer.is_occupied ? 'occupied' : 'vacant'}" style="margin-left: 8px;">
-                                                                    ${layer.is_occupied ? 'Occupied' : 'Vacant'}
-                                                                </div>
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            `;
-                                        }
-                                    });
-                            }
-                        }, 300);
-                    }
-                } else {
-                    showNotification(result.message || 'Error unassigning burial', 'error');
-                }
-            } catch (error) {
-                console.error('Error unassigning burial:', error);
-                showNotification('An error occurred. Please try again.', 'error');
-            }
+async function showMoveBurialModal(burialId, currentLotId, currentLayer) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.style.zIndex = '3000'; // Above edit modal
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background: #fff; border-bottom: 1px solid #f1f5f9; padding: 24px 32px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: #eff6ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #3b82f6;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M8 21H3v-5M21 3l-7 7M3 21l7-7"/></svg>
+                    </div>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b;">Move Burial</h2>
+                </div>
+                <button class="modal-close" style="background: #f8fafc; border: none; width: 32px; height: 32px; border-radius: 8px; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 32px;">
+                <form id="moveBurialForm">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Search & Select New Lot</label>
+                        <div style="position: relative;">
+                            <input type="text" id="lotSearchInput" placeholder="Search by lot number, section or block..." style="width: 100%; padding: 12px 12px 12px 40px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none;">
+                            <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <div id="lotSearchResults" style="max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px; display: none; background: #fff; position: absolute; width: 100%; top: 100%; left: 0; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 4px;"></div>
+                        </div>
+                        <input type="hidden" id="moveNewLotId" required>
+                        <div id="selectedLotBadge" style="margin-top: 8px; display: none;">
+                            <div style="display: inline-flex; align-items: center; gap: 8px; background: #eff6ff; color: #3b82f6; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                                <span id="selectedLotText"></span>
+                                <button type="button" id="clearLotSelection" style="border: none; background: none; color: #3b82f6; cursor: pointer; padding: 0; font-size: 16px;">&times;</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Select New Layer</label>
+                        <select id="moveNewLayer" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none;" required disabled>
+                            <option value="">Select a lot first</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Reason for Move / Notes</label>
+                        <textarea id="moveNotes" placeholder="Explain why this burial is being moved..." style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; min-height: 100px;" required></textarea>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" class="modal-cancel" style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-weight: 600; cursor: pointer;">Cancel</button>
+                        <button type="submit" style="flex: 2; padding: 12px; border-radius: 10px; border: none; background: #3b82f6; color: #fff; font-weight: 600; cursor: pointer;">Confirm Move</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const form = modal.querySelector('#moveBurialForm');
+    const lotSearchInput = modal.querySelector('#lotSearchInput');
+    const lotSearchResults = modal.querySelector('#lotSearchResults');
+    const lotHiddenId = modal.querySelector('#moveNewLotId');
+    const selectedLotBadge = modal.querySelector('#selectedLotBadge');
+    const selectedLotText = modal.querySelector('#selectedLotText');
+    const clearLotBtn = modal.querySelector('#clearLotSelection');
+    const layerSelect = modal.querySelector('#moveNewLayer');
+    const closeBtn = modal.querySelector('.modal-close');
+    const cancelBtn = modal.querySelector('.modal-cancel');
+
+    let allLots = [];
+    let selectedLotId = currentLotId;
+
+    const closeModalLocal = () => {
+        modal.remove();
+    };
+
+    closeBtn.onclick = closeModalLocal;
+    cancelBtn.onclick = closeModalLocal;
+    modal.onclick = (e) => { if (e.target === modal) closeModalLocal(); };
+
+    // Set initial lot if exists
+    if (currentLotId) {
+        const lot = currentLots.find(l => l.id == currentLotId);
+        if (lot) {
+            updateSelectedLot(lot);
+        }
+    }
+
+    function updateSelectedLot(lot) {
+        if (!lot) {
+            selectedLotId = null;
+            lotHiddenId.value = "";
+            selectedLotBadge.style.display = "none";
+            lotSearchInput.style.display = "block";
+            lotSearchInput.parentElement.style.display = "block";
+            layerSelect.innerHTML = '<option value="">Select a lot first</option>';
+            layerSelect.disabled = true;
+            return;
+        }
+
+        selectedLotId = lot.id;
+        lotHiddenId.value = lot.id;
+        selectedLotText.textContent = `Lot ${lot.lot_number} (${lot.section} - Block ${lot.block})`;
+        selectedLotBadge.style.display = "block";
+        lotSearchInput.style.display = "none";
+        lotSearchInput.parentElement.style.display = "none";
+        lotSearchResults.style.display = "none";
+        
+        layerSelect.disabled = false;
+        loadLayersForMove(lot.id, layerSelect, lot.id == currentLotId ? currentLayer : null);
+    }
+
+    clearLotBtn.onclick = () => {
+        updateSelectedLot(null);
+        lotSearchInput.value = "";
+    };
+
+    // Fetch lots for searching
+    try {
+        const result = await API.fetchLots(1, 1000); // Fetch all lots
+        if (result.success && result.data) {
+            allLots = result.data;
+        }
+    } catch (error) {
+        console.error('Error fetching lots:', error);
+    }
+
+    lotSearchInput.oninput = (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 1) {
+            lotSearchResults.style.display = 'none';
+            return;
+        }
+
+        const filtered = allLots.filter(lot => 
+            lot.lot_number.toLowerCase().includes(query) || 
+            lot.section.toLowerCase().includes(query) || 
+            lot.block.toLowerCase().includes(query)
+        ).slice(0, 10); // Limit to 10 results
+
+        if (filtered.length > 0) {
+            lotSearchResults.innerHTML = filtered.map(lot => `
+                <div class="search-result-item" data-id="${lot.id}" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
+                    <div style="font-weight: 600; color: #1e293b;">Lot ${lot.lot_number}</div>
+                    <div style="font-size: 12px; color: #64748b;">${lot.section} - Block ${lot.block}</div>
+                </div>
+            `).join('');
+            
+            // Add hover effect
+            lotSearchResults.querySelectorAll('.search-result-item').forEach(item => {
+                item.onmouseenter = () => item.style.background = '#f8fafc';
+                item.onmouseleave = () => item.style.background = '#fff';
+                item.onclick = () => {
+                    const lot = allLots.find(l => l.id == item.dataset.id);
+                    updateSelectedLot(lot);
+                };
+            });
+            
+            lotSearchResults.style.display = 'block';
+        } else {
+            lotSearchResults.innerHTML = '<div style="padding: 15px; color: #94a3b8; text-align: center; font-size: 13px;">No lots found</div>';
+            lotSearchResults.style.display = 'block';
+        }
+    };
+
+    // Close results when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!lotSearchInput.contains(e.target) && !lotSearchResults.contains(e.target)) {
+            lotSearchResults.style.display = 'none';
         }
     });
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loading-spinner"></span> Moving...';
+
+        const newLotId = selectedLotId;
+        const newLayer = layerSelect.value || null;
+        const moveNotes = modal.querySelector('#moveNotes').value;
+
+        try {
+            // Fetch full record data first to ensure we don't overwrite other fields
+            const recordRes = await fetch(`../api/burial_records.php?id=${burialId}`);
+            const recordDataResult = await recordRes.json();
+            
+            if (!recordDataResult.success) {
+                throw new Error(recordDataResult.message || 'Failed to fetch record data');
+            }
+            
+            const recordData = recordDataResult.data;
+            const updateData = {
+                ...recordData,
+                lot_id: newLotId,
+                layer: newLayer,
+                move_notes: moveNotes
+            };
+
+            const result = await API.updateBurialRecord(burialId, updateData);
+            if (result.success) {
+                showNotification('Burial moved successfully', 'success');
+                closeModalLocal();
+                
+                // Refresh main lot list
+                loadCemeteryLots(currentPage);
+                
+                // Refresh the edit modal if it's open
+                const editModalLot = currentLots.find(l => l.id == currentLotId);
+                if (editModalLot) {
+                    setTimeout(() => {
+                        const container = document.getElementById('burialInfoContainer');
+                        if (container) {
+                            refreshBurialInfo(currentLotId, container);
+                        }
+                    }, 300);
+                }
+                
+                // If moved to a different lot, refresh that lot too if needed
+                if (newLotId && newLotId != currentLotId) {
+                    // (Optional) handle refreshing the target lot's info if another modal is open
+                }
+            } else {
+                showNotification(result.message || 'Error moving burial', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Confirm Move';
+            }
+        } catch (error) {
+            console.error('Error moving burial:', error);
+            showNotification('An error occurred. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Confirm Move';
+        }
+    };
 }
+
+async function loadLayersForMove(lotId, layerSelect, currentLayer) {
+    layerSelect.innerHTML = '<option value="">Loading layers...</option>';
+    try {
+        const result = await API.fetchLotLayers(lotId);
+        if (result.success && result.data) {
+            layerSelect.innerHTML = '<option value="">-- Select Layer --</option>';
+            result.data.forEach(layer => {
+                const option = document.createElement('option');
+                option.value = layer.layer_number;
+                option.textContent = `Layer ${layer.layer_number} ${layer.is_occupied ? '(Occupied)' : '(Vacant)'}`;
+                if (layer.layer_number == currentLayer) {
+                    option.textContent += ' (Current)';
+                }
+                layerSelect.appendChild(option);
+            });
+            if (currentLayer) {
+                layerSelect.value = currentLayer;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching layers:', error);
+        layerSelect.innerHTML = '<option value="">Error loading layers</option>';
+    }
+}
+
+async function refreshBurialInfo(lotId, container) {
+    const layersRes = await API.fetchLotLayers(lotId);
+    if (layersRes.success) {
+        const layers = layersRes.data || [];
+        container.innerHTML = `
+            <div class="burial-info-section">
+                <div class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Burial Details by Layer
+                </div>
+                <div class="layers-list">
+                    ${layers.map(layer => `
+                        <div class="layer-card">
+                            <div class="layer-number">${layer.layer_number}</div>
+                            <div class="layer-details">
+                                <div class="layer-name">${layer.deceased_name || 'Vacant Layer'}</div>
+                                <div class="layer-sub">
+                                    ${layer.deceased_name ? (layer.date_of_burial ? `Buried on ${new Date(layer.date_of_burial).toLocaleDateString()}` : 'Burial record assigned') : 'No burial record assigned'}
+                                </div>
+                            </div>
+                            ${layer.is_occupied ? `
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="button" class="btn-action" onclick="showBurialDetailModal('${layer.burial_record_id}', '', ${layer.layer_number})" title="View Burial Details" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #eff6ff; color: #3b82f6; border: none; font-weight: 600;">
+                                        View Details
+                                    </button>
+                                    <button type="button" class="btn-action" onclick="showMoveBurialModal('${layer.burial_record_id}', '${lotId}', ${layer.layer_number})" title="Move Burial" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #fef3c7; color: #d97706; border: none; font-weight: 600;">
+                                        Move
+                                    </button>
+                                </div>
+                            ` : ''}
+                            <div class="layer-status ${layer.is_occupied ? 'occupied' : 'vacant'}" style="margin-left: 8px;">
+                                ${layer.is_occupied ? 'Occupied' : 'Vacant'}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Unassign is now replaced by Move Burial
+ */
 
 function createLotModal(lot = null) {
     // This function is replaced by showLotModal

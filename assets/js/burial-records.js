@@ -425,20 +425,26 @@ function renderRecords(records) {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     </div>
                     <div>
-                        <div style="font-weight: 600; color: #1e293b;">Lot ${record.lot_number || '—'}</div>
+                        ${record.lot_id ? `
+                            <div style="font-weight: 600; color: #1e293b;">Lot ${record.lot_number || '—'}</div>
+                        ` : `
+                            <div style="color: #94a3b8; font-style: italic; font-size: 14px;">Unassigned</div>
+                        `}
                         <div style="font-size: 12px; color: #94a3b8;">${record.section || '—'}</div>
                     </div>
                 </div>
             </td>
             <td>
-                ${record.layer ? `
+                ${record.lot_id && record.layer ? `
                     <span style="background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
                         Layer ${record.layer}
                     </span>
-                ` : '—'}
+                ` : (record.lot_id ? '—' : '<span style="color: #94a3b8; font-style: italic;">Unassigned</span>')}
             </td>
             <td>
-                <div style="color: #475569;">${record.block || '—'}</div>
+                <div style="color: #475569;">
+                    ${record.lot_id ? (record.block || '—') : '<span style="color: #94a3b8; font-style: italic;">Unassigned</span>'}
+                </div>
             </td>
             <td>
                 <div style="font-size: 13px; color: #475569;">
@@ -1757,16 +1763,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Check for URL parameters (lot_id, layer)
+        // Check for URL parameters (lot_id, layer, edit_id)
         const urlParams = new URLSearchParams(window.location.search);
         const lotId = urlParams.get('lot_id');
         const layer = urlParams.get('layer');
+        const editId = urlParams.get('edit_id');
         
         if (lotId) {
             // Automatically open add modal with pre-selected lot and layer
             showAddModal({ lot_id: lotId, layer: layer });
             // Clean up URL
             window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (editId) {
+            // Wait for records to load before showing edit modal
+            const checkRecords = setInterval(() => {
+                if (currentRecords.length > 0) {
+                    showEditModal(editId);
+                    clearInterval(checkRecords);
+                    // Clean up URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }, 100);
+            
+            // Timeout after 5 seconds
+            setTimeout(() => clearInterval(checkRecords), 5000);
         }
     }
 });
