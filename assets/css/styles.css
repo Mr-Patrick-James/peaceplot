@@ -99,6 +99,49 @@ body{
   border-left: 1px solid rgba(255,255,255,0.1);
   margin-left: 20px;
 }
+
+/* Compact Flatpickr Styles */
+.flatpickr-calendar {
+  width: 220px !important;
+  font-size: 11px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+  border-radius: 12px !important;
+}
+.flatpickr-days, .dayContainer {
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+}
+.flatpickr-day {
+  height: 28px !important;
+  line-height: 28px !important;
+  max-width: 28px !important;
+  margin: 1px !important;
+  border-radius: 6px !important;
+}
+.flatpickr-months .flatpickr-month {
+  height: 28px !important;
+}
+.flatpickr-current-month {
+  padding: 0 !important;
+  height: 28px !important;
+  font-size: 12px !important;
+}
+.flatpickr-calendar.arrowTop:after, .flatpickr-calendar.arrowTop:before {
+  border-bottom-color: #fff !important;
+}
+.flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month {
+  padding: 2px !important;
+  height: 28px !important;
+}
+.flatpickr-weekday {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+}
+.flatpickr-innerContainer {
+  padding: 2px !important;
+}
 .dropdown.active .dropdown-content {
   display: flex;
 }

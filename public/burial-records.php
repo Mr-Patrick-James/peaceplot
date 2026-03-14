@@ -48,6 +48,9 @@ if ($conn) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PeacePlot Admin - Burial Records</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
+  <!-- Flatpickr for better date selection -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     /* Modern Dashboard Header & UI */
     .dashboard-header {
@@ -306,6 +309,44 @@ if ($conn) {
     }
     .date-range-wrapper label { font-size: 12px; font-weight: 600; color: #64748b; }
     .date-range-wrapper input { border: none; outline: none; font-size: 13px; color: #1e293b; background: transparent; }
+
+    /* Age Range Styles */
+    .age-range-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .age-input-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .age-input-group label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .age-input-group input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #1e293b;
+      outline: none;
+    }
+    .age-input-group input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    .age-range-separator {
+      margin-top: 18px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
 
     /* Table & Pagination */
     .table-wrap { width: 100%; overflow-x: auto; }
@@ -633,9 +674,9 @@ if ($conn) {
           <div class="filter-controls">
             <div class="date-range-wrapper">
               <label>From:</label>
-              <input type="date" id="startDate">
+              <input type="text" id="startDate" placeholder="YYYY-MM-DD" class="datepicker">
               <label>To:</label>
-              <input type="date" id="endDate">
+              <input type="text" id="endDate" placeholder="YYYY-MM-DD" class="datepicker">
             </div>
             <div class="search-wrapper">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -704,6 +745,27 @@ if ($conn) {
                         <label class="filter-option">
                           <input type="checkbox" name="status" value="Maintenance" onchange="updateFilters()"> Maintenance
                         </label>
+                      </div>
+                    </div>
+
+                    <!-- Age Range Category -->
+                    <div class="filter-category">
+                      <button class="category-toggle" onclick="toggleCategory(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Age Range
+                      </button>
+                      <div class="category-content">
+                        <div class="age-range-inputs">
+                          <div class="age-input-group">
+                            <label>Min</label>
+                            <input type="number" id="ageMin" placeholder="0" onchange="updateFilters()">
+                          </div>
+                          <div class="age-range-separator">-</div>
+                          <div class="age-input-group">
+                            <label>Max</label>
+                            <input type="number" id="ageMax" placeholder="120" onchange="updateFilters()">
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

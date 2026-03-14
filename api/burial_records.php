@@ -70,6 +70,8 @@ function handleGet($conn) {
         $sortOrder = isset($_GET['sort_order']) && strtoupper($_GET['sort_order']) === 'ASC' ? 'ASC' : 'DESC';
         $startDate = isset($_GET['start_date']) ? trim($_GET['start_date']) : '';
         $endDate = isset($_GET['end_date']) ? trim($_GET['end_date']) : '';
+        $ageMin = isset($_GET['age_min']) && $_GET['age_min'] !== '' ? intval($_GET['age_min']) : null;
+        $ageMax = isset($_GET['age_max']) && $_GET['age_max'] !== '' ? intval($_GET['age_max']) : null;
         
         // Check if burial_record_images table exists
         $tableCheck = $conn->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='burial_record_images'");
@@ -179,6 +181,16 @@ function handleGet($conn) {
             if ($endDate) {
                 $whereClause .= " AND dr.date_of_death <= :end_date";
                 $params[':end_date'] = $endDate;
+            }
+
+            if ($ageMin !== null) {
+                $whereClause .= " AND dr.age >= :age_min";
+                $params[':age_min'] = $ageMin;
+            }
+
+            if ($ageMax !== null) {
+                $whereClause .= " AND dr.age <= :age_max";
+                $params[':age_max'] = $ageMax;
             }
             
             // Get total count for pagination

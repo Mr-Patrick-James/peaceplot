@@ -1,5 +1,5 @@
 const BurialAPI = {
-    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '', section = '', block = '', status = '', assignment = '', startDate = '', endDate = '', sortBy = 'created_at', sortOrder = 'DESC') {
+    async fetchRecords(showArchived = false, page = 1, limit = 10, search = '', section = '', block = '', status = '', assignment = '', startDate = '', endDate = '', sortBy = 'created_at', sortOrder = 'DESC', ageMin = '', ageMax = '') {
         try {
             let url = `${API_BASE_URL}/burial_records.php?archived=${showArchived ? '1' : '0'}&page=${page}&limit=${limit}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -11,6 +11,8 @@ const BurialAPI = {
             if (endDate) url += `&end_date=${encodeURIComponent(endDate)}`;
             if (sortBy) url += `&sort_by=${encodeURIComponent(sortBy)}`;
             if (sortOrder) url += `&sort_order=${encodeURIComponent(sortOrder)}`;
+            if (ageMin) url += `&age_min=${encodeURIComponent(ageMin)}`;
+            if (ageMax) url += `&age_max=${encodeURIComponent(ageMax)}`;
             
             const response = await fetch(url);
             const data = await response.json();
@@ -172,10 +174,14 @@ let sectionFilter = '';
 let blockFilter = '';
 let startDate = '';
 let endDate = '';
+let ageMinFilter = '';
+let ageMaxFilter = '';
 let currentSortBy = 'created_at';
 let currentSortOrder = 'DESC';
 
 let selectedIds = new Set();
+let fpStart = null;
+let fpEnd = null;
 
 function toggleRowSelection(id, checkbox) {
     const idStr = id.toString();
@@ -240,15 +246,22 @@ function updateFilters() {
     const activeSections = Array.from(document.querySelectorAll('input[name="section"]:checked')).map(cb => cb.value);
     const activeStatuses = Array.from(document.querySelectorAll('input[name="status"]:checked')).map(cb => cb.value);
     const activeAssignments = Array.from(document.querySelectorAll('input[name="assignment"]:checked')).map(cb => cb.value);
+    
+    const minAge = document.getElementById('ageMin')?.value || '';
+    const maxAge = document.getElementById('ageMax')?.value || '';
 
     blockFilter = activeBlocks.join(',');
     sectionFilter = activeSections.join(',');
     statusFilter = activeStatuses.join(',');
     assignmentFilter = activeAssignments.join(',');
+    ageMinFilter = minAge;
+    ageMaxFilter = maxAge;
 
     // Update badge
     const filterBadge = document.getElementById('filterBadge');
-    const totalActive = activeBlocks.length + activeSections.length + activeStatuses.length + activeAssignments.length;
+    let totalActive = activeBlocks.length + activeSections.length + activeStatuses.length + activeAssignments.length;
+    if (minAge || maxAge) totalActive += 1; // Count age range as 1 filter
+
     if (filterBadge) {
         filterBadge.textContent = totalActive;
         filterBadge.style.display = totalActive > 0 ? 'flex' : 'none';
@@ -264,6 +277,19 @@ function updateFilters() {
             ...activeAssignments.map(v => ({ name: 'assignment', value: v }))
         ];
 
+        let ageChipHtml = '';
+        if (minAge || maxAge) {
+            const ageLabel = (minAge && maxAge) ? `Age: ${minAge}-${maxAge}` : (minAge ? `Age: ${minAge}+` : `Age: Up to ${maxAge}`);
+            ageChipHtml = `
+                <div class="filter-chip">
+                    ${ageLabel}
+                    <span class="remove" onclick="removeAgeFilter()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </span>
+                </div>
+            `;
+        }
+
         activeFiltersRow.innerHTML = allFilters.map(filter => `
             <div class="filter-chip">
                 ${filter.value}
@@ -271,10 +297,18 @@ function updateFilters() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </span>
             </div>
-        `).join('');
+        `).join('') + ageChipHtml;
     }
 
     loadBurialRecords();
+}
+
+function removeAgeFilter() {
+    const minInput = document.getElementById('ageMin');
+    const maxInput = document.getElementById('ageMax');
+    if (minInput) minInput.value = '';
+    if (maxInput) maxInput.value = '';
+    updateFilters();
 }
 
 function removeFilter(name, value) {
@@ -287,6 +321,19 @@ function removeFilter(name, value) {
 
 function clearAllFilters() {
     document.querySelectorAll('.filter-popover input[type="checkbox"]').forEach(cb => cb.checked = false);
+    
+    // Reset age inputs
+    const minInput = document.getElementById('ageMin');
+    const maxInput = document.getElementById('ageMax');
+    if (minInput) minInput.value = '';
+    if (maxInput) maxInput.value = '';
+
+    // Reset dates
+    if (fpStart) fpStart.clear();
+    if (fpEnd) fpEnd.clear();
+    startDate = '';
+    endDate = '';
+
     // Reset sorting to default
     currentSortBy = 'created_at';
     currentSortOrder = 'DESC';
@@ -362,7 +409,7 @@ async function loadBurialRecords() {
     `;
 
     try {
-        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchQuery, sectionFilter, blockFilter, statusFilter, assignmentFilter, startDate, endDate, currentSortBy, currentSortOrder);
+        const result = await BurialAPI.fetchRecords(showingArchived, currentPage, itemsPerPage, searchQuery, sectionFilter, blockFilter, statusFilter, assignmentFilter, startDate, endDate, currentSortBy, currentSortOrder, ageMinFilter, ageMaxFilter);
         if (result.success && result.data) {
             currentRecords = result.data;
             if (result.pagination) {
@@ -527,11 +574,11 @@ function renderRecords(records) {
             </td>
             <td align="right">
                 <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                    <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center;" data-action="view" data-record-id="${record.id}" title="View Details">
+                    <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #6366f1; border-color: #e0e7ff;" data-action="view" data-record-id="${record.id}" title="View Details">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
                     ${!showingArchived ? `
-                        <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center;" data-action="edit" data-record-id="${record.id}" title="Edit Record">
+                        <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #3b82f6; border-color: #dbeafe;" data-action="edit" data-record-id="${record.id}" title="Edit Record">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         </button>
                         <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #ef4444; border-color: #fee2e2;" data-action="delete" data-record-id="${record.id}" title="Archive Record">
@@ -685,6 +732,17 @@ function showAddModal(preData = null) {
         const modal = createRecordModal(preData);
         document.body.appendChild(modal);
         modal.style.display = 'flex';
+
+        // Initialize Flatpickr for the new modal
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr(modal.querySelectorAll(".datepicker"), {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "F j, Y",
+                allowInput: true,
+                monthSelectorType: 'static'
+            });
+        }
         
         // If we have pre-selected lot, trigger layer loading
         if (preData && preData.lot_id) {
@@ -794,6 +852,17 @@ function showEditModal(recordId) {
         const modal = createRecordModal(record);
         document.body.appendChild(modal);
         modal.style.display = 'flex';
+
+        // Initialize Flatpickr for the new modal
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr(modal.querySelectorAll(".datepicker"), {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "F j, Y",
+                allowInput: true,
+                monthSelectorType: 'static'
+            });
+        }
     } catch (error) {
         console.error('Error creating edit modal:', error);
     }
@@ -1245,11 +1314,11 @@ function createRecordModal(record = null) {
                         </div>
                         <div class="form-group">
                             <label>Date of Birth</label>
-                            <input type="date" name="date_of_birth" value="${record?.date_of_birth || ''}">
+                            <input type="text" name="date_of_birth" class="datepicker" value="${record?.date_of_birth || ''}" placeholder="YYYY-MM-DD">
                         </div>
                         <div class="form-group">
                             <label>Date of Death</label>
-                            <input type="date" name="date_of_death" value="${record?.date_of_death || ''}">
+                            <input type="text" name="date_of_death" class="datepicker" value="${record?.date_of_death || ''}" placeholder="YYYY-MM-DD">
                         </div>
                         <div class="form-group">
                             <label>Age</label>
@@ -1274,7 +1343,7 @@ function createRecordModal(record = null) {
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                         <div class="form-group">
                             <label>Date of Burial</label>
-                            <input type="date" name="date_of_burial" value="${record?.date_of_burial || ''}">
+                            <input type="text" name="date_of_burial" class="datepicker" value="${record?.date_of_burial || ''}" placeholder="YYYY-MM-DD">
                         </div>
                         <div class="form-group">
                             <label>Cemetery Lot</label>
@@ -1774,24 +1843,53 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Date Filters
-        const startDateInput = document.getElementById('startDate');
-        const endDateInput = document.getElementById('endDate');
-        
-        if (startDateInput) {
-            startDateInput.addEventListener('change', (e) => {
-                startDate = e.target.value;
-                currentPage = 1;
-                loadBurialRecords();
+        // Date Filters with Flatpickr
+        if (typeof flatpickr !== 'undefined') {
+            fpStart = flatpickr("#startDate", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "F j, Y",
+                allowInput: true,
+                monthSelectorType: 'static',
+                onChange: function(selectedDates, dateStr) {
+                    startDate = dateStr;
+                    currentPage = 1;
+                    loadBurialRecords();
+                }
             });
-        }
-        
-        if (endDateInput) {
-            endDateInput.addEventListener('change', (e) => {
-                endDate = e.target.value;
-                currentPage = 1;
-                loadBurialRecords();
+
+            fpEnd = flatpickr("#endDate", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "F j, Y",
+                allowInput: true,
+                monthSelectorType: 'static',
+                onChange: function(selectedDates, dateStr) {
+                    endDate = dateStr;
+                    currentPage = 1;
+                    loadBurialRecords();
+                }
             });
+        } else {
+            // Fallback if Flatpickr is not loaded
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            
+            if (startDateInput) {
+                startDateInput.addEventListener('change', (e) => {
+                    startDate = e.target.value;
+                    currentPage = 1;
+                    loadBurialRecords();
+                });
+            }
+            
+            if (endDateInput) {
+                endDateInput.addEventListener('change', (e) => {
+                    endDate = e.target.value;
+                    currentPage = 1;
+                    loadBurialRecords();
+                });
+            }
         }
 
         // Popover Logic

@@ -45,6 +45,9 @@ if ($conn) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PeacePlot Admin - System History</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
+  <!-- Flatpickr for better date selection -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
   <div class="app">
@@ -128,10 +131,10 @@ if ($conn) {
           <div style="display:flex; gap:10px; align-items:center;">
             <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:8px 15px; border:2px solid #e2e8f0; border-radius:12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
               <label for="startDate" style="font-size:13px; font-weight:600; color:#64748b;">From:</label>
-              <input type="date" id="startDate" style="border:none; outline:none; font-size:14px; color:#1e293b;">
+              <input type="text" id="startDate" placeholder="YYYY-MM-DD" style="border:none; outline:none; font-size:14px; color:#1e293b; width: 100px;">
               <div style="width:1px; height:20px; background:#e2e8f0; margin:0 5px;"></div>
               <label for="endDate" style="font-size:13px; font-weight:600; color:#64748b;">To:</label>
-              <input type="date" id="endDate" style="border:none; outline:none; font-size:14px; color:#1e293b;">
+              <input type="text" id="endDate" placeholder="YYYY-MM-DD" style="border:none; outline:none; font-size:14px; color:#1e293b; width: 100px;">
             </div>
             <input 
               id="historySearch" 
@@ -234,6 +237,26 @@ if ($conn) {
       const startDateInput = document.getElementById('startDate');
       const endDateInput = document.getElementById('endDate');
       const rows = document.querySelectorAll('.history-row');
+
+      // Initialize Flatpickr for date filters
+      if (typeof flatpickr !== 'undefined') {
+        flatpickr("#startDate", {
+          dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "M j, Y",
+          allowInput: true,
+          monthSelectorType: 'static',
+          onChange: filterTable
+        });
+        flatpickr("#endDate", {
+          dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "M j, Y",
+          allowInput: true,
+          monthSelectorType: 'static',
+          onChange: filterTable
+        });
+      }
 
       function filterTable() {
         const searchTerm = searchInput.value.toLowerCase().trim();

@@ -121,8 +121,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Burial Record - PeacePlot</title>
+    <title>PeacePlot Admin - Add Burial Record</title>
     <link rel="stylesheet" href="../assets/css/styles.css">
+    <!-- Flatpickr for better date selection -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         .form-container {
             max-width: 800px;
@@ -351,18 +354,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="date_of_birth">Date of Birth</label>
-                            <input type="date" id="date_of_birth" name="date_of_birth">
+                            <input type="text" id="date_of_birth" name="date_of_birth" class="datepicker" placeholder="YYYY-MM-DD">
                         </div>
                         
                         <div class="form-group">
                             <label for="date_of_death">Date of Death</label>
-                            <input type="date" id="date_of_death" name="date_of_death">
+                            <input type="text" id="date_of_death" name="date_of_death" class="datepicker" placeholder="YYYY-MM-DD">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="date_of_burial">Date of Burial</label>
-                        <input type="date" id="date_of_burial" name="date_of_burial">
+                        <input type="text" id="date_of_burial" name="date_of_burial" class="datepicker" placeholder="YYYY-MM-DD">
                     </div>
 
                     <div class="form-group">
@@ -397,6 +400,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+        // Initialize Flatpickr for date inputs
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr(".datepicker", {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    allowInput: true,
+                    // Ensure the dropdowns for month and year are available
+                    monthSelectorType: 'static',
+                    yearRange: [1900, 2100] // Reasonable range
+                });
+            }
+        });
+
         async function loadLayers(lotId) {
             const layerGroup = document.getElementById('layerGroup');
             const layerOptions = document.getElementById('layerOptions');
