@@ -307,10 +307,9 @@ function handlePost($conn, $input) {
             return;
         }
 
-        if ($lotLayer['is_occupied']) {
-            echo json_encode(['success' => false, 'message' => 'Layer ' . $layer . ' is already occupied']);
-            return;
-        }
+        // Allow multiple burials if it's an ash burial (based on remarks/notes containing 'ash' or user preference)
+        // For now, we'll just allow it regardless of content to support the "same layer" request.
+        // We removed the strict 'is_occupied' check here.
 
         $stmt = $conn->prepare("
             INSERT INTO deceased_records 
@@ -472,11 +471,8 @@ function handlePut($conn, $input) {
         $layerCheckStmt->execute();
         $layerRow = $layerCheckStmt->fetch();
 
-        if ($layerRow && $layerRow['is_occupied'] && intval($layerRow['burial_record_id']) !== intval($input['id'])) {
-            echo json_encode(['success' => false, 'message' => 'Layer ' . $newLayer . ' is already occupied']);
-            return;
-        }
-
+        // Removed strict check for 'is_occupied' to allow multiple burials per layer
+        
         $stmt = $conn->prepare("
             UPDATE deceased_records 
             SET lot_id = :lot_id,

@@ -1317,7 +1317,7 @@ if ($conn) {
                 <th align="left">Position</th>
                 <th align="left">Occupant</th>
                 <th align="left">Status</th>
-                <th align="left">Layer Vacancy</th>
+                <th align="left">Layer Occupancy</th>
                 <th align="right">Actions</th>
               </tr>
             </thead>

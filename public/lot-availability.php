@@ -63,8 +63,8 @@ if ($conn) {
         // Get filtered and paginated lots
         $query = "SELECT cl.*, 
                          (SELECT GROUP_CONCAT(full_name, ', ') FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC)) as deceased_name,
-                         (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers_count,
-                         (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers_count
+                         COALESCE(NULLIF((SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id), 0), cl.layers, 1) as total_layers_count,
+                         (SELECT COUNT(DISTINCT layer) FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0) as occupied_layers_count
                   FROM cemetery_lots cl 
                   WHERE cl.status = :status";
         
@@ -246,7 +246,7 @@ if ($conn) {
                 <th align="left">Block</th>
                 <th align="left">Position</th>
                 <th align="left">Status</th>
-                <th align="left">Layer Vacancy</th>
+                <th align="left">Layer Occupancy</th>
                 <?php if ($filterStatus === 'Occupied'): ?>
                   <th align="left">Deceased Name</th>
                 <?php endif; ?>
@@ -272,8 +272,7 @@ if ($conn) {
                       <?php 
                         $total = intval($lot['total_layers_count'] ?: 1);
                         $occupied = intval($lot['occupied_layers_count'] ?: 0);
-                        $available = $total - $occupied;
-                        echo "$available / $total layers";
+                        echo "$occupied / $total layers";
                       ?>
                     </td>
                     <?php if ($filterStatus === 'Occupied'): ?>

@@ -589,10 +589,10 @@ async function loadLotLayers(lotId, layerSelect, selectedLayer = null) {
                 layers.map(layer => {
                     const isOccupied = layer.is_occupied == 1;
                     const isSelected = selectedLayer == layer.layer_number;
-                    const isDisabled = isOccupied && !isSelected;
+                    // Allow selecting occupied layers for multiple burials (e.g. ash burials)
                     const statusText = isOccupied ? (isSelected ? ' (Current)' : ' (Occupied)') : ' (Vacant)';
                     
-                    return `<option value="${layer.layer_number}" ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}>
+                    return `<option value="${layer.layer_number}" ${isSelected ? 'selected' : ''}>
                         Layer ${layer.layer_number}${statusText}
                     </option>`;
                 }).join('');
@@ -1217,7 +1217,7 @@ function createRecordModal(record = null) {
                             <select name="layer" id="selectedLayer">
                                 <option value="">Select a layer...</option>
                             </select>
-                            <p style="font-size:11px; color:#64748b; margin-top:4px;">Multi-layer lots require a layer assignment.</p>
+                            <p style="font-size:11px; color:#64748b; margin-top:4px;">Multi-layer lots require a layer assignment. Occupied layers can still be selected for multiple burials (e.g. ash burials).</p>
                         </div>
                     </div>
                 </div>

@@ -44,8 +44,8 @@ function handleGet($conn) {
                            (SELECT GROUP_CONCAT(full_name, ', ') 
                             FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
                            ) as deceased_name,
-                           (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers_count,
-                           (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers_count
+                           COALESCE(NULLIF((SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id), 0), cl.layers, 1) as total_layers_count,
+                           (SELECT COUNT(DISTINCT layer) FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0) as occupied_layers_count
                     FROM cemetery_lots cl 
                     WHERE cl.id = :id
                 ");
@@ -174,8 +174,8 @@ function handleGet($conn) {
                            (SELECT GROUP_CONCAT(full_name, ', ') 
                             FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
                            ) as deceased_name,
-                           (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers_count,
-                           (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers_count
+                           COALESCE(NULLIF((SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id), 0), cl.layers, 1) as total_layers_count,
+                           (SELECT COUNT(DISTINCT layer) FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0) as occupied_layers_count
                     FROM cemetery_lots cl 
                     " . ($search ? "LEFT JOIN deceased_records dr ON cl.id = dr.lot_id" : "") . "
                     $whereSQL

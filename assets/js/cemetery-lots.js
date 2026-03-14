@@ -187,16 +187,15 @@ function renderLots(lots) {
             <td><span class="status-badge ${badgeClass}">${lot.status}</span></td>
             <td>
                 <div style="font-size: 13px; font-weight: 600; color: #475569;">
-                    ${available} / ${total} layers
+                    ${occupied} / ${total} layers
                 </div>
                 <div style="font-size: 11px; color: #94a3b8;">
-                    ${available > 0 ? 'Vacant' : 'Fully Occupied'}
+                    ${occupied === 0 ? 'Vacant' : (occupied < total ? 'Partially Occupied' : 'Occupied')}
                 </div>
             </td>
             <td>
                 <div class="actions">
-                    ${(lot.occupied_layers_count < lot.total_layers_count || !lot.deceased_name) ? `
-                    <button class="btn-action btn-assign" data-action="assign-burial" data-lot-id="${lot.id}" title="Assign Burial">
+                    <button class="btn-action btn-assign" data-action="assign-burial" data-lot-id="${lot.id}" title="Assign Burial / Add Ash Burial">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -206,7 +205,6 @@ function renderLots(lots) {
                             </svg>
                         </span>
                     </button>
-                    ` : ''}
                     <button class="btn-action btn-edit" data-action="edit" data-lot-id="${lot.id}" title="Edit Lot">
                         <span class="icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -882,8 +880,8 @@ async function showAssignBurialModal(lotId) {
     const layersResult = await API.fetchLotLayers(lotId);
     const layers = layersResult.success ? layersResult.data : [];
     
-    // Only show vacant layers
-    const vacantLayers = layers.filter(l => !l.is_occupied);
+    // Sort layers by number
+    layers.sort((a, b) => a.layer_number - b.layer_number);
 
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -912,10 +910,14 @@ async function showAssignBurialModal(lotId) {
                 <div class="form-group">
                     <label>Select Target Layer</label>
                     <select id="layerSelect" required style="width: 100%;">
-                        ${vacantLayers.map(l => `<option value="${l.layer_number}">Layer ${l.layer_number} (Vacant)</option>`).join('')}
-                        ${vacantLayers.length === 0 ? '<option value="" disabled selected>No vacant layers available</option>' : ''}
+                        ${layers.map(l => {
+                            const isOccupied = l.is_occupied == 1;
+                            const statusText = isOccupied ? '(Occupied - Ash Burial Allowed)' : '(Vacant)';
+                            return `<option value="${l.layer_number}">Layer ${l.layer_number} ${statusText}</option>`;
+                        }).join('')}
+                        ${layers.length === 0 ? '<option value="1">Layer 1 (Vacant)</option>' : ''}
                     </select>
-                    ${vacantLayers.length === 0 ? '<p style="color: #ef4444; font-size: 12px; margin-top: 4px;">This lot has no available space.</p>' : ''}
+                    <p style="font-size:11px; color:#64748b; margin-top:4px;">You can assign multiple burials (like ashes) to the same layer.</p>
                 </div>
 
                 <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
