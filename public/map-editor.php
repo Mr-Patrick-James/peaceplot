@@ -57,6 +57,40 @@ if ($conn) {
   <title>PeacePlot Admin - Map Editor</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
   <style>
+    .dashboard-header {
+      background: #fff;
+      padding: 24px 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative; /* Added for absolute search positioning */
+    }
+    .header-left .title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+    .header-left .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0;
+    }
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .breadcrumbs a { color: #94a3b8; text-decoration: none; }
+    .breadcrumbs .current { color: #1e293b; font-weight: 600; }
+    .header-actions { display: flex; gap: 12px; }
+
     .editor-container {
       background: white;
       border-radius: 12px;
@@ -697,10 +731,24 @@ if ($conn) {
     </aside>
 
     <main class="main">
-      <div class="page-header">
-        <h1 class="page-title">Cemetery Map Editor</h1>
-        <p style="color:var(--muted); margin-top:8px;">Draw rectangles on the map to mark cemetery lots</p>
-      </div>
+      <header class="dashboard-header">
+        <div class="header-left">
+          <div class="breadcrumbs">
+            <a href="dashboard.php">Dashboard</a>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <span class="current">Map Editor</span>
+          </div>
+          <h1 class="title">Map Editor</h1>
+          <p class="subtitle">Design and organize cemetery lots on the visual map</p>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn-outline" onclick="window.location.href='cemetery-map.php'">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View Map
+          </button>
+        </div>
+      </header>
 
       <div class="editor-container">
         <div class="editor-toolbar">
@@ -722,6 +770,13 @@ if ($conn) {
             <button class="zoom-btn" onclick="zoomOut()">−</button>
             <span class="zoom-level" id="zoomLevel">100%</span>
             <button class="zoom-btn" onclick="zoomIn()">+</button>
+            <button class="tool-btn" style="padding: 6px 12px; font-size: 13px;" onclick="resetView()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+              Reset View
+            </button>
           </div>
           
           <button class="btn-primary" onclick="saveAllLots()" style="margin-left:auto;">
@@ -959,6 +1014,28 @@ if ($conn) {
 
     function zoomOut() {
       zoom = Math.max(zoom - 0.25, 0.05);
+      updateTransform();
+    }
+
+    function resetView() {
+      const containerWidth = mapWrapper.clientWidth;
+      const containerHeight = mapWrapper.clientHeight;
+      const imgWidth = mapImage.naturalWidth;
+      const imgHeight = mapImage.naturalHeight;
+
+      if (imgWidth > 3000 || imgHeight > 3000) {
+          zoom = 0.2;
+      } else {
+          const scaleX = containerWidth / imgWidth;
+          const scaleY = containerHeight / imgHeight;
+          zoom = Math.min(scaleX, scaleY, 1);
+      }
+
+      const displayedWidth = imgWidth * zoom;
+      const displayedHeight = imgHeight * zoom;
+      panX = (containerWidth - displayedWidth) / 2;
+      panY = (containerHeight - displayedHeight) / 2;
+
       updateTransform();
     }
 

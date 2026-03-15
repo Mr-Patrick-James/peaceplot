@@ -26,6 +26,7 @@ if ($conn) {
             SELECT 
                 cl.id,
                 s.name as section_name,
+                b.name as block_name,
                 CASE 
                     WHEN (SELECT COUNT(*) FROM deceased_records dr WHERE dr.lot_id = cl.id) > 0 THEN 'Occupied'
                     WHEN (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) > 0 THEN 'Occupied'
@@ -33,6 +34,7 @@ if ($conn) {
                 END as actual_status
             FROM cemetery_lots cl
             LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
         ";
 
         $stats['total_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
@@ -52,15 +54,27 @@ if ($conn) {
         $stmt = $conn->query("
             SELECT 
                 section_name as section,
+                block_name as block,
                 COUNT(*) as total,
                 SUM(CASE WHEN actual_status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
                 SUM(CASE WHEN actual_status = 'Vacant' THEN 1 ELSE 0 END) as vacant
             FROM ($statusQuery) as lots
-            WHERE section_name IS NOT NULL
-            GROUP BY section_name
-            ORDER BY section_name
+            WHERE section_name IS NOT NULL AND block_name IS NOT NULL
+            GROUP BY section_name, block_name
+            ORDER BY section_name, block_name
         ");
         $stats['sections'] = $stmt->fetchAll();
+        
+        // Fetch Recent Burials
+        $stmt = $conn->query("
+            SELECT dr.*, cl.lot_number, s.name as section_name
+            FROM deceased_records dr
+            LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
+            LEFT JOIN sections s ON cl.section_id = s.id
+            ORDER BY dr.created_at DESC
+            LIMIT 5
+        ");
+        $recent_burials = $stmt->fetchAll();
         
         $available_percent = $stats['total_lots'] > 0 ? round(($stats['available_lots'] / $stats['total_lots']) * 100, 1) : 0;
         $occupied_percent = $stats['total_lots'] > 0 ? round(($stats['occupied_lots'] / $stats['total_lots']) * 100, 1) : 0;
@@ -78,354 +92,207 @@ if ($conn) {
   <title>PeacePlot Admin - Dashboard</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
   <style>
-    /* Dashboard specific modern UI */
+    /* Dashboard Modern UI Refinements */
     .dashboard-header {
       background: #fff;
-      padding: 24px 32px;
-      border-radius: 16px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      padding: 28px 32px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.02);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: relative;
+      border: 1px solid #f1f5f9;
     }
     .header-left .title {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1e293b;
-      margin: 0 0 4px 0;
+      font-size: 26px;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.02em;
     }
     .header-left .subtitle {
       font-size: 14px;
       color: #64748b;
       margin: 0;
+      font-weight: 400;
     }
     
-    /* Universal Search Styles */
-    .search-container {
-      position: relative;
-      width: 400px;
-    }
-    .universal-search-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    .universal-search-wrapper svg {
-      position: absolute;
-      left: 16px;
-      color: #94a3b8;
-      pointer-events: none;
-    }
-    .universal-search-input {
-      width: 100%;
-      padding: 12px 16px 12px 48px;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      font-size: 14px;
-      outline: none;
-      transition: all 0.2s;
-      background: #f8fafc;
-    }
-    .universal-search-input:focus {
-      background: #fff;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    }
-    .search-results-dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      right: 0;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-      border: 1px solid #e2e8f0;
-      z-index: 1000;
-      display: none;
-      overflow: hidden;
-    }
-    .search-result-item {
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: background 0.2s;
-      text-decoration: none;
-      border-bottom: 1px solid #f1f5f9;
-    }
-    .search-result-item:last-child { border-bottom: none; }
-    .search-result-item:hover { background: #f8fafc; }
-    .result-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .icon-lot { background: #eff6ff; color: #3b82f6; }
-    .icon-deceased { background: #fef2f2; color: #ef4444; }
-    .result-info { flex: 1; min-width: 0; }
-    .result-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #1e293b;
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .result-subtitle {
-      font-size: 12px;
-      color: #64748b;
-      display: block;
-    }
-
     /* Stats Cards Styles */
     .dashboard-stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
       margin-bottom: 32px;
     }
     .dash-stat-card {
       background: #fff;
       padding: 24px;
-      border-radius: 16px;
-      border-left: 5px solid #0e1f35; /* Sidebar background color */
+      border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      border: 1px solid #f1f5f9;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dash-stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+      border-color: #e2e8f0;
     }
     .dash-stat-info .label {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       color: #94a3b8;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .dash-stat-info .value {
-      font-size: 28px;
-      font-weight: 700;
-      color: #1e293b;
+      font-size: 32px;
+      font-weight: 600;
+      color: #0f172a;
       line-height: 1;
+      letter-spacing: -0.02em;
     }
     .dash-stat-info .subtext {
       font-size: 12px;
       color: #64748b;
-      margin-top: 8px;
+      margin-top: 10px;
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .dash-stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform 0.3s ease;
     }
-    .bg-blue { background: #eff6ff; color: #3b82f6; }
-    .bg-green { background: #f0fdf4; color: #22c55e; }
-    .bg-orange { background: #fff7ed; color: #f97316; }
+    .dash-stat-card:hover .dash-stat-icon {
+      transform: scale(1.1) rotate(-5deg);
+    }
+    
+    .bg-blue-soft { background: #eff6ff; color: #3b82f6; }
+    .bg-green-soft { background: #f0fdf4; color: #22c55e; }
+    .bg-orange-soft { background: #fff7ed; color: #f97316; }
+    .bg-indigo-soft { background: #f5f3ff; color: #6366f1; }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
 
     .content-card {
       background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      border: 1px solid #f1f5f9;
       margin-bottom: 24px;
       overflow: hidden;
     }
     .content-card-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 24px 28px;
+      border-bottom: 1px solid #f8fafc;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .content-card-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #1e293b;
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
       margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    /* Advanced Filter Control Styles */
-    .dashboard-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      gap: 16px;
-      position: relative;
-      z-index: 1001;
+    /* Table Styles */
+    .table-modern {
+      width: 100%;
+      border-collapse: collapse;
     }
-    .controls-left {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .controls-right {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .btn-filter {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      background: #3b82f6;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-      transition: all 0.2s;
-      position: relative;
-    }
-    .btn-filter:hover { background: #2563eb; transform: translateY(-1px); }
-    .filter-badge {
-      background: #fff;
-      color: #3b82f6;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-    }
-    .filter-popover {
-      position: absolute;
-      top: calc(100% + 12px);
-      left: 0;
-      width: 640px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-      border: 1px solid #e2e8f0;
-      z-index: 1000;
-      display: none;
-      overflow: hidden;
-      color: #1e293b;
+    .table-modern th {
+      background: #f8fafc;
+      padding: 14px 28px;
       text-align: left;
-    }
-    .filter-popover.active { display: block; }
-    .popover-header {
-      padding: 16px 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       border-bottom: 1px solid #f1f5f9;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
-    .popover-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
-    .btn-save-view { font-size: 13px; color: #3b82f6; text-decoration: none; font-weight: 600; }
-    .popover-body { 
-      display: flex;
-      max-height: 480px; 
-      overflow-y: auto; 
-    }
-    .popover-column {
-      flex: 1;
-      border-right: 1px solid #f1f5f9;
-    }
-    .popover-column:last-child {
-      border-right: none;
-    }
-    
-    .filter-category { border-bottom: 1px solid #f8fafc; }
-    .filter-category:last-child { border-bottom: none; }
-    .category-toggle {
-      width: 100%;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: none;
-      border: none;
-      cursor: pointer;
+    .table-modern td {
+      padding: 18px 28px;
+      border-bottom: 1px solid #f8fafc;
+      color: #334155;
       font-size: 14px;
-      font-weight: 600;
-      color: #1e293b;
-      transition: background 0.2s;
     }
-    .category-toggle:hover { background: #f8fafc; }
-    .category-toggle svg { 
-      width: 16px; height: 16px; color: #94a3b8; 
-      transition: transform 0.2s;
+    .table-modern tr:last-child td {
+      border-bottom: none;
     }
-    .filter-category.active .category-toggle svg { transform: rotate(90deg); }
-    
-    .category-content { display: none; padding: 0 20px 12px 46px; }
-    .filter-category.active .category-content { display: block; }
-    
-    .filter-option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 0;
-      cursor: pointer;
-      font-size: 13.5px;
-      color: #475569;
+    .table-modern tr:hover td {
+      background: #fcfdfe;
     }
-    .filter-option input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-      border: 2px solid #cbd5e1;
-      cursor: pointer;
-    }
-    
-    .active-filters-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 24px;
-    }
-    .filter-chip {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      background: #eff6ff;
-      color: #3b82f6;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .filter-chip .remove {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0.7;
-    }
-    .filter-chip .remove:hover { opacity: 1; }
 
-    .search-inline-wrapper {
-      position: relative;
-      width: 240px;
-    }
-    .search-inline-wrapper input {
+    /* Progress Bar */
+    .progress-track {
+      height: 8px;
       width: 100%;
-      padding: 10px 16px 10px 40px;
-      border: 1px solid #e2e8f0;
+      background: #f1f5f9;
       border-radius: 10px;
-      font-size: 14px;
-      outline: none;
-      background: #fff;
+      overflow: hidden;
+      margin-top: 8px;
     }
-    .search-inline-wrapper svg {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #94a3b8;
+    .progress-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 1s ease-out;
+    }
+
+    /* Chart Refinements */
+    .chart-section {
+      padding: 32px;
+    }
+    .chart-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 80px;
+    }
+    .bar-container {
+      height: 200px;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      margin-bottom: 16px;
+      width: 100%;
+      justify-content: center;
+    }
+    .bar-segment {
+      width: 24px;
+      border-radius: 6px 6px 0 0;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .bar-segment:hover {
+      filter: brightness(1.1);
+      transform: scaleX(1.1);
+    }
+
+    @media (max-width: 1200px) {
+      .content-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -490,91 +357,17 @@ if ($conn) {
           <h1 class="title">Dashboard Overview</h1>
           <p class="subtitle">Quick overview of cemetery operations and statistics</p>
         </div>
-        
-        <div class="search-container">
+
+        <div class="header-search">
           <div class="universal-search-wrapper">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" class="universal-search-input" id="universalSearch" placeholder="Search lots, deceased names...">
+            <input type="text" class="universal-search-input" id="universalSearch" placeholder="Global Search lots, deceased names...">
           </div>
           <div class="search-results-dropdown" id="searchResults">
             <!-- Results will be injected here -->
           </div>
         </div>
       </header>
-
-      <div class="dashboard-controls">
-        <div class="controls-left">
-          <div style="position: relative;">
-            <button class="btn-filter" id="filterBtn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filters
-              <span class="filter-badge" id="filterBadge">0</span>
-            </button>
-            
-            <div class="filter-popover" id="filterPopover">
-              <div class="popover-header">
-                <h3>Filters</h3>
-                <a href="#" class="btn-save-view">Save view</a>
-              </div>
-              <div class="popover-body">
-                <div class="popover-column">
-                  <!-- Sections Category -->
-                  <div class="filter-category active">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Sections
-                    </button>
-                    <div class="category-content">
-                      <?php foreach ($stats['sections'] as $section): ?>
-                        <label class="filter-option">
-                          <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section['section']); ?>" onchange="updateFilters()">
-                          <?php echo htmlspecialchars($section['section']); ?>
-                        </label>
-                      <?php endforeach; ?>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="popover-column">
-                  <!-- Status Category -->
-                  <div class="filter-category active">
-                    <button class="category-toggle" onclick="toggleCategory(this)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Status
-                    </button>
-                    <div class="category-content">
-                      <label class="filter-option">
-                        <input type="checkbox" name="status" value="Vacant" onchange="updateFilters()"> Vacant
-                      </label>
-                      <label class="filter-option">
-                        <input type="checkbox" name="status" value="Occupied" onchange="updateFilters()"> Occupied
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="search-inline-wrapper">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" placeholder="Search in results..." id="inlineSearch">
-          </div>
-        </div>
-        
-        <div class="controls-right">
-          <select class="form-group" style="margin:0; width: 160px; padding: 8px 12px; border-radius: 10px;">
-            <option>Last 30 days</option>
-            <option>Last 90 days</option>
-            <option>Last year</option>
-            <option>All time</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="active-filters-row" id="activeFilters">
-        <!-- Chips will be injected here -->
-      </div>
 
       <?php if (isset($error)): ?>
         <div class="card" style="padding:20px; color:#ef4444;">
@@ -587,9 +380,12 @@ if ($conn) {
           <div class="dash-stat-info">
             <div class="label">Total Cemetery Lots</div>
             <div class="value"><?php echo $stats['total_lots']; ?></div>
-            <div class="subtext">All sections</div>
+            <div class="subtext">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 16 8.5 11 2 16"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+              Across all sections
+            </div>
           </div>
-          <div class="dash-stat-icon bg-blue">
+          <div class="dash-stat-icon bg-blue-soft">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
               <circle cx="12" cy="10" r="3" />
@@ -601,9 +397,12 @@ if ($conn) {
           <div class="dash-stat-info">
             <div class="label">Total Sections</div>
             <div class="value"><?php echo $stats['total_sections']; ?></div>
-            <div class="subtext">Cemetery Areas</div>
+            <div class="subtext">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+              Defined areas
+            </div>
           </div>
-          <div class="dash-stat-icon bg-blue">
+          <div class="dash-stat-icon bg-indigo-soft">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" />
             </svg>
@@ -614,9 +413,12 @@ if ($conn) {
           <div class="dash-stat-info">
             <div class="label">Total Blocks</div>
             <div class="value"><?php echo $stats['total_blocks']; ?></div>
-            <div class="subtext">Categorized Blocks</div>
+            <div class="subtext">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+              Categorized
+            </div>
           </div>
-          <div class="dash-stat-icon bg-blue">
+          <div class="dash-stat-icon bg-purple-soft" style="background:#f5f3ff; color:#a855f7;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
             </svg>
@@ -627,9 +429,11 @@ if ($conn) {
           <div class="dash-stat-info">
             <div class="label">Available Lots</div>
             <div class="value"><?php echo $stats['available_lots']; ?></div>
-            <div class="subtext"><?php echo $available_percent; ?>% available</div>
+            <div class="subtext">
+              <span style="color:#22c55e"><?php echo $available_percent; ?>%</span> availability rate
+            </div>
           </div>
-          <div class="dash-stat-icon bg-green">
+          <div class="dash-stat-icon bg-green-soft">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
               <circle cx="12" cy="12" r="3" />
@@ -641,9 +445,11 @@ if ($conn) {
           <div class="dash-stat-info">
             <div class="label">Occupied Lots</div>
             <div class="value"><?php echo $stats['occupied_lots']; ?></div>
-            <div class="subtext"><?php echo $occupied_percent; ?>% occupied</div>
+            <div class="subtext">
+              <span style="color:#f97316"><?php echo $occupied_percent; ?>%</span> current occupancy
+            </div>
           </div>
-          <div class="dash-stat-icon bg-orange">
+          <div class="dash-stat-icon bg-orange-soft">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
@@ -654,76 +460,149 @@ if ($conn) {
         </div>
       </div>
 
-      <div class="content-card">
-        <div class="content-card-header">
-          <h2 class="content-card-title">Section Summary</h2>
+      <div class="content-grid">
+        <!-- Recent Burials -->
+        <div class="content-card">
+          <div class="content-card-header">
+            <h2 class="content-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              Recent Burials
+            </h2>
+            <a href="burial-records.php" class="btn-outline" style="padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 10px;">View All</a>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table-modern">
+              <thead>
+                <tr>
+                  <th align="left">Full Name</th>
+                  <th align="left">Lot Details</th>
+                  <th align="left">Date of Death</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($recent_burials)): ?>
+                  <tr>
+                    <td colspan="3" style="text-align:center; padding: 60px; color:#94a3b8;">
+                      <div style="margin-bottom:12px; opacity:0.5;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div>
+                      No recent burials found
+                    </td>
+                  </tr>
+                <?php else: ?>
+                  <?php foreach ($recent_burials as $burial): ?>
+                    <tr>
+                      <td>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                          <div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-weight:600; color:#475569; font-size:12px;">
+                            <?php echo substr($burial['full_name'], 0, 1); ?>
+                          </div>
+                          <span style="font-weight: 500; color: #0f172a;"><?php echo htmlspecialchars($burial['full_name']); ?></span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                          <span style="font-weight:500; font-size:13px; color:#334155;">Lot <?php echo htmlspecialchars($burial['lot_number'] ?: 'N/A'); ?></span>
+                          <span style="font-size: 11px; color: #64748b;"><?php echo htmlspecialchars($burial['section_name'] ?: 'No Section'); ?></span>
+                        </div>
+                      </td>
+                      <td style="font-weight:400; color:#64748b;"><?php echo $burial['date_of_death'] ? date('M j, Y', strtotime($burial['date_of_death'])) : 'N/A'; ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th align="left">Section</th>
-                <th align="right">Total Lots</th>
-                <th align="right">Occupied</th>
-                <th align="right">Vacant</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if (empty($stats['sections'])): ?>
+        <!-- Block Summary -->
+        <div class="content-card">
+          <div class="content-card-header">
+            <h2 class="content-card-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></svg>
+              Block Health
+            </h2>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table-modern">
+              <thead>
                 <tr>
-                  <td colspan="4" style="text-align:center; padding: 40px; color:#94a3b8;">No sections found</td>
+                  <th align="left">Block / Section</th>
+                  <th align="right">Occupancy</th>
                 </tr>
-              <?php else: ?>
-                <?php foreach ($stats['sections'] as $section): ?>
+              </thead>
+              <tbody>
+                <?php if (empty($stats['sections'])): ?>
                   <tr>
-                    <td><strong><?php echo htmlspecialchars($section['section']); ?></strong></td>
-                    <td align="right"><?php echo $section['total']; ?></td>
-                    <td align="right"><span style="color:#f97316; font-weight:600;"><?php echo $section['occupied']; ?></span></td>
-                    <td align="right"><span style="color:#22c55e; font-weight:600;"><?php echo $section['vacant']; ?></span></td>
+                    <td colspan="2" style="text-align:center; padding: 60px; color:#94a3b8;">No blocks found</td>
                   </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
+                <?php else: ?>
+                  <?php foreach ($stats['sections'] as $item): 
+                    $total = max($item['total'], 1);
+                    $occ_perc = round(($item['occupied'] / $total) * 100);
+                    $color = $occ_perc > 80 ? '#ef4444' : ($occ_perc > 50 ? '#f97316' : '#22c55e');
+                  ?>
+                    <tr>
+                      <td>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                          <span style="font-weight: 600; color:#0f172a;"><?php echo htmlspecialchars($item['block']); ?></span>
+                          <span style="font-size:11px; color:#94a3b8;"><?php echo htmlspecialchars($item['section']); ?> • <?php echo $item['total']; ?> Total Lots</span>
+                        </div>
+                      </td>
+                      <td align="right">
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                          <span style="font-weight:600; color:<?php echo $color; ?>; font-size:13px;"><?php echo $occ_perc; ?>%</span>
+                          <div class="progress-track" style="width:100px; height:6px;">
+                            <div class="progress-fill" style="width:<?php echo $occ_perc; ?>%; background:<?php echo $color; ?>;"></div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
+      <!-- Chart Analytics -->
       <div class="content-card">
         <div class="content-card-header">
           <div>
-            <h2 class="content-card-title">Cemetery Status by Section</h2>
-            <p style="font-size:12px; color:#94a3b8; margin:4px 0 0 0;">Comparison of Vacant vs Occupied lots</p>
+            <h2 class="content-card-title">Inventory Analytics (by Block)</h2>
+            <p style="font-size:12px; color:#94a3b8; margin:4px 0 0 0;">Visual distribution of lot availability across all blocks</p>
           </div>
         </div>
-        <div class="chart-placeholder" style="padding: 32px;">
-          <div class="chart-bar-container">
-            <div class="chart-y-axis">
-              <span>20</span>
-              <span>15</span>
-              <span>10</span>
-              <span>5</span>
-              <span>0</span>
-            </div>
-            <div class="chart-bars">
-              <?php foreach ($stats['sections'] as $section): ?>
-                <div class="chart-bar-group">
-                  <div style="display:flex; gap:4px; align-items:flex-end; height:200px; width:100%; justify-content:center;">
-                    <div class="chart-bar" style="height:<?php echo min($section['vacant'] * 10, 200); ?>px; background:#22c55e; width:24px; border-radius:4px 4px 0 0;" title="Vacant: <?php echo $section['vacant']; ?>"></div>
-                    <div class="chart-bar" style="height:<?php echo min($section['occupied'] * 10, 200); ?>px; background:#f97316; width:24px; border-radius:4px 4px 0 0;" title="Occupied: <?php echo $section['occupied']; ?>"></div>
-                  </div>
-                  <span class="chart-label" style="font-weight:600; color:#1e293b; margin-top:12px;"><?php echo htmlspecialchars($section['section']); ?></span>
-                  <div style="display:flex; flex-direction:column; gap:2px;">
-                    <span class="chart-label" style="font-size:10px; color:#22c55e"><?php echo $section['vacant']; ?> V</span>
-                    <span class="chart-label" style="font-size:10px; color:#f97316"><?php echo $section['occupied']; ?> O</span>
-                  </div>
+        <div class="chart-section">
+          <div class="bar-container" style="gap:20px; overflow-x: auto; padding-bottom: 20px; justify-content: flex-start;">
+            <?php foreach ($stats['sections'] as $item): 
+              $total = max($item['total'], 1);
+              $vHeight = ($item['vacant'] / $total) * 180;
+              $oHeight = ($item['occupied'] / $total) * 180;
+            ?>
+              <div class="chart-bar-group" style="min-width: 100px;">
+                <div style="display:flex; gap:6px; align-items:flex-end; height:180px;">
+                  <div class="bar-segment" style="height:<?php echo $vHeight; ?>px; background:#22c55e;" title="Vacant: <?php echo $item['vacant']; ?>"></div>
+                  <div class="bar-segment" style="height:<?php echo $oHeight; ?>px; background:#f97316;" title="Occupied: <?php echo $item['occupied']; ?>"></div>
                 </div>
-              <?php endforeach; ?>
-            </div>
+                <span class="chart-label" style="margin-top:16px; color:#0f172a; font-weight:600; font-size: 11px;"><?php echo htmlspecialchars($item['block']); ?></span>
+                <span style="font-size:9px; color:#94a3b8;"><?php echo htmlspecialchars($item['section']); ?></span>
+                <div style="display:flex; gap:8px; margin-top:4px;">
+                  <span style="font-size:10px; font-weight:600; color:#22c55e;"><?php echo $item['vacant']; ?>V</span>
+                  <span style="font-size:10px; font-weight:600; color:#f97316;"><?php echo $item['occupied']; ?>O</span>
+                </div>
+              </div>
+            <?php endforeach; ?>
           </div>
-          <div style="display:flex; justify-content:center; gap:24px; margin-top:32px; font-size:13px; font-weight:500;">
-            <div style="display:flex; align-items:center; gap:8px;"><div style="width:12px; height:12px; background:#22c55e; border-radius:3px;"></div> Vacant Lots</div>
-            <div style="display:flex; align-items:center; gap:8px;"><div style="width:12px; height:12px; background:#f97316; border-radius:3px;"></div> Occupied Lots</div>
+          
+          <div style="display:flex; justify-content:center; gap:32px; margin-top:48px; padding-top:24px; border-top:1px solid #f8fafc;">
+            <div style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:500; color:#475569;">
+              <div style="width:12px; height:12px; background:#22c55e; border-radius:4px;"></div> Vacant Lots
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:500; color:#475569;">
+              <div style="width:12px; height:12px; background:#f97316; border-radius:4px;"></div> Occupied Lots
+            </div>
           </div>
         </div>
       </div>
@@ -732,162 +611,6 @@ if ($conn) {
     </main>
   </div>
 
-  <script>
-    // Universal Search Logic
-    const searchInput = document.getElementById('universalSearch');
-    const searchResults = document.getElementById('searchResults');
-    let searchTimeout = null;
-
-    searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.trim();
-      clearTimeout(searchTimeout);
-
-      if (query.length < 2) {
-        searchResults.style.display = 'none';
-        return;
-      }
-
-      searchTimeout = setTimeout(async () => {
-        try {
-          const response = await fetch(`../api/universal_search.php?q=${encodeURIComponent(query)}`);
-          const result = await response.json();
-
-          if (result.success && result.data.length > 0) {
-            searchResults.innerHTML = result.data.map(item => `
-              <a href="${item.url}" class="search-result-item">
-                <div class="result-icon icon-${item.type}">
-                  ${item.type === 'lot' ? 
-                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' : 
-                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
-                  }
-                </div>
-                <div class="result-info">
-                  <span class="result-title">${item.title}</span>
-                  <span class="result-subtitle">${item.subtitle}</span>
-                </div>
-              </a>
-            `).join('');
-            searchResults.style.display = 'block';
-          } else {
-            searchResults.innerHTML = '<div style="padding: 16px; text-align: center; color: #94a3b8; font-size: 13px;">No results found</div>';
-            searchResults.style.display = 'block';
-          }
-        } catch (error) {
-          console.error('Search error:', error);
-        }
-      }, 300);
-    });
-
-    // Close results when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-        searchResults.style.display = 'none';
-      }
-      
-      // Close filter popover when clicking outside
-      const filterBtn = document.getElementById('filterBtn');
-      const filterPopover = document.getElementById('filterPopover');
-      if (filterBtn && filterPopover && !filterBtn.contains(e.target) && !filterPopover.contains(e.target)) {
-        filterPopover.classList.remove('active');
-      }
-    });
-
-    // Advanced Filter Control Logic
-    const filterBtn = document.getElementById('filterBtn');
-    const filterPopover = document.getElementById('filterPopover');
-    const filterBadge = document.getElementById('filterBadge');
-    const activeFiltersRow = document.getElementById('activeFilters');
-    const inlineSearch = document.getElementById('inlineSearch');
-
-    if (filterBtn) {
-      filterBtn.addEventListener('click', () => {
-        filterPopover.classList.toggle('active');
-      });
-    }
-
-    function toggleCategory(btn) {
-      btn.parentElement.classList.toggle('active');
-    }
-
-    function updateFilters() {
-      const checkboxes = document.querySelectorAll('.filter-popover input[type="checkbox"]:checked');
-      const activeFilters = [];
-      
-      checkboxes.forEach(cb => {
-        activeFilters.push({
-          name: cb.name,
-          value: cb.value
-        });
-      });
-
-      // Update badge
-      filterBadge.textContent = activeFilters.length;
-      filterBadge.style.display = activeFilters.length > 0 ? 'flex' : 'none';
-
-      // Update chips
-      activeFiltersRow.innerHTML = activeFilters.map(filter => `
-        <div class="filter-chip">
-          ${filter.value}
-          <span class="remove" onclick="removeFilter('${filter.name}', '${filter.value}')">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </span>
-        </div>
-      `).join('');
-
-      // Filter the table rows (Section Summary)
-      filterDashboardData();
-    }
-
-    function removeFilter(name, value) {
-      const cb = document.querySelector(`.filter-popover input[name="${name}"][value="${value}"]`);
-      if (cb) {
-        cb.checked = false;
-        updateFilters();
-      }
-    }
-
-    function filterDashboardData() {
-      const activeSections = Array.from(document.querySelectorAll('input[name="section"]:checked')).map(cb => cb.value);
-      const activeStatuses = Array.from(document.querySelectorAll('input[name="status"]:checked')).map(cb => cb.value);
-      const searchTerm = inlineSearch.value.toLowerCase();
-
-      const tableRows = document.querySelectorAll('.content-card table tbody tr');
-      tableRows.forEach(row => {
-        if (row.cells.length < 2) return;
-        
-        const sectionName = row.cells[0].textContent.trim();
-        const matchesSection = activeSections.length === 0 || activeSections.includes(sectionName);
-        const matchesSearch = sectionName.toLowerCase().includes(searchTerm);
-
-        if (matchesSection && matchesSearch) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-
-      // Also filter the chart groups
-      const chartGroups = document.querySelectorAll('.chart-bar-group');
-      chartGroups.forEach(group => {
-        const label = group.querySelector('.chart-label').textContent.trim();
-        const matchesSection = activeSections.length === 0 || activeSections.includes(label);
-        const matchesSearch = label.toLowerCase().includes(searchTerm);
-
-        if (matchesSection && matchesSearch) {
-          group.style.display = 'flex';
-        } else {
-          group.style.display = 'none';
-        }
-      });
-    }
-
-    if (inlineSearch) {
-      inlineSearch.addEventListener('input', filterDashboardData);
-    }
-
-    // Initialize badge state
-    filterBadge.style.display = 'none';
-  </script>
   <script src="../assets/js/app.js"></script>
 </body>
 </html>

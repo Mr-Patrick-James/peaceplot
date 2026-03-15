@@ -1827,10 +1827,20 @@ function updateGalleryDisplay(modal) {
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     if (path.includes('burial-records')) {
+        // Check for URL parameters (lot_id, layer, edit_id, search)
+        const urlParams = new URLSearchParams(window.location.search);
+        const search = urlParams.get('search');
+        const searchInput = document.getElementById('recordSearch');
+
+        if (search) {
+            searchQuery = search;
+            if (searchInput) {
+                searchInput.value = search;
+            }
+        }
+        
         loadBurialRecords();
         
-        // Search Input
-        const searchInput = document.getElementById('recordSearch');
         if (searchInput) {
             let timeout = null;
             searchInput.addEventListener('input', (e) => {
@@ -1919,8 +1929,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Check for URL parameters (lot_id, layer, edit_id)
-        const urlParams = new URLSearchParams(window.location.search);
+        // Check for URL parameters (lot_id, layer, edit_id, search)
         const lotId = urlParams.get('lot_id');
         const layer = urlParams.get('layer');
         const editId = urlParams.get('edit_id');

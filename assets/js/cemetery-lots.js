@@ -1028,8 +1028,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     // Check for index.php, index.html, or root path
     if (path.includes('index.html') || path.includes('index.php') || path.endsWith('/public/') || path.endsWith('/public')) {
-        loadCemeteryLots(1);
+        const urlParams = new URLSearchParams(window.location.search);
+        const search = urlParams.get('search');
         const searchInput = document.getElementById('lotSearch');
+        
+        if (search) {
+            searchQuery = search;
+            if (searchInput) {
+                searchInput.value = search;
+            }
+        }
+        
+        loadCemeteryLots(1);
+        
         if (searchInput) {
             let timeout = null;
             searchInput.addEventListener('input', (e) => {

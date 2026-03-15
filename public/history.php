@@ -48,6 +48,57 @@ if ($conn) {
   <!-- Flatpickr for better date selection -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <style>
+    .dashboard-header {
+      background: #fff;
+      padding: 24px 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative; /* Added for absolute search positioning */
+    }
+    .header-left .title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+    .header-left .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0;
+    }
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .breadcrumbs a { color: #94a3b8; text-decoration: none; }
+    .breadcrumbs .current { color: #1e293b; font-weight: 600; }
+    .header-actions { display: flex; gap: 12px; }
+
+    .btn-outline {
+      padding: 10px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+  </style>
 </head>
 <body>
   <div class="app">
@@ -106,21 +157,38 @@ if ($conn) {
     </aside>
 
     <main class="main">
-      <div class="page-header">
-        <h1 class="page-title">System Activity History</h1>
-        <div style="display:flex; gap:10px;">
-          <a href="history.php?view=<?php echo $showArchived ? 'active' : 'archived'; ?>" class="btn-secondary" style="display:flex; align-items:center; gap:8px; text-decoration:none;">
-            <span class="icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 8v13H3V8"></path>
-                <path d="M1 3h22v5H1z"></path>
-                <path d="M10 12h4"></path>
-              </svg>
-            </span>
-            <span><?php echo $showArchived ? 'View Active Logs' : 'View Archived Logs'; ?></span>
+      <header class="dashboard-header">
+        <div class="header-left">
+          <div class="breadcrumbs">
+            <a href="dashboard.php">Dashboard</a>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <span class="current">System History</span>
+          </div>
+          <h1 class="title">System History</h1>
+          <p class="subtitle">Log of all activities and changes in the system</p>
+        </div>
+
+        <div class="header-search">
+          <div class="universal-search-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" class="universal-search-input" id="universalSearch" placeholder="Global Search lots, deceased names...">
+          </div>
+          <div class="search-results-dropdown" id="searchResults">
+            <!-- Results will be injected here -->
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <a href="history.php?view=<?php echo $showArchived ? 'active' : 'archived'; ?>" class="btn-outline" style="text-decoration:none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 8v13H3V8"></path>
+              <path d="M1 3h22v5H1z"></path>
+              <path d="M10 12h4"></path>
+            </svg>
+            <?php echo $showArchived ? 'Active Logs' : 'Archived Logs'; ?>
           </a>
         </div>
-      </div>
+      </header>
 
       <section class="card">
         <div class="card-head" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">

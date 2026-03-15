@@ -169,9 +169,34 @@ if ($conn) {
     </aside>
 
     <main class="main">
-      <div class="page-header">
-        <h1 class="page-title">Lots Monitoring</h1>
-      </div>
+      <header class="dashboard-header">
+        <div class="header-left">
+          <div class="breadcrumbs">
+            <a href="dashboard.php">Dashboard</a>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <span class="current">Lots Monitoring</span>
+          </div>
+          <h1 class="title">Lots Monitoring</h1>
+          <p class="subtitle">Quick overview of lot availability and statistics</p>
+        </div>
+
+        <div class="header-search">
+          <div class="universal-search-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" class="universal-search-input" id="universalSearch" placeholder="Global Search lots, deceased names...">
+          </div>
+          <div class="search-results-dropdown" id="searchResults">
+            <!-- Results will be injected here -->
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn-outline" onclick="window.print()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v8H6z" /></svg>
+            Print
+          </button>
+        </div>
+      </header>
 
       <?php if (isset($error)): ?>
         <div class="card" style="padding:20px; color:#ef4444;">
@@ -343,7 +368,42 @@ if ($conn) {
     </main>
   </div>
 
+  <script src="../assets/js/app.js"></script>
   <style>
+    .dashboard-header {
+      background: #fff;
+      padding: 24px 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative; /* Added for absolute search positioning */
+    }
+    .header-left .title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+    .header-left .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0;
+    }
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .breadcrumbs a { color: #94a3b8; text-decoration: none; }
+    .breadcrumbs .current { color: #1e293b; font-weight: 600; }
+    .header-actions { display: flex; gap: 12px; }
+
     .pagination-btn {
       padding: 8px 14px;
       border: 1px solid #e2e8f0;
@@ -394,6 +454,5 @@ if ($conn) {
       window.location.href = '?status=' + status + (section ? '&section=' + encodeURIComponent(section) : '') + (block ? '&block=' + encodeURIComponent(block) : '');
     });
   </script>
-  <script src="../assets/js/app.js"></script>
 </body>
 </html>

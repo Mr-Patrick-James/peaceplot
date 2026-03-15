@@ -60,6 +60,7 @@ if ($db) {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: relative; /* Added for absolute search positioning */
     }
     .header-left .title {
       font-size: 24px;
@@ -581,12 +582,22 @@ if ($db) {
     <main class="main">
       <header class="dashboard-header">
         <div class="header-left">
-          <h1 class="title">Section Management</h1>
-          <p class="subtitle">Manage and categorize cemetery lots by sections</p>
           <div class="breadcrumbs">
             <a href="dashboard.php">Dashboard</a>
-            <span>&rsaquo;</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             <span class="current">Manage Sections</span>
+          </div>
+          <h1 class="title">Section Management</h1>
+          <p class="subtitle">Manage and categorize cemetery lots by sections</p>
+        </div>
+
+        <div class="header-search">
+          <div class="universal-search-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" class="universal-search-input" id="universalSearch" placeholder="Global Search lots, deceased names...">
+          </div>
+          <div class="search-results-dropdown" id="searchResults">
+            <!-- Results will be injected here -->
           </div>
         </div>
         

@@ -36,7 +36,7 @@ try {
             'title' => "Lot " . $row['title'],
             'subtitle' => "Section: " . ($row['section_name'] ?: 'No Section'),
             'type' => 'lot',
-            'url' => "index.php?search=" . urlencode($row['title'])
+            'url' => "index.php?search=" . urlencode($row['title']) . "&q=" . urlencode($query)
         ];
     }
 
@@ -54,7 +54,7 @@ try {
             'title' => $row['title'],
             'subtitle' => "Deceased Record" . ($row['date_of_death'] ? " (Died: " . $row['date_of_death'] . ")" : ""),
             'type' => 'deceased',
-            'url' => "burial-records.php?search=" . urlencode($row['title'])
+            'url' => "burial-records.php?search=" . urlencode($row['title']) . "&q=" . urlencode($query)
         ];
     }
 

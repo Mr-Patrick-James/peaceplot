@@ -107,6 +107,56 @@ if ($conn) {
       user-select: none;
       pointer-events: none;
     }
+
+    /* Modern Dashboard Header & UI */
+    .dashboard-header {
+      background: #fff;
+      padding: 24px 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative; /* Added for absolute search positioning */
+    }
+    .header-left .title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+    .header-left .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0 0 16px 0;
+    }
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .breadcrumbs a { color: #94a3b8; text-decoration: none; }
+    .breadcrumbs .current { color: #1e293b; font-weight: 600; }
+    .header-actions { display: flex; gap: 12px; }
+    
+    .btn-outline {
+      padding: 10px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
     
     .lot-marker {
       position: absolute;
@@ -1156,19 +1206,24 @@ if ($conn) {
     </aside>
 
     <main class="main">
-      <div class="page-header">
-        <h1 class="page-title">Cemetery Map</h1>
-        <div class="actions">
-          <button onclick="window.print()" class="btn-primary" style="background: #6b7a90;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
-              <path d="M6 9V2h12v7" />
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-              <path d="M6 14h12v8H6z" />
-            </svg>
+      <header class="dashboard-header">
+        <div class="header-left">
+          <div class="breadcrumbs">
+            <a href="dashboard.php">Dashboard</a>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <span class="current">Cemetery Map</span>
+          </div>
+          <h1 class="title">Cemetery Map</h1>
+          <p class="subtitle">Visual representation of cemetery lots and occupancy</p>
+        </div>
+
+        <div class="header-actions">
+          <button onclick="window.print()" class="btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v8H6z" /></svg>
             Print Map
           </button>
         </div>
-      </div>
+      </header>
 
       <?php if (isset($error)): ?>
         <div class="card" style="padding:20px; color:#ef4444;">
@@ -2463,15 +2518,17 @@ if ($conn) {
         }, 300);
         
         // Add clear highlight button
-        const actionsContainer = document.querySelector('.page-header .actions');
+        const actionsContainer = document.querySelector('.dashboard-header .header-actions');
         if (actionsContainer && !document.getElementById('clearHighlightBtn')) {
            const clearBtn = document.createElement('button');
            clearBtn.id = 'clearHighlightBtn';
-           clearBtn.className = 'btn-primary';
-           clearBtn.style.background = '#6b7280';
-           clearBtn.innerHTML = '✕ Clear Highlight';
+           clearBtn.className = 'btn-outline';
+           clearBtn.style.color = '#ef4444';
+           clearBtn.style.borderColor = '#fee2e2';
+           clearBtn.style.background = '#fef2f2';
+           clearBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Clear Highlight';
            clearBtn.onclick = () => window.location.href = 'cemetery-map.php';
-           actionsContainer.appendChild(clearBtn);
+           actionsContainer.insertBefore(clearBtn, actionsContainer.firstChild);
         }
       }
     }
