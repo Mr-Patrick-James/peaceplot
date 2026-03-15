@@ -41,17 +41,36 @@ function handleGet($conn) {
         $lotId = isset($_GET['lot_id']) ? intval($_GET['lot_id']) : null;
         
         if ($lotId) {
-            // Get layers for a specific lot with burial information
+            // Get layers for a specific lot
             $stmt = $conn->prepare("
-                SELECT ll.*, dr.full_name as deceased_name, dr.id as burial_record_id, dr.date_of_burial
-                FROM lot_layers ll
-                LEFT JOIN deceased_records dr ON ll.burial_record_id = dr.id
-                WHERE ll.lot_id = :lot_id
-                ORDER BY ll.layer_number ASC
+                SELECT * FROM lot_layers 
+                WHERE lot_id = :lot_id
+                ORDER BY layer_number ASC
             ");
             $stmt->bindParam(':lot_id', $lotId);
             $stmt->execute();
-            $layers = $stmt->fetchAll();
+            $layers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Get all burial records for this lot to match with layers
+            $burialStmt = $conn->prepare("
+                SELECT id, full_name, date_of_burial, layer 
+                FROM deceased_records 
+                WHERE lot_id = :lot_id AND is_archived = 0
+                ORDER BY layer ASC, created_at DESC
+            ");
+            $burialStmt->bindParam(':lot_id', $lotId);
+            $burialStmt->execute();
+            $burials = $burialStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Group burials by layer
+            $burialsByLayer = [];
+            foreach ($burials as $burial) {
+                $layerNum = intval($burial['layer']);
+                if (!isset($burialsByLayer[$layerNum])) {
+                    $burialsByLayer[$layerNum] = [];
+                }
+                $burialsByLayer[$layerNum][] = $burial;
+            }
             
             // If no layers found, automatically create default layer 1
             if (empty($layers)) {
@@ -76,15 +95,34 @@ function handleGet($conn) {
                     
                     // Fetch the newly created layer
                     $stmt->execute();
-                    $layers = $stmt->fetchAll();
+                    $layers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                }
+            }
+
+            // Map burials to layers
+            foreach ($layers as &$layer) {
+                $layerNum = intval($layer['layer_number']);
+                $layer['burials'] = isset($burialsByLayer[$layerNum]) ? $burialsByLayer[$layerNum] : [];
+                // For backward compatibility
+                if (!empty($layer['burials'])) {
+                    $layer['deceased_name'] = $layer['burials'][0]['full_name'];
+                    $layer['burial_record_id'] = $layer['burials'][0]['id'];
+                    $layer['date_of_burial'] = $layer['burials'][0]['date_of_burial'];
+                    $layer['is_occupied'] = 1;
+                } else {
+                    $layer['deceased_name'] = null;
+                    $layer['burial_record_id'] = null;
+                    $layer['date_of_burial'] = null;
+                    $layer['is_occupied'] = 0;
                 }
             }
             
             echo json_encode(['success' => true, 'data' => $layers]);
         } else {
-            // Get all layers
+            // Get all layers with primary burial info
             $stmt = $conn->query("
-                SELECT ll.*, cl.lot_number, s.name as section_name, b.name as block_name, dr.full_name as deceased_name, dr.date_of_burial
+                SELECT ll.*, cl.lot_number, s.name as section_name, b.name as block_name, 
+                       dr.full_name as deceased_name, dr.date_of_burial
                 FROM lot_layers ll
                 LEFT JOIN cemetery_lots cl ON ll.lot_id = cl.id
                 LEFT JOIN sections s ON cl.section_id = s.id
@@ -92,7 +130,7 @@ function handleGet($conn) {
                 LEFT JOIN deceased_records dr ON ll.burial_record_id = dr.id
                 ORDER BY cl.lot_number, ll.layer_number
             ");
-            $layers = $stmt->fetchAll();
+            $layers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode(['success' => true, 'data' => $layers]);
         }

@@ -1997,7 +1997,7 @@ if ($conn) {
     
     async function showLayerBurialDetails(lotId, layerNumber, deceasedName) {
       try {
-        // Fetch burial records
+        // Fetch all burial records for this lot and layer
         const response = await fetch(`../api/burial_records.php`);
         const data = await response.json();
         
@@ -2006,20 +2006,22 @@ if ($conn) {
           return;
         }
         
-        // Find the record
-        const burialRecord = data.data.find(record => 
-          record.lot_id == lotId && record.layer == layerNumber
+        // Find all records for this lot and layer
+        const burialRecords = data.data.filter(record => 
+          record.lot_id == lotId && record.layer == layerNumber && record.is_archived == 0
         );
         
-        if (!burialRecord) {
-          showNotification('Burial record not found', 'warning');
+        if (burialRecords.length === 0) {
+          showNotification('Burial records not found', 'warning');
           return;
         }
         
-        // Fetch full details
-        const detailResponse = await fetch(`../api/burial_records.php?id=${burialRecord.id}`);
-        const detailData = await detailResponse.json();
-        const fullRecord = detailData.success ? detailData.data : burialRecord;
+        // Fetch full details for all records
+        const fullRecords = await Promise.all(burialRecords.map(async (record) => {
+          const detailResponse = await fetch(`../api/burial_records.php?id=${record.id}`);
+          const detailData = await detailResponse.json();
+          return detailData.success ? detailData.data : record;
+        }));
         
         const layerModal = document.createElement('div');
         layerModal.className = 'modal-map';
@@ -2027,133 +2029,164 @@ if ($conn) {
         
         // Format dates
         const formatDate = (dateStr) => {
-            if (!dateStr) return 'N/A';
+            if (!dateStr || dateStr === 'N/A') return 'N/A';
             const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return 'N/A';
             return (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
         };
 
+        const modalTitle = fullRecords.length > 1 ? `Layer ${layerNumber} - Multiple Burials (${fullRecords.length})` : `Layer ${layerNumber} - Burial Details`;
+
         layerModal.innerHTML = `
-          <div class="modal-map-content" style="max-width: 700px; width: 95%; max-height: 90vh; overflow-y: auto; border-radius: 20px; background: #fff; padding: 0;">
-            <div class="modal-map-header" style="padding: 24px 30px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-              <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #1e293b;">Layer ${layerNumber} - Burial Details</h3>
-              <button class="modal-map-close" onclick="closeLayerModal()" style="background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 24px;">&times;</button>
-            </div>
-            
-            <div class="modal-map-body" style="padding: 30px;">
-              <div style="background: #f8fafc; border-radius: 20px; padding: 30px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                
-                <!-- Header with Name and Status -->
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
-                  <div>
-                    <h2 style="margin: 0 0 4px 0; font-size: 1.5rem; font-weight: 700; color: #1e293b;">${fullRecord.full_name}</h2>
-                    <div style="display: flex; align-items: center; gap: 6px; color: #64748b; font-size: 14px;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                      Lot ${fullRecord.lot_number} - Layer ${layerNumber}
-                    </div>
-                  </div>
-                  <div style="background: #fff7ed; color: #ea580c; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #ffedd5;">Occupied</div>
-                </div>
-
-                <div style="height: 1px; background: #e2e8f0; margin-bottom: 24px;"></div>
-
-                <!-- Primary Info Row -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;">
-                  <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="color: #64748b;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                    <div>
-                      <div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Age</div>
-                      <div style="font-size: 14px; font-weight: 600; color: #334155;">${fullRecord.age ? fullRecord.age + ' years old' : 'N/A'}</div>
-                    </div>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="color: #64748b;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-                    <div>
-                      <div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Date of Birth</div>
-                      <div style="font-size: 14px; font-weight: 600; color: #334155;">${formatDate(fullRecord.date_of_birth)}</div>
-                    </div>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="color: #64748b;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                    <div>
-                      <div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Date of Death</div>
-                      <div style="font-size: 14px; font-weight: 600; color: #334155;">${formatDate(fullRecord.date_of_death)}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Secondary Info Row -->
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
-                  <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="color: #64748b;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-                    <div>
-                      <div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Date of Burial</div>
-                      <div style="font-size: 14px; font-weight: 600; color: #334155;">${formatDate(fullRecord.date_of_burial)}</div>
-                    </div>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="color: #64748b;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                    <div>
-                      <div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Cause of Death</div>
-                      <div style="font-size: 14px; font-weight: 600; color: #334155;">${fullRecord.cause_of_death || 'N/A'}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Next of Kin Section -->
-                <div style="background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #3b82f6;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-                    <span style="font-size: 13px; font-weight: 700;">Next of Kin Information</span>
-                  </div>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Name</div><div style="font-size: 14px; color: #334155; font-weight: 600;">${fullRecord.next_of_kin || 'N/A'}</div></div>
-                    <div><div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Contact</div><div style="font-size: 14px; color: #334155; font-weight: 600;">${fullRecord.next_of_kin_contact || 'N/A'}</div></div>
-                  </div>
-                </div>
-
-                <!-- Notes / Remarks Section -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
-                  <div style="background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #64748b;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      <span style="font-size: 13px; font-weight: 700;">Deceased Information</span>
-                    </div>
-                    <div style="font-size: 13px; color: #475569; line-height: 1.5;">${fullRecord.deceased_info || 'N/A'}</div>
-                  </div>
-                  <div style="background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #64748b;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                      <span style="font-size: 13px; font-weight: 700;">Relationship / Remarks</span>
-                    </div>
-                    <div style="font-size: 13px; color: #475569; line-height: 1.5;">${fullRecord.remarks || 'N/A'}</div>
-                  </div>
-                </div>
-
-                <!-- Move History Section (Audit) -->
-                <div id="auditLogSection" style="margin-bottom: 24px; display: none;"></div>
-
-                <!-- Grave Images Section -->
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; gap: 8px; color: #64748b;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                      <span style="font-size: 13px; font-weight: 700;">Grave Images</span>
-                    </div>
-                  </div>
-                  <div style="background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; min-height: 120px;">
-                    <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 12px;">Grave Photos</div>
-                    <div id="layerGraveImagesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
-                      <!-- Images will be injected here -->
-                    </div>
-                  </div>
-                </div>
-
+          <div class="modal-map-content" style="max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; border-radius: 24px; background: #fff; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+            <div class="modal-map-header" style="padding: 24px 32px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #fff; z-index: 10; border-radius: 24px 24px 0 0;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;">${modalTitle}</h3>
+                <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">Lot ${fullRecords[0].lot_number} • Section ${fullRecords[0].section_name || 'N/A'}</p>
               </div>
+              <button class="modal-map-close" onclick="closeLayerModal()" style="background: #f1f5f9; border: none; color: #64748b; cursor: pointer; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s;">&times;</button>
             </div>
             
-            <div style="padding: 24px 30px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px;">
-              <button onclick="closeLayerModal()" style="padding: 10px 20px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-weight: 600; cursor: pointer;">Close</button>
-              <button onclick="window.location.href='burial-records.php?edit_id=${fullRecord.id}'" style="padding: 10px 25px; border-radius: 10px; border: none; background: #3b82f6; color: #fff; font-weight: 600; cursor: pointer;">Edit Record</button>
+            <div class="modal-map-body" style="padding: 32px;">
+              ${fullRecords.map((fullRecord, index) => `
+                <div class="burial-record-card" style="${index > 0 ? 'margin-top: 40px; padding-top: 40px; border-top: 2px dashed #e2e8f0;' : ''}">
+                  <div style="background: #f8fafc; border-radius: 20px; padding: 30px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    
+                    <!-- Header with Name and Status -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+                      <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                          ${index > 0 ? '<span style="background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Ash Burial</span>' : '<span style="background: #f0fdf4; color: #16a34a; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Primary Burial</span>'}
+                        </div>
+                        <h2 style="margin: 0 0 4px 0; font-size: 1.75rem; font-weight: 800; color: #1e293b; letter-spacing: -0.025em;">${fullRecord.full_name}</h2>
+                        <div style="display: flex; align-items: center; gap: 12px; color: #64748b; font-size: 14px; font-weight: 500;">
+                          <div style="display: flex; align-items: center; gap: 4px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            Lot ${fullRecord.lot_number} - Layer ${layerNumber}
+                          </div>
+                          <div style="width: 4px; height: 4px; background: #cbd5e1; border-radius: 50%;"></div>
+                          <div>ID: #${fullRecord.id}</div>
+                        </div>
+                      </div>
+                      <div style="background: #fff; color: #3b82f6; padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 12px; border: 1px solid #dbeafe; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.05);">OCCUPIED</div>
+                    </div>
+
+                    <div style="height: 1px; background: #e2e8f0; margin-bottom: 30px;"></div>
+
+                    <!-- Info Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 30px;">
+                      <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                        <div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Age</div>
+                          <div style="font-size: 15px; font-weight: 700; color: #1e293b;">${fullRecord.age ? fullRecord.age + ' years old' : 'N/A'}</div>
+                        </div>
+                      </div>
+                      <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                        <div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Date of Birth</div>
+                          <div style="font-size: 15px; font-weight: 700; color: #1e293b;">${formatDate(fullRecord.date_of_birth)}</div>
+                        </div>
+                      </div>
+                      <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                        <div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Date of Death</div>
+                          <div style="font-size: 15px; font-weight: 700; color: #1e293b;">${formatDate(fullRecord.date_of_death)}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 30px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+                      <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                        <div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Date of Burial</div>
+                          <div style="font-size: 15px; font-weight: 700; color: #1e293b;">${formatDate(fullRecord.date_of_burial)}</div>
+                        </div>
+                      </div>
+                      <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                        <div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Cause of Death</div>
+                          <div style="font-size: 15px; font-weight: 700; color: #1e293b;">${fullRecord.cause_of_death || 'N/A'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Next of Kin -->
+                    <div style="background: #fff; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; color: #3b82f6;">
+                        <div style="width: 30px; height: 30px; background: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+                        <span style="font-size: 14px; font-weight: 800; letter-spacing: 0.02em;">NEXT OF KIN INFORMATION</span>
+                      </div>
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Name</div>
+                          <div style="font-size: 15px; color: #1e293b; font-weight: 700;">${fullRecord.next_of_kin || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Contact Details</div>
+                          <div style="font-size: 15px; color: #1e293b; font-weight: 700;">${fullRecord.next_of_kin_contact || 'N/A'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Remarks & Info -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                      <div style="background: #fff; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #64748b;">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          <span style="font-size: 13px; font-weight: 800;">DECEASED INFORMATION</span>
+                        </div>
+                        <div style="font-size: 14px; color: #475569; line-height: 1.6; font-weight: 500;">${fullRecord.deceased_info || 'N/A'}</div>
+                      </div>
+                      <div style="background: #fff; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #64748b;">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                          <span style="font-size: 13px; font-weight: 800;">RELATIONSHIP / REMARKS</span>
+                        </div>
+                        <div style="font-size: 14px; color: #475569; line-height: 1.6; font-weight: 500;">${fullRecord.remarks || 'N/A'}</div>
+                      </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px;">
+                      <button onclick="window.location.href='burial-records.php?edit_id=${fullRecord.id}'" style="padding: 10px 24px; border-radius: 12px; border: none; background: #3b82f6; color: #fff; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Edit Record
+                      </button>
+                    </div>
+
+                    <!-- Audit Logs Section -->
+                    <div id="auditLogSection_${fullRecord.id}" style="margin-top: 30px; display: none;">
+                      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; color: #64748b;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
+                        <span style="font-size: 14px; font-weight: 800;">MOVE HISTORY & AUDIT</span>
+                      </div>
+                      <div id="auditLogContent_${fullRecord.id}" style="display: grid; gap: 12px;">
+                        <!-- Logs will be injected here -->
+                      </div>
+                    </div>
+
+                    <!-- Grave Images -->
+                    <div style="margin-top: 30px;">
+                      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; color: #64748b;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <span style="font-size: 14px; font-weight: 800;">GRAVE PHOTOS</span>
+                      </div>
+                      <div id="layerGraveImagesGrid_${fullRecord.id}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; background: #fff; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; min-height: 100px;">
+                        <div style="grid-column: 1/-1; text-align: center; color: #94a3b8; font-size: 13px;">Loading images...</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            
+            <div style="padding: 24px 32px; border-top: 1px solid #f1f5f9; display: flex; justify-content: center; background: #f8fafc; border-radius: 0 0 24px 24px;">
+              <button onclick="closeLayerModal()" style="padding: 12px 40px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; color: #1e293b; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">Close Details</button>
             </div>
           </div>
         `;
@@ -2161,11 +2194,11 @@ if ($conn) {
         document.body.appendChild(layerModal);
         layerModal.style.display = 'flex';
         
-        // Fetch and show activity logs
-        fetchAuditLogs(fullRecord.id);
-
-        // Load grave images
-        loadLayerGraveImages(fullRecord.id);
+        // Load grave images and audit logs for each record
+        fullRecords.forEach(record => {
+          loadLayerGraveImages(record.id, `layerGraveImagesGrid_${record.id}`);
+          fetchAuditLogs(record.id);
+        });
         
         layerModal.onclick = (e) => { 
           if (e.target === layerModal) closeLayerModal(); 
@@ -2178,76 +2211,67 @@ if ($conn) {
     }
 
     async function fetchAuditLogs(recordId) {
-      const logContainer = document.getElementById('auditLogSection');
-      if (!logContainer) return;
+      const logContainer = document.getElementById(`auditLogSection_${recordId}`);
+      const logContent = document.getElementById(`auditLogContent_${recordId}`);
+      if (!logContainer || !logContent) return;
 
       try {
         const response = await fetch(`../api/activity_logs.php?record_id=${recordId}&table=deceased_records`);
         const result = await response.json();
 
         if (result.success && result.data && result.data.length > 0) {
-          const moveLogs = result.data.filter(log => 
+          // Filter for movement or significant updates
+          const relevantLogs = result.data.filter(log => 
             log.action === 'MOVE_RECORD' || 
-            (log.action === 'UPDATE_RECORD' && log.description.includes('move')) ||
-            log.description.includes('Reason:')
+            log.action === 'UNASSIGN_RECORD' ||
+            (log.action === 'UPDATE_RECORD' && (log.description.toLowerCase().includes('move') || log.description.toLowerCase().includes('layer')))
           );
 
-          if (moveLogs.length > 0) {
+          if (relevantLogs.length > 0) {
             logContainer.style.display = 'block';
-            logContainer.innerHTML = `
-                <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #d97706;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
-                        <span style="font-size: 13px; font-weight: 700;">Move History & Audit</span>
-                    </div>
-                    <div style="display: grid; gap: 10px;">
-                      ${moveLogs.map(log => `
-                        <div style="background: white; border-left: 3px solid #fbbf24; padding: 10px; border-radius: 4px;">
-                          <div style="font-weight: 600; color: #1e293b; font-size: 13px;">${log.description}</div>
-                          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${new Date(log.created_at).toLocaleString()}</div>
-                        </div>
-                      `).join('')}
-                    </div>
+            logContent.innerHTML = relevantLogs.map(log => `
+              <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 8px; border-top: 1px solid #fef3c7; border-right: 1px solid #fef3c7; border-bottom: 1px solid #fef3c7;">
+                <div style="font-size: 13px; font-weight: 700; color: #92400e; margin-bottom: 4px;">${log.description}</div>
+                <div style="font-size: 11px; color: #b45309; display: flex; align-items: center; gap: 4px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  ${new Date(log.created_at).toLocaleString()}
                 </div>
-            `;
+              </div>
+            `).join('');
           }
         }
       } catch (e) {
         console.error('Error fetching logs:', e);
       }
     }
-    
-    function closeLayerModal() {
-      const layerModal = document.querySelector('.modal-map[style*="z-index: 2000"]');
-      if (layerModal) {
-        layerModal.remove();
-      }
-    }
-    
-    async function loadLayerGraveImages(burialRecordId) {
-      const grid = document.getElementById('layerGraveImagesGrid');
-      
+
+    // Updated image loader to accept container ID
+    async function loadLayerGraveImages(recordId, containerId = 'layerGraveImagesGrid') {
+      const grid = document.getElementById(containerId);
       if (!grid) return;
       
-      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted);">Loading images...</div>';
-      
       try {
-        const imagesResponse = await fetch(`../api/burial_images.php?burial_record_id=${burialRecordId}`);
-        const imagesData = await imagesResponse.json();
+        const response = await fetch(`../api/burial_images.php?burial_record_id=${recordId}`);
+        const result = await response.json();
         
-        if (imagesData.success && imagesData.data && imagesData.data.length > 0) {
-          grid.innerHTML = imagesData.data.map(img => `
-            <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer;" onclick="showImageGallery('${burialRecordId}', '${img.id}')">
-              <img src="../${img.image_path}" alt="${img.image_caption || 'Grave image'}" style="width: 100%; height: 120px; object-fit: cover;">
-              <div style="padding: 8px; font-size: 12px; color: var(--muted); text-align: center;">${img.image_caption || 'No caption'}</div>
+        if (result.success && result.data && result.data.length > 0) {
+          grid.innerHTML = result.data.map(img => `
+            <div class="grave-image-item" style="aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer; position: relative; group;">
+              <img src="../${img.image_path}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;" onclick="window.open('../${img.image_path}', '_blank')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
             </div>
           `).join('');
         } else {
-          grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px;">No images available</div>';
+          grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; font-size: 13px; padding: 20px;">No photos available for this record</div>';
         }
       } catch (error) {
-        console.error('Error loading grave images:', error);
-        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 20px;">Error loading images</div>';
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444; font-size: 13px; padding: 20px;">Error loading images</div>';
+      }
+    }
+
+    function closeLayerModal() {
+      const layerModal = document.querySelector('.modal-map');
+      if (layerModal) {
+        layerModal.remove();
       }
     }
     
@@ -2278,15 +2302,18 @@ if ($conn) {
         const lotBurials = burialsData.success && burialsData.data ? 
           burialsData.data.filter(record => record.lot_id == lotId) : [];
         
-        // Create a map of occupied layers from burial records
+        // Create a map of occupied layers from burial records (can have multiple burials per layer)
         const occupiedLayers = {};
         lotBurials.forEach(burial => {
           if (burial.layer) {
-            occupiedLayers[burial.layer] = burial.full_name;
+            if (!occupiedLayers[burial.layer]) {
+              occupiedLayers[burial.layer] = [];
+            }
+            occupiedLayers[burial.layer].push(burial.full_name);
           }
         });
         
-        // Update lot_layers table to match burial records
+        // Update lot_layers table to match burial records (sync primary burial)
         await syncLayersWithBurials(lotId, layersData.data || [], occupiedLayers);
         
         // Get updated layers after sync
@@ -2301,19 +2328,23 @@ if ($conn) {
         }
         
         layerGrid.innerHTML = layers.map(layer => {
-          const isOccupied = occupiedLayers[layer.layer_number] || layer.is_occupied;
-          const deceasedName = occupiedLayers[layer.layer_number] || layer.deceased_name || '';
+          const layerBurials = layer.burials || [];
+          const isOccupied = layerBurials.length > 0 || layer.is_occupied;
+          const deceasedName = layerBurials.length > 0 ? layerBurials.map(b => b.full_name).join(', ') : (layer.deceased_name || '');
           
           return `
             <div class="layer-item ${isOccupied ? 'occupied' : 'vacant'}" 
                  onclick="showLayerDetails(${lotId}, ${layer.layer_number}, '${isOccupied}', '${deceasedName.replace(/'/g, "\\'")}')"
-                 style="cursor: pointer;">
-              <div class="layer-number">Layer ${layer.layer_number}</div>
-              <div class="layer-status">
-                ${isOccupied ? `Occupied by ${deceasedName}` : 'Vacant'}
+                 style="cursor: pointer; padding: 15px; border-radius: 12px; position: relative; transition: all 0.2s;">
+              <div class="layer-number" style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">Layer ${layer.layer_number}</div>
+              <div class="layer-status" style="font-size: 13px; line-height: 1.4;">
+                ${isOccupied ? `
+                  <div style="font-weight: 600; color: #1e293b;">${deceasedName}</div>
+                  ${layerBurials.length > 1 ? `<div style="font-size: 11px; color: #3b82f6; margin-top: 4px; font-weight: 500;">Multiple Burials (Ash Burial)</div>` : ''}
+                ` : '<span style="color: #94a3b8;">Vacant</span>'}
               </div>
               <div class="layer-indicator ${isOccupied ? 'occupied' : 'vacant'}"></div>
-              ${isOccupied ? '<div class="view-details-btn">📋 View Details</div>' : ''}
+              ${isOccupied ? '<div class="view-details-btn" style="margin-top: 10px; font-size: 12px; color: #3b82f6; font-weight: 600;">📋 View Details</div>' : ''}
             </div>
           `;
         }).join('');

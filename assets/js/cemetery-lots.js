@@ -447,30 +447,43 @@ async function showLotModal(lot = null) {
                             Burial Details by Layer
                         </div>
                         <div class="layers-list">
-                            ${layers.map(layer => `
-                                <div class="layer-card">
+                            ${layers.map(layer => {
+                                const burials = layer.burials || [];
+                                const isOccupied = burials.length > 0 || layer.is_occupied == 1;
+                                
+                                return `
+                                <div class="layer-card" style="align-items: flex-start; padding: 16px;">
                                     <div class="layer-number">${layer.layer_number}</div>
-                                    <div class="layer-details">
-                                        <div class="layer-name">${layer.deceased_name || 'Vacant Layer'}</div>
-                                        <div class="layer-sub">
-                                            ${layer.deceased_name ? (layer.date_of_burial ? `Buried on ${new Date(layer.date_of_burial).toLocaleDateString()}` : 'Burial record assigned') : 'No burial record assigned'}
-                                        </div>
+                                    <div class="layer-details" style="flex: 1;">
+                                        ${burials.length > 0 ? burials.map((burial, idx) => `
+                                            <div class="burial-entry" style="${idx > 0 ? 'margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0;' : ''}">
+                                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                                    <div>
+                                                        <div class="layer-name" style="font-weight: 600; color: #1e293b;">${burial.full_name}</div>
+                                                        <div class="layer-sub" style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                                                            ${burial.date_of_burial ? `Buried on ${new Date(burial.date_of_burial).toLocaleDateString()}` : 'Burial record assigned'}
+                                                        </div>
+                                                    </div>
+                                                    <div style="display: flex; gap: 6px;">
+                                                        <button type="button" class="btn-action" onclick="showBurialDetailModal('${burial.id}', '${lot.lot_number}', ${layer.layer_number})" title="View Burial Details" style="padding: 5px 8px; font-size: 11px; border-radius: 6px; background: #eff6ff; color: #3b82f6; border: none; font-weight: 600; cursor: pointer;">
+                                                            View
+                                                        </button>
+                                                        <button type="button" class="btn-action" onclick="showMoveBurialModal('${burial.id}', '${lot.id}', ${layer.layer_number})" title="Move Burial" style="padding: 5px 8px; font-size: 11px; border-radius: 6px; background: #fef3c7; color: #d97706; border: none; font-weight: 600; cursor: pointer;">
+                                                            Move
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('') : `
+                                            <div class="layer-name" style="color: #94a3b8;">Vacant Layer</div>
+                                            <div class="layer-sub">No burial record assigned</div>
+                                        `}
                                     </div>
-                                    ${layer.is_occupied ? `
-                                        <div style="display: flex; gap: 8px;">
-                                            <button type="button" class="btn-action" onclick="showBurialDetailModal('${layer.burial_record_id}', '${lot.lot_number}', ${layer.layer_number})" title="View Burial Details" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #eff6ff; color: #3b82f6; border: none; font-weight: 600;">
-                                                View Details
-                                            </button>
-                                            <button type="button" class="btn-action" onclick="showMoveBurialModal('${layer.burial_record_id}', '${lot.id}', ${layer.layer_number})" title="Move Burial" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #fef3c7; color: #d97706; border: none; font-weight: 600;">
-                                                Move
-                                            </button>
-                                        </div>
-                                    ` : ''}
-                                    <div class="layer-status ${layer.is_occupied ? 'occupied' : 'vacant'}" style="margin-left: 8px;">
-                                        ${layer.is_occupied ? 'Occupied' : 'Vacant'}
+                                    <div class="layer-status ${isOccupied ? 'occupied' : 'vacant'}" style="margin-left: 12px; white-space: nowrap;">
+                                        ${isOccupied ? (burials.length > 1 ? `${burials.length} Burials` : 'Occupied') : 'Vacant'}
                                     </div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
                     </div>
                 `;
@@ -915,30 +928,43 @@ async function refreshBurialInfo(lotId, container) {
                     Burial Details by Layer
                 </div>
                 <div class="layers-list">
-                    ${layers.map(layer => `
-                        <div class="layer-card">
+                    ${layers.map(layer => {
+                        const burials = layer.burials || [];
+                        const isOccupied = burials.length > 0 || layer.is_occupied == 1;
+                        
+                        return `
+                        <div class="layer-card" style="align-items: flex-start; padding: 16px;">
                             <div class="layer-number">${layer.layer_number}</div>
-                            <div class="layer-details">
-                                <div class="layer-name">${layer.deceased_name || 'Vacant Layer'}</div>
-                                <div class="layer-sub">
-                                    ${layer.deceased_name ? (layer.date_of_burial ? `Buried on ${new Date(layer.date_of_burial).toLocaleDateString()}` : 'Burial record assigned') : 'No burial record assigned'}
-                                </div>
+                            <div class="layer-details" style="flex: 1;">
+                                ${burials.length > 0 ? burials.map((burial, idx) => `
+                                    <div class="burial-entry" style="${idx > 0 ? 'margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0;' : ''}">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                            <div>
+                                                <div class="layer-name" style="font-weight: 600; color: #1e293b;">${burial.full_name}</div>
+                                                <div class="layer-sub" style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                                                    ${burial.date_of_burial ? `Buried on ${new Date(burial.date_of_burial).toLocaleDateString()}` : 'Burial record assigned'}
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; gap: 6px;">
+                                                <button type="button" class="btn-action" onclick="showBurialDetailModal('${burial.id}', '', ${layer.layer_number})" title="View Burial Details" style="padding: 5px 8px; font-size: 11px; border-radius: 6px; background: #eff6ff; color: #3b82f6; border: none; font-weight: 600; cursor: pointer;">
+                                                    View
+                                                </button>
+                                                <button type="button" class="btn-action" onclick="showMoveBurialModal('${burial.id}', '${lotId}', ${layer.layer_number})" title="Move Burial" style="padding: 5px 8px; font-size: 11px; border-radius: 6px; background: #fef3c7; color: #d97706; border: none; font-weight: 600; cursor: pointer;">
+                                                    Move
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('') : `
+                                    <div class="layer-name" style="color: #94a3b8;">Vacant Layer</div>
+                                    <div class="layer-sub">No burial record assigned</div>
+                                `}
                             </div>
-                            ${layer.is_occupied ? `
-                                <div style="display: flex; gap: 8px;">
-                                    <button type="button" class="btn-action" onclick="showBurialDetailModal('${layer.burial_record_id}', '', ${layer.layer_number})" title="View Burial Details" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #eff6ff; color: #3b82f6; border: none; font-weight: 600;">
-                                        View Details
-                                    </button>
-                                    <button type="button" class="btn-action" onclick="showMoveBurialModal('${layer.burial_record_id}', '${lotId}', ${layer.layer_number})" title="Move Burial" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; background: #fef3c7; color: #d97706; border: none; font-weight: 600;">
-                                        Move
-                                    </button>
-                                </div>
-                            ` : ''}
-                            <div class="layer-status ${layer.is_occupied ? 'occupied' : 'vacant'}" style="margin-left: 8px;">
-                                ${layer.is_occupied ? 'Occupied' : 'Vacant'}
+                            <div class="layer-status ${isOccupied ? 'occupied' : 'vacant'}" style="margin-left: 12px; white-space: nowrap;">
+                                ${isOccupied ? (burials.length > 1 ? `${burials.length} Burials` : 'Occupied') : 'Vacant'}
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             </div>
         `;

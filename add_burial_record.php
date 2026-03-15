@@ -429,21 +429,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             try {
-                const response = fetch(`../api/lot_layers.php?lot_id=${lotId}`);
+                const response = await fetch(`../api/lot_layers.php?lot_id=${lotId}`);
                 const data = await response.json();
                 
                 if (data.success && data.data) {
                     layerGroup.style.display = 'block';
                     
                     layerOptions.innerHTML = data.data.map(layer => {
-                        const isOccupied = layer.is_occupied;
+                        const burials = layer.burials || [];
+                        const isOccupied = burials.length > 0 || layer.is_occupied;
+                        const deceasedNames = burials.length > 0 ? burials.map(b => b.full_name).join(', ') : (layer.deceased_name || 'Unknown');
+                        
                         return `
                             <div class="layer-option ${isOccupied ? 'occupied' : 'vacant'}" 
                                  data-layer="${layer.layer_number}"
                                  onclick="selectLayer(${layer.layer_number}, ${isOccupied})">
                                 <div class="layer-number">Layer ${layer.layer_number}</div>
                                 <div class="layer-status">
-                                    ${isOccupied ? `Occupied by ${layer.deceased_name || 'Unknown'}` : 'Vacant'}
+                                    ${isOccupied ? `Occupied by ${deceasedNames}` : 'Vacant'}
+                                    ${isOccupied ? '<div style="font-size: 10px; margin-top: 4px; color: #666;">(Ash Burial Allowed)</div>' : ''}
                                 </div>
                             </div>
                         `;
@@ -461,8 +465,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         function selectLayer(layerNumber, isOccupied) {
             if (isOccupied) {
-                alert(`Layer ${layerNumber} is already occupied and cannot be selected.`);
-                return;
+                const confirmAsh = confirm(`Layer ${layerNumber} is already occupied. Would you like to assign this as an Ash Burial?`);
+                if (!confirmAsh) return;
             }
             
             // Remove previous selection
