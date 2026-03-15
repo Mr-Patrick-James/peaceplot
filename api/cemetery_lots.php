@@ -54,13 +54,15 @@ function handleGet($conn) {
         if ($id) {
             if ($conn) {
                 $stmt = $conn->prepare("
-                    SELECT cl.*, 
+                    SELECT cl.*, s.name as section_name, b.name as block_name,
                            (SELECT GROUP_CONCAT(full_name, ', ') 
                             FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
                            ) as deceased_name,
                            COALESCE(NULLIF((SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id), 0), cl.layers, 1) as total_layers_count,
                            (SELECT COUNT(DISTINCT layer) FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0) as occupied_layers_count
                     FROM cemetery_lots cl 
+                    LEFT JOIN sections s ON cl.section_id = s.id
+                    LEFT JOIN blocks b ON s.block_id = b.id
                     WHERE cl.id = :id
                 ");
                 $stmt->bindParam(':id', $id);
@@ -125,7 +127,7 @@ function handleGet($conn) {
                         $placeholders[] = $placeholder;
                         $params[$placeholder] = trim($s);
                     }
-                    $whereClauses[] = "cl.section IN (" . implode(',', $placeholders) . ")";
+                    $whereClauses[] = "s.name IN (" . implode(',', $placeholders) . ")";
                 }
 
                 if ($block) {
@@ -136,7 +138,7 @@ function handleGet($conn) {
                         $placeholders[] = $placeholder;
                         $params[$placeholder] = trim($b);
                     }
-                    $whereClauses[] = "cl.block IN (" . implode(',', $placeholders) . ")";
+                    $whereClauses[] = "b.name IN (" . implode(',', $placeholders) . ")";
                 }
 
                 if ($occupancy) {
@@ -155,7 +157,7 @@ function handleGet($conn) {
                 }
                 
                 if ($search) {
-                    $whereClauses[] = "(cl.lot_number = :exact_search OR cl.lot_number LIKE :search OR cl.section LIKE :search OR cl.position LIKE :search OR dr.full_name LIKE :search)";
+                    $whereClauses[] = "(cl.lot_number = :exact_search OR cl.lot_number LIKE :search OR s.name LIKE :search OR b.name LIKE :search OR cl.position LIKE :search OR dr.full_name LIKE :search)";
                     $params[':exact_search'] = $search;
                     $params[':search'] = "%$search%";
                 }
@@ -163,7 +165,12 @@ function handleGet($conn) {
                 $whereSQL = count($whereClauses) > 0 ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
                 // Get total count for pagination
-                $countQuery = "SELECT COUNT(DISTINCT cl.id) FROM cemetery_lots cl";
+                $countQuery = "
+                    SELECT COUNT(DISTINCT cl.id) 
+                    FROM cemetery_lots cl
+                    LEFT JOIN sections s ON cl.section_id = s.id
+                    LEFT JOIN blocks b ON s.block_id = b.id
+                ";
                 if ($search) {
                     $countQuery .= " LEFT JOIN deceased_records dr ON cl.id = dr.lot_id";
                 }
@@ -184,13 +191,15 @@ function handleGet($conn) {
                 // Main query with search, order, and limit
                 // Use a subquery for deceased_name to ensure latest records appear first
                 $query = "
-                    SELECT cl.*, 
+                    SELECT cl.*, s.name as section_name, b.name as block_name,
                            (SELECT GROUP_CONCAT(full_name, ', ') 
                             FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
                            ) as deceased_name,
                            COALESCE(NULLIF((SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id), 0), cl.layers, 1) as total_layers_count,
                            (SELECT COUNT(DISTINCT layer) FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0) as occupied_layers_count
                     FROM cemetery_lots cl 
+                    LEFT JOIN sections s ON cl.section_id = s.id
+                    LEFT JOIN blocks b ON s.block_id = b.id
                     " . ($search ? "LEFT JOIN deceased_records dr ON cl.id = dr.lot_id" : "") . "
                     $whereSQL
                     GROUP BY cl.id
@@ -250,29 +259,28 @@ function handleGet($conn) {
 
 function handlePost($conn, $input) {
     try {
-        if (empty($input['lot_number']) || empty($input['section']) || empty($input['block']) || empty($input['status'])) {
-            echo json_encode(['success' => false, 'message' => 'Missing required fields (Lot Number, Section, Block, and Status)']);
+        if (empty($input['lot_number']) || empty($input['section_id']) || empty($input['status'])) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields (Lot Number, Section, and Status)']);
             return;
         }
         
         // Check if lot number already exists in the same section
-        $checkStmt = $conn->prepare("SELECT id FROM cemetery_lots WHERE lot_number = :lot_number AND section = :section");
+        $checkStmt = $conn->prepare("SELECT id FROM cemetery_lots WHERE lot_number = :lot_number AND section_id = :section_id");
         $checkStmt->bindParam(':lot_number', $input['lot_number']);
-        $checkStmt->bindParam(':section', $input['section']);
+        $checkStmt->bindParam(':section_id', $input['section_id']);
         $checkStmt->execute();
         if ($checkStmt->fetch()) {
-            echo json_encode(['success' => false, 'message' => "Lot number '" . $input['lot_number'] . "' already exists in '" . $input['section'] . "'."]);
+            echo json_encode(['success' => false, 'message' => "Lot number '" . $input['lot_number'] . "' already exists in this section."]);
             return;
         }
         
         $stmt = $conn->prepare("
-            INSERT INTO cemetery_lots (lot_number, section, block, position, status) 
-            VALUES (:lot_number, :section, :block, :position, :status)
+            INSERT INTO cemetery_lots (lot_number, section_id, position, status) 
+            VALUES (:lot_number, :section_id, :position, :status)
         ");
         
         $stmt->bindParam(':lot_number', $input['lot_number']);
-        $stmt->bindParam(':section', $input['section']);
-        $stmt->bindParam(':block', $input['block']);
+        $stmt->bindParam(':section_id', $input['section_id']);
         $stmt->bindParam(':position', $input['position']);
         $stmt->bindParam(':status', $input['status']);
         
@@ -311,27 +319,26 @@ function handlePost($conn, $input) {
 
 function handlePut($conn, $input) {
     try {
-        if (empty($input['id']) || empty($input['lot_number']) || empty($input['section']) || empty($input['block']) || empty($input['status'])) {
-            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        if (empty($input['id']) || empty($input['lot_number']) || empty($input['section_id']) || empty($input['status'])) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields (ID, Lot Number, Section, and Status)']);
             return;
         }
         
         // Check if new lot number and section already exists elsewhere
-        $checkStmt = $conn->prepare("SELECT id FROM cemetery_lots WHERE lot_number = :lot_number AND section = :section AND id != :id");
+        $checkStmt = $conn->prepare("SELECT id FROM cemetery_lots WHERE lot_number = :lot_number AND section_id = :section_id AND id != :id");
         $checkStmt->bindParam(':lot_number', $input['lot_number']);
-        $checkStmt->bindParam(':section', $input['section']);
+        $checkStmt->bindParam(':section_id', $input['section_id']);
         $checkStmt->bindParam(':id', $input['id']);
         $checkStmt->execute();
         if ($checkStmt->fetch()) {
-            echo json_encode(['success' => false, 'message' => "Another lot with number '" . $input['lot_number'] . "' already exists in '" . $input['section'] . "'."]);
+            echo json_encode(['success' => false, 'message' => "Another lot with number '" . $input['lot_number'] . "' already exists in this section."]);
             return;
         }
         
         $stmt = $conn->prepare("
             UPDATE cemetery_lots 
             SET lot_number = :lot_number, 
-                section = :section, 
-                block = :block, 
+                section_id = :section_id, 
                 position = :position, 
                 status = :status, 
                 updated_at = CURRENT_TIMESTAMP
@@ -340,8 +347,7 @@ function handlePut($conn, $input) {
         
         $stmt->bindParam(':id', $input['id']);
         $stmt->bindParam(':lot_number', $input['lot_number']);
-        $stmt->bindParam(':section', $input['section']);
-        $stmt->bindParam(':block', $input['block']);
+        $stmt->bindParam(':section_id', $input['section_id']);
         $stmt->bindParam(':position', $input['position']);
         $stmt->bindParam(':status', $input['status']);
         

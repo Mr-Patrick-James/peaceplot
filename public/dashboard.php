@@ -25,13 +25,14 @@ if ($conn) {
         $statusQuery = "
             SELECT 
                 cl.id,
-                cl.section,
+                s.name as section_name,
                 CASE 
                     WHEN (SELECT COUNT(*) FROM deceased_records dr WHERE dr.lot_id = cl.id) > 0 THEN 'Occupied'
                     WHEN (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) > 0 THEN 'Occupied'
                     ELSE cl.status
                 END as actual_status
             FROM cemetery_lots cl
+            LEFT JOIN sections s ON cl.section_id = s.id
         ";
 
         $stats['total_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
@@ -50,13 +51,14 @@ if ($conn) {
         
         $stmt = $conn->query("
             SELECT 
-                section,
+                section_name as section,
                 COUNT(*) as total,
                 SUM(CASE WHEN actual_status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
                 SUM(CASE WHEN actual_status = 'Vacant' THEN 1 ELSE 0 END) as vacant
             FROM ($statusQuery) as lots
-            GROUP BY section
-            ORDER BY section
+            WHERE section_name IS NOT NULL
+            GROUP BY section_name
+            ORDER BY section_name
         ");
         $stats['sections'] = $stmt->fetchAll();
         

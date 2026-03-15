@@ -80,9 +80,11 @@ function handleGet($conn) {
         
         if ($id) {
             $stmt = $conn->prepare("
-                SELECT dr.*, cl.lot_number, cl.section, cl.block 
+                SELECT dr.*, cl.lot_number, s.name as section, b.name as block 
                 FROM deceased_records dr 
                 LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
+                LEFT JOIN sections s ON cl.section_id = s.id
+                LEFT JOIN blocks b ON s.block_id = b.id
                 WHERE dr.id = :id
             ");
             $stmt->bindParam(':id', $id);
@@ -120,7 +122,7 @@ function handleGet($conn) {
             $params = [':is_archived' => $showArchived];
             
             if ($search) {
-                $whereClause .= " AND (dr.full_name LIKE :search OR cl.lot_number LIKE :search OR cl.section LIKE :search OR dr.deceased_info LIKE :search OR dr.remarks LIKE :search)";
+                $whereClause .= " AND (dr.full_name LIKE :search OR cl.lot_number LIKE :search OR s.name LIKE :search OR b.name LIKE :search OR dr.deceased_info LIKE :search OR dr.remarks LIKE :search)";
                 $params[':search'] = "%$search%";
             }
 
@@ -132,7 +134,7 @@ function handleGet($conn) {
                     $placeholders[] = $placeholder;
                     $params[$placeholder] = trim($s);
                 }
-                $whereClause .= " AND cl.section IN (" . implode(',', $placeholders) . ")";
+                $whereClause .= " AND s.name IN (" . implode(',', $placeholders) . ")";
             }
 
             if ($filterBlock) {
@@ -143,7 +145,7 @@ function handleGet($conn) {
                     $placeholders[] = $placeholder;
                     $params[$placeholder] = trim($b);
                 }
-                $whereClause .= " AND cl.block IN (" . implode(',', $placeholders) . ")";
+                $whereClause .= " AND b.name IN (" . implode(',', $placeholders) . ")";
             }
 
             if ($filterStatus) {
@@ -198,6 +200,8 @@ function handleGet($conn) {
                 SELECT COUNT(*) 
                 FROM deceased_records dr 
                 LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
+                LEFT JOIN sections s ON cl.section_id = s.id
+                LEFT JOIN blocks b ON s.block_id = b.id
                 $whereClause
             ");
             foreach ($params as $key => $val) {
@@ -215,16 +219,18 @@ function handleGet($conn) {
                 'age' => 'dr.age',
                 'created_at' => 'dr.created_at',
                 'lot_number' => 'cl.lot_number',
-                'section' => 'cl.section',
-                'block' => 'cl.block'
+                'section' => 's.name',
+                'block' => 'b.name'
             ];
             
             $sortColumn = $allowedSortColumns[$sortBy] ?? 'dr.created_at';
             
             $sql = "
-                SELECT dr.*, cl.lot_number, cl.section, cl.block, cl.status as lot_status
+                SELECT dr.*, cl.lot_number, s.name as section, b.name as block, cl.status as lot_status
                 FROM deceased_records dr 
                 LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id 
+                LEFT JOIN sections s ON cl.section_id = s.id
+                LEFT JOIN blocks b ON s.block_id = b.id
                 $whereClause
                 ORDER BY $sortColumn $sortOrder, dr.id DESC
             ";

@@ -16,18 +16,25 @@ $blocks = [];
 
 if ($conn) {
     try {
-        // Fetch unique sections for filtering
-        $sectionStmt = $conn->query("SELECT DISTINCT section FROM cemetery_lots WHERE section IS NOT NULL AND section != '' ORDER BY LENGTH(section), section");
-        $sections = $sectionStmt->fetchAll(PDO::FETCH_COLUMN);
+        // Fetch sections with their block names for filtering
+        $sectionStmt = $conn->query("
+            SELECT s.id, s.name, b.name as block_name 
+            FROM sections s 
+            LEFT JOIN blocks b ON s.block_id = b.id 
+            ORDER BY b.name, s.name
+        ");
+        $sections = $sectionStmt->fetchAll();
 
         // Fetch unique blocks for filtering
-        $blockStmt = $conn->query("SELECT DISTINCT block FROM cemetery_lots WHERE block IS NOT NULL AND block != '' ORDER BY LENGTH(block), block");
-        $blocks = $blockStmt->fetchAll(PDO::FETCH_COLUMN);
+        $blockStmt = $conn->query("SELECT id, name FROM blocks ORDER BY name");
+        $blocks = $blockStmt->fetchAll();
 
         $lotsStmt = $conn->query("
-            SELECT id, lot_number, section, block 
-            FROM cemetery_lots 
-            ORDER BY lot_number
+            SELECT cl.id, cl.lot_number, s.name as section, b.name as block 
+            FROM cemetery_lots cl
+            LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
+            ORDER BY cl.lot_number
         ");
         $availableLots = $lotsStmt->fetchAll();
         
@@ -706,8 +713,8 @@ if ($conn) {
                       <div class="category-content">
                         <?php foreach ($blocks as $block): ?>
                           <label class="filter-option">
-                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block); ?>" onchange="updateFilters()">
-                            <?php echo htmlspecialchars($block); ?>
+                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block['name']); ?>" onchange="updateFilters()">
+                            <?php echo htmlspecialchars($block['name']); ?>
                           </label>
                         <?php endforeach; ?>
                       </div>
@@ -722,8 +729,8 @@ if ($conn) {
                       <div class="category-content">
                         <?php foreach ($sections as $section): ?>
                           <label class="filter-option">
-                            <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section); ?>" onchange="updateFilters()">
-                            <?php echo htmlspecialchars($section); ?>
+                            <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section['name']); ?>" onchange="updateFilters()">
+                            <?php echo htmlspecialchars($section['name']); ?> (<?php echo htmlspecialchars($section['block_name'] ?: 'No Block'); ?>)
                           </label>
                         <?php endforeach; ?>
                       </div>
@@ -899,7 +906,7 @@ if ($conn) {
     console.log('Available lots loaded:', availableLots);
   </script>
   <script src="../assets/js/app.js"></script>
-  <script src="../assets/js/api.js"></script>
-  <script src="../assets/js/burial-records.js"></script>
+  <script src="../assets/js/api.js?v=<?php echo time(); ?>"></script>
+  <script src="../assets/js/burial-records.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

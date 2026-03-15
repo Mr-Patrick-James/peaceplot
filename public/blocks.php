@@ -21,12 +21,20 @@ if ($db) {
     try {
         // Fetch stats
         $stats['total'] = $db->query("SELECT COUNT(*) FROM blocks")->fetchColumn();
-        $stats['with_lots'] = $db->query("SELECT COUNT(DISTINCT block) FROM cemetery_lots WHERE block IS NOT NULL AND block != ''")->fetchColumn();
+        $stats['with_lots'] = $db->query("
+            SELECT COUNT(DISTINCT b.id) 
+            FROM blocks b
+            JOIN sections s ON s.block_id = b.id
+            JOIN cemetery_lots cl ON cl.section_id = s.id
+        ")->fetchColumn();
         $stats['empty'] = max(0, $stats['total'] - $stats['with_lots']);
 
         $stmt = $db->query("
             SELECT b.*, 
-                   (SELECT COUNT(*) FROM cemetery_lots WHERE block = b.name) as lot_count
+                   (SELECT COUNT(*) 
+                    FROM cemetery_lots cl
+                    JOIN sections s ON cl.section_id = s.id
+                    WHERE s.block_id = b.id) as lot_count
             FROM blocks b 
             ORDER BY b.name ASC
         ");

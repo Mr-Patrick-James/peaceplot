@@ -23,7 +23,7 @@ if ($conn) {
     try {
         // Get all lots with their map coordinates and layer information
         $stmt = $conn->query("
-            SELECT cl.*, 
+            SELECT cl.*, s.name as section_name, b.name as block_name,
                    (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
                    (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
                    COUNT(DISTINCT dr.id) as burial_count,
@@ -34,6 +34,8 @@ if ($conn) {
                        ELSE cl.status
                    END as actual_status
             FROM cemetery_lots cl 
+            LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
             LEFT JOIN deceased_records dr ON cl.id = dr.lot_id
             GROUP BY cl.id
             ORDER BY LENGTH(cl.lot_number), cl.lot_number
@@ -108,16 +110,17 @@ if ($conn) {
     
     .lot-marker {
       position: absolute;
-      border: calc(1.5px + 1.5px / var(--current-zoom, 1)) solid;
+      border: calc(1px + 1px / var(--current-zoom, 1)) solid;
       cursor: pointer;
       transition: all 0.3s;
-      box-shadow: 0 calc(1px + 1px / var(--current-zoom, 1)) calc(4px + 4px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
+      box-shadow: 0 calc(0.5px + 0.5px / var(--current-zoom, 1)) calc(2px + 2px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
+      box-sizing: border-box; /* Ensures border is inside dimensions */
     }
     
     .lot-marker:hover {
-      border-width: calc(2px + 2px / var(--current-zoom, 1));
+      border-width: calc(1.5px + 1.5px / var(--current-zoom, 1));
       z-index: 100;
-      box-shadow: 0 calc(2px + 2px / var(--current-zoom, 1)) calc(8px + 8px / var(--current-zoom, 1)) rgba(0,0,0,0.5);
+      box-shadow: 0 calc(1px + 1px / var(--current-zoom, 1)) calc(4px + 4px / var(--current-zoom, 1)) rgba(0,0,0,0.5);
     }
     
     .lot-marker.vacant {
@@ -137,44 +140,47 @@ if ($conn) {
     
     .lot-label {
       position: absolute;
-      top: 0px;
-      left: 0px;
-      background: rgba(0,0,0,0.8);
+      top: 0.2px;
+      left: 0.2px;
+      background: rgba(0,0,0,0.9);
       color: white;
-      padding: 0.5px 1.5px;
-      border-radius: 0.5px;
-      font-size: 3.5px;
-      font-weight: 700;
+      padding: 0.2px 0.5px;
+      border-radius: 0.2px;
+      font-size: 3.2px; /* Lot name a bit bigger */
+      font-weight: 900;
       pointer-events: none;
       display: flex;
       flex-direction: column;
-      line-height: 1.1;
+      line-height: 1;
       z-index: 2;
+      box-sizing: border-box;
+      max-width: calc(100% - 0.4px);
     }
 
     .lot-marker.vertical .lot-label {
       width: auto;
-      max-width: 100%;
+      max-width: calc(100% - 0.4px);
     }
 
     .lot-label .section-tag {
-      font-size: 0.65em;
-      opacity: 0.8;
-      font-weight: 400;
+      font-size: 0.75em; /* Increased section name font */
+      opacity: 0.85;
+      font-weight: 600;
+      margin-top: 0.1px;
     }
 
     .lot-marker.vertical .section-tag {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(0,0,0,0.85);
-      padding: 0.5px 1.5px;
-      border-radius: 0 0 0.5px 0.5px;
+      bottom: 0.2px;
+      left: 0.2px;
+      width: calc(100% - 0.4px);
+      background: rgba(0,0,0,0.9);
+      padding: 0.2px 0.5px;
+      border-radius: 0 0 0.2px 0.2px;
       text-align: center;
-      font-size: 0.6em;
+      font-size: 2.5px; /* Increased by 1px (from 1.5px to 2.5px) */
       opacity: 1;
-      font-weight: 600;
+      font-weight: 700;
       line-height: 1;
       z-index: 2;
       box-sizing: border-box;
@@ -890,20 +896,21 @@ if ($conn) {
     
     .lot-layer-indicator {
       position: absolute;
-      top: 0px;
-      right: 0px;
-      background: rgba(0,0,0,0.85);
+      bottom: 0.2px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.9);
       color: white;
-      border-radius: 50%;
-      width: 6px;
-      height: 6px;
-      font-size: 3.5px;
-      font-weight: 800;
+      font-size: 2.2px; /* Increased a tiny bit (from 1.5px to 2.2px) */
+      font-weight: 900;
+      padding: 0.1px 0.4px;
+      border-radius: 0.2px;
+      z-index: 3;
+      pointer-events: none;
+      line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      pointer-events: none;
-      line-height: 1;
     }
 
     /* Notification Styles */
@@ -1221,10 +1228,10 @@ if ($conn) {
                      title="<?php echo htmlspecialchars($lot['lot_number']); ?> - <?php echo $actualStatus; ?>">
                   <div class="lot-label">
                     <span><?php echo htmlspecialchars($lot['lot_number']); ?></span>
-                    <span class="section-tag"><?php echo htmlspecialchars($lot['section']); ?></span>
+                    <span class="section-tag"><?php echo htmlspecialchars($lot['section_name'] ?? ''); ?></span>
                   </div>
                   <?php if ($isVertical): ?>
-                    <div class="section-tag"><?php echo htmlspecialchars($lot['section']); ?></div>
+                    <div class="section-tag"><?php echo htmlspecialchars($lot['section_name'] ?? ''); ?></div>
                   <?php endif; ?>
                   <?php if ($totalLayers > 1): ?>
                     <div class="lot-layer-indicator" title="<?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?> layers occupied"><?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?></div>

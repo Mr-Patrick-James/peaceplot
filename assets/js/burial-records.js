@@ -1492,7 +1492,7 @@ function createRecordModal(record = null) {
                     
                     return `
                         <option value="${lot.id}" ${record?.lot_id == lot.id ? 'selected' : ''}>
-                            ${lot.lot_number} - ${lot.section}${lot.block ? ' - ' + lot.block : ''}${availabilityText}
+                            ${lot.lot_number} - ${lot.section_name || lot.section || 'No Section'}${lot.block_name || lot.block ? ' - ' + (lot.block_name || lot.block) : ''}${availabilityText}
                         </option>
                     `;
                 }).join('');

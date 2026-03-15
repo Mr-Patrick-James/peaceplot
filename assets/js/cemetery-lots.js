@@ -176,7 +176,7 @@ function renderLots(lots) {
                     </div>
                     <div class="lot-name-info">
                         <span class="name">Lot ${lot.lot_number}</span>
-                        <span class="sub">${lot.section}${lot.block ? ' • ' + lot.block : ''}</span>
+                        <span class="sub">${lot.section_name}${lot.block_name ? ' • ' + lot.block_name : ''}</span>
                     </div>
                 </div>
             </td>
@@ -385,17 +385,11 @@ async function showLotModal(lot = null) {
                         </div>
                         <div class="form-group">
                             <label>Section *</label>
-                            <select name="section" id="modalSection" required>
+                            <select name="section_id" id="modalSection" required>
                                 <option value="">Loading...</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Block *</label>
-                            <select name="block" id="modalBlock" required>
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                        <div class="form-group full-width">
                             <label>Position / Landmark</label>
                             <input type="text" name="position" value="${lot?.position || ''}" placeholder="e.g. Near the main gate">
                         </div>
@@ -424,8 +418,7 @@ async function showLotModal(lot = null) {
 
     // Fetch dropdown data and burial info in parallel
     const fetches = [
-        fetch('../api/sections.php').then(r => r.json()),
-        API.fetchBlocks()
+        fetch('../api/sections.php').then(r => r.json())
     ];
     
     if (isEdit) {
@@ -433,19 +426,13 @@ async function showLotModal(lot = null) {
     }
 
     try {
-        const [sectionsRes, blocksRes, layersRes] = await Promise.all(fetches);
+        const [sectionsRes, layersRes] = await Promise.all(fetches);
         
         // Populate Sections
         const sections = Array.isArray(sectionsRes) ? sectionsRes : (sectionsRes.data || []);
         const sectionSelect = modal.querySelector('#modalSection');
-        sectionSelect.innerHTML = '<option value="">Select Section</option>' + 
-            sections.map(s => `<option value="${s.name}" ${lot?.section === s.name ? 'selected' : ''}>${s.name}</option>`).join('');
-
-        // Populate Blocks
-        const blocks = blocksRes.success ? blocksRes.data : [];
-        const blockSelect = modal.querySelector('#modalBlock');
-        blockSelect.innerHTML = '<option value="">Select Block</option>' + 
-            blocks.map(b => `<option value="${b.name}" ${lot?.block === b.name ? 'selected' : ''}>${b.name}</option>`).join('');
+        sectionSelect.innerHTML = '<option value="">Select Section (Block)</option>' + 
+            sections.map(s => `<option value="${s.id}" ${lot?.section_id == s.id ? 'selected' : ''}>${s.name} (${s.block_name || 'No Block'})</option>`).join('');
 
         // Populate Burial Info if it exists
         if (isEdit && layersRes && layersRes.success) {
@@ -504,7 +491,7 @@ async function showLotModal(lot = null) {
             : await API.createLot(data);
         
         if (result.success) {
-            closeModal(modal);
+            modal.querySelector('.modal-close').click();
             showNotification(isEdit ? 'Lot updated successfully' : 'Lot created successfully', 'success');
             loadCemeteryLots(isEdit ? currentPage : 1);
             editingLotId = null;
@@ -758,7 +745,7 @@ async function showMoveBurialModal(burialId, currentLotId, currentLayer) {
 
         selectedLotId = lot.id;
         lotHiddenId.value = lot.id;
-        selectedLotText.textContent = `Lot ${lot.lot_number} (${lot.section} - Block ${lot.block})`;
+        selectedLotText.textContent = `Lot ${lot.lot_number} (${lot.section_name || lot.section || 'No Section'} - Block ${lot.block_name || lot.block || 'No Block'})`;
         selectedLotBadge.style.display = "block";
         lotSearchInput.style.display = "none";
         lotSearchInput.parentElement.style.display = "none";
@@ -792,15 +779,15 @@ async function showMoveBurialModal(burialId, currentLotId, currentLayer) {
 
         const filtered = allLots.filter(lot => 
             lot.lot_number.toLowerCase().includes(query) || 
-            lot.section.toLowerCase().includes(query) || 
-            lot.block.toLowerCase().includes(query)
+            (lot.section_name || lot.section || '').toLowerCase().includes(query) || 
+            (lot.block_name || lot.block || '').toLowerCase().includes(query)
         ).slice(0, 10); // Limit to 10 results
 
         if (filtered.length > 0) {
             lotSearchResults.innerHTML = filtered.map(lot => `
                 <div class="search-result-item" data-id="${lot.id}" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
                     <div style="font-weight: 600; color: #1e293b;">Lot ${lot.lot_number}</div>
-                    <div style="font-size: 12px; color: #64748b;">${lot.section} - Block ${lot.block}</div>
+                    <div style="font-size: 12px; color: #64748b;">${lot.section_name || lot.section || 'No Section'} - Block ${lot.block_name || lot.block || 'No Block'}</div>
                 </div>
             `).join('');
             

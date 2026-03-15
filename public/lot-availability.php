@@ -21,19 +21,20 @@ if ($conn) {
         // Get section statistics
         $stmt = $conn->query("
             SELECT 
-                section,
-                COUNT(*) as total,
-                SUM(CASE WHEN status = 'Vacant' THEN 1 ELSE 0 END) as vacant,
-                SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied
-            FROM cemetery_lots
-            GROUP BY section
-            ORDER BY section
+                s.name as section,
+                COUNT(cl.id) as total,
+                SUM(CASE WHEN cl.status = 'Vacant' THEN 1 ELSE 0 END) as vacant,
+                SUM(CASE WHEN cl.status = 'Occupied' THEN 1 ELSE 0 END) as occupied
+            FROM sections s
+            LEFT JOIN cemetery_lots cl ON s.id = cl.section_id
+            GROUP BY s.id
+            ORDER BY s.name
         ");
         $sections = $stmt->fetchAll();
 
         // Get unique blocks
-        $blockStmt = $conn->query("SELECT DISTINCT block FROM cemetery_lots WHERE block IS NOT NULL AND block != '' ORDER BY LENGTH(block), block");
-        $blocks = $blockStmt->fetchAll(PDO::FETCH_COLUMN);
+        $blockStmt = $conn->query("SELECT id, name FROM blocks ORDER BY name");
+        $blocks = $blockStmt->fetchAll();
         
         // Pagination parameters
         $itemsPerPage = 20;
@@ -41,12 +42,18 @@ if ($conn) {
         $offset = ($currentPage - 1) * $itemsPerPage;
 
         // Get total count for filtered lots
-        $countQuery = "SELECT COUNT(*) FROM cemetery_lots WHERE status = :status";
+        $countQuery = "
+            SELECT COUNT(*) 
+            FROM cemetery_lots cl
+            LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
+            WHERE cl.status = :status
+        ";
         if ($filterSection) {
-            $countQuery .= " AND section = :section";
+            $countQuery .= " AND s.name = :section";
         }
         if ($filterBlock) {
-            $countQuery .= " AND block = :block";
+            $countQuery .= " AND b.name = :block";
         }
         $countStmt = $conn->prepare($countQuery);
         $countStmt->bindParam(':status', $filterStatus);
@@ -61,18 +68,20 @@ if ($conn) {
         $totalPages = ceil($totalItems / $itemsPerPage);
 
         // Get filtered and paginated lots
-        $query = "SELECT cl.*, 
+        $query = "SELECT cl.*, s.name as section_name, b.name as block_name,
                          (SELECT GROUP_CONCAT(full_name, ', ') FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC)) as deceased_name,
                          COALESCE(NULLIF((SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id), 0), cl.layers, 1) as total_layers_count,
                          (SELECT COUNT(DISTINCT layer) FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0) as occupied_layers_count
                   FROM cemetery_lots cl 
+                  LEFT JOIN sections s ON cl.section_id = s.id
+                  LEFT JOIN blocks b ON s.block_id = b.id
                   WHERE cl.status = :status";
         
         if ($filterSection) {
-            $query .= " AND cl.section = :section";
+            $query .= " AND s.name = :section";
         }
         if ($filterBlock) {
-            $query .= " AND cl.block = :block";
+            $query .= " AND b.name = :block";
         }
         
         $query .= " GROUP BY cl.id ORDER BY LENGTH(cl.lot_number), cl.lot_number LIMIT :limit OFFSET :offset";
@@ -219,9 +228,9 @@ if ($conn) {
             <select id="blockFilter" style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;">
               <option value="">All Blocks</option>
               <?php foreach ($blocks as $block): ?>
-                <option value="<?php echo htmlspecialchars($block); ?>" 
-                        <?php echo $filterBlock === $block ? 'selected' : ''; ?>>
-                  <?php echo htmlspecialchars($block); ?>
+                <option value="<?php echo htmlspecialchars($block['name']); ?>" 
+                        <?php echo $filterBlock === $block['name'] ? 'selected' : ''; ?>>
+                  <?php echo htmlspecialchars($block['name']); ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -264,8 +273,8 @@ if ($conn) {
                 <?php foreach ($filteredLots as $lot): ?>
                   <tr>
                     <td><?php echo htmlspecialchars($lot['lot_number']); ?></td>
-                    <td><?php echo htmlspecialchars($lot['section']); ?></td>
-                    <td><?php echo htmlspecialchars($lot['block'] ?: '—'); ?></td>
+                    <td><?php echo htmlspecialchars($lot['section_name'] ?? '—'); ?></td>
+                    <td><?php echo htmlspecialchars($lot['block_name'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></td>
                     <td><span class="badge <?php echo strtolower($lot['status']); ?>"><?php echo htmlspecialchars($lot['status']); ?></span></td>
                     <td>

@@ -29,21 +29,23 @@ if ($conn) {
         // Get section-wise summary
         $stmt = $conn->query("
             SELECT 
-                section,
-                COUNT(*) as total,
-                SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
-                SUM(CASE WHEN status = 'Vacant' THEN 1 ELSE 0 END) as vacant
-            FROM cemetery_lots
-            GROUP BY section
-            ORDER BY section
+                s.name as section,
+                COUNT(cl.id) as total,
+                SUM(CASE WHEN cl.status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
+                SUM(CASE WHEN cl.status = 'Vacant' THEN 1 ELSE 0 END) as vacant
+            FROM sections s
+            LEFT JOIN cemetery_lots cl ON s.id = cl.section_id
+            GROUP BY s.id
+            ORDER BY s.name
         ");
         $stats['sections'] = $stmt->fetchAll();
         
         // Get recent burials
         $stmt = $conn->query("
-            SELECT dr.*, cl.lot_number, cl.section 
+            SELECT dr.*, cl.lot_number, s.name as section 
             FROM deceased_records dr
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
+            LEFT JOIN sections s ON cl.section_id = s.id
             ORDER BY dr.date_of_burial DESC
             LIMIT 10
         ");

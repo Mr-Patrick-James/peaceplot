@@ -26,20 +26,27 @@ if ($conn) {
         $stats['vacant'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Vacant'")->fetchColumn();
         $stats['occupied'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Occupied'")->fetchColumn();
 
-        // Fetch unique sections for filtering
-        $sectionStmt = $conn->query("SELECT DISTINCT section FROM cemetery_lots WHERE section IS NOT NULL AND section != '' ORDER BY LENGTH(section), section");
-        $sections = $sectionStmt->fetchAll(PDO::FETCH_COLUMN);
+        // Fetch sections with their block names for filtering and dropdowns
+        $sectionStmt = $conn->query("
+            SELECT s.id, s.name, b.name as block_name 
+            FROM sections s 
+            LEFT JOIN blocks b ON s.block_id = b.id 
+            ORDER BY b.name, s.name
+        ");
+        $sections = $sectionStmt->fetchAll();
 
         // Fetch unique blocks for filtering
-        $blockStmt = $conn->query("SELECT DISTINCT block FROM cemetery_lots WHERE block IS NOT NULL AND block != '' ORDER BY LENGTH(block), block");
-        $blocks = $blockStmt->fetchAll(PDO::FETCH_COLUMN);
+        $blockStmt = $conn->query("SELECT id, name FROM blocks ORDER BY name");
+        $blocks = $blockStmt->fetchAll();
 
         $stmt = $conn->query("
-            SELECT cl.*, 
+            SELECT cl.*, s.name as section_name, b.name as block_name,
                    (SELECT GROUP_CONCAT(full_name, ', ') 
                     FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
                    ) as deceased_name 
             FROM cemetery_lots cl 
+            LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
             ORDER BY cl.lot_number
         ");
         $lots = $stmt->fetchAll();
@@ -1238,8 +1245,8 @@ if ($conn) {
                       <div class="category-content">
                         <?php foreach ($blocks as $block): ?>
                           <label class="filter-option">
-                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block); ?>" onchange="updateFilters()">
-                            <?php echo htmlspecialchars($block); ?>
+                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block['name']); ?>" onchange="updateFilters()">
+                            <?php echo htmlspecialchars($block['name']); ?>
                           </label>
                         <?php endforeach; ?>
                       </div>
@@ -1254,8 +1261,8 @@ if ($conn) {
                       <div class="category-content">
                         <?php foreach ($sections as $section): ?>
                           <label class="filter-option">
-                            <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section); ?>" onchange="updateFilters()">
-                            <?php echo htmlspecialchars($section); ?>
+                            <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section['name']); ?>" onchange="updateFilters()">
+                            <?php echo htmlspecialchars($section['name']); ?>
                           </label>
                         <?php endforeach; ?>
                       </div>

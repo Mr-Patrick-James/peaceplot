@@ -26,12 +26,12 @@ if ($db) {
 
         // Fetch stats
         $stats['total'] = $db->query("SELECT COUNT(*) FROM sections")->fetchColumn();
-        $stats['with_lots'] = $db->query("SELECT COUNT(DISTINCT section) FROM cemetery_lots WHERE section IS NOT NULL AND section != ''")->fetchColumn();
+        $stats['with_lots'] = $db->query("SELECT COUNT(DISTINCT section_id) FROM cemetery_lots WHERE section_id IS NOT NULL")->fetchColumn();
         $stats['empty'] = max(0, $stats['total'] - $stats['with_lots']);
 
         $stmt = $db->query("
             SELECT s.*, b.name as block_name,
-                   (SELECT COUNT(*) FROM cemetery_lots WHERE section = s.name) as lot_count
+                   (SELECT COUNT(*) FROM cemetery_lots WHERE section_id = s.id) as lot_count
             FROM sections s 
             LEFT JOIN blocks b ON s.block_id = b.id
             ORDER BY s.name ASC
@@ -709,7 +709,7 @@ if ($db) {
               <?php endforeach; ?>
               <?php if (empty($sections)): ?>
                 <tr>
-                  <td colspan="5" style="text-align: center; padding: 60px; color: #94a3b8;">
+                  <td colspan="6" style="text-align: center; padding: 60px; color: #94a3b8;">
                     <div style="margin-bottom: 12px; opacity: 0.5;">
                       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
                     </div>

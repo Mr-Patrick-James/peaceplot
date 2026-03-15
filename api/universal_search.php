@@ -22,9 +22,11 @@ try {
 
     // Search Lots
     $stmt = $db->prepare("
-        SELECT id, lot_number as title, section, 'lot' as type 
-        FROM cemetery_lots 
-        WHERE lot_number LIKE ? OR section LIKE ? OR block LIKE ?
+        SELECT cl.id, cl.lot_number as title, s.name as section_name, 'lot' as type 
+        FROM cemetery_lots cl
+        LEFT JOIN sections s ON cl.section_id = s.id
+        LEFT JOIN blocks b ON s.block_id = b.id
+        WHERE cl.lot_number LIKE ? OR s.name LIKE ? OR b.name LIKE ?
         LIMIT 5
     ");
     $stmt->execute([$searchParam, $searchParam, $searchParam]);
@@ -32,7 +34,7 @@ try {
         $results[] = [
             'id' => $row['id'],
             'title' => "Lot " . $row['title'],
-            'subtitle' => "Section: " . $row['section'],
+            'subtitle' => "Section: " . ($row['section_name'] ?: 'No Section'),
             'type' => 'lot',
             'url' => "index.php?search=" . urlencode($row['title'])
         ];

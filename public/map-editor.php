@@ -26,7 +26,7 @@ if ($conn) {
         $blocks = $blockStmt->fetchAll();
 
         $stmt = $conn->query("
-            SELECT cl.*, 
+            SELECT cl.*, s.name as section_name, b.name as block_name,
                    (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
                    (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
                    COUNT(DISTINCT dr.id) as burial_count,
@@ -37,6 +37,8 @@ if ($conn) {
                    END as actual_status,
                    dr.full_name as deceased_name 
             FROM cemetery_lots cl 
+            LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
             LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
             GROUP BY cl.id
             ORDER BY LENGTH(cl.lot_number), cl.lot_number
@@ -770,7 +772,7 @@ if ($conn) {
               <option value="<?php echo $lot['id']; ?>" 
                       data-lot='<?php echo htmlspecialchars(json_encode($lot)); ?>'>
                 <?php echo htmlspecialchars($lot['lot_number']); ?> - 
-                <?php echo htmlspecialchars($lot['section']); ?> 
+                <?php echo htmlspecialchars($lot['section_name'] ?? 'No Section'); ?> 
                 (<?php echo htmlspecialchars($lot['status']); ?>)
               </option>
             <?php endforeach; ?>
@@ -786,29 +788,27 @@ if ($conn) {
             </div>
             
             <div class="form-group">
-              <label>Block *</label>
-              <select id="newBlock" required>
-                <option value="">Select Block</option>
-                <?php foreach ($blocks as $block): ?>
-                  <option value="<?php echo htmlspecialchars($block['name']); ?>">
-                    <?php echo htmlspecialchars($block['name']); ?>
+              <label>Section (Block) *</label>
+              <select id="newSectionId" required>
+                <option value="">Select Section</option>
+                <?php foreach ($sections as $section): ?>
+                  <?php 
+                    // Find the block name for this section
+                    $blockName = 'No Block';
+                    foreach ($blocks as $b) {
+                      if ($b['id'] == $section['block_id']) {
+                        $blockName = $b['name'];
+                        break;
+                      }
+                    }
+                  ?>
+                  <option value="<?php echo $section['id']; ?>" data-section-name="<?php echo htmlspecialchars($section['name']); ?>">
+                    <?php echo htmlspecialchars($section['name']); ?> (<?php echo htmlspecialchars($blockName); ?>)
                   </option>
                 <?php endforeach; ?>
               </select>
             </div>
 
-            <div class="form-group">
-              <label>Section *</label>
-              <select id="newSection" required>
-                <option value="">Select Section</option>
-                <?php foreach ($sections as $section): ?>
-                  <option value="<?php echo htmlspecialchars($section['name']); ?>">
-                    <?php echo htmlspecialchars($section['name']); ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            
             <div class="form-group">
               <label>Position</label>
               <input type="text" id="newPosition" placeholder="e.g., North Corner">
@@ -1154,13 +1154,13 @@ if ($conn) {
       
       const label = document.createElement('div');
       label.className = 'lot-label';
-      label.innerHTML = `<span>${lotData.lot_number}</span><span class="section-tag">${lotData.section}</span>`;
+      label.innerHTML = `<span>${lotData.lot_number}</span><span class="section-tag">${lotData.section_name || lotData.section || ''}</span>`;
       rect.appendChild(label);
 
       if (isVertical) {
         const sectionTag = document.createElement('div');
         sectionTag.className = 'section-tag';
-        sectionTag.textContent = lotData.section;
+        sectionTag.textContent = lotData.section_name || lotData.section || '';
         rect.appendChild(sectionTag);
       }
 
@@ -1412,20 +1412,21 @@ if ($conn) {
       } else {
         // Create new lot
         const lotNumber = document.getElementById('newLotNumber').value.trim();
-        const section = document.getElementById('newSection').value.trim();
-        const block = document.getElementById('newBlock').value.trim();
+        const sectionId = document.getElementById('newSectionId').value;
         const position = document.getElementById('newPosition').value.trim();
         const status = document.getElementById('newStatus').value;
 
-        if (!lotNumber || !section || !block) {
-          showNotification('Please fill in required fields (Lot Number, Section, and Block)', 'warning');
+        if (!lotNumber || !sectionId) {
+          showNotification('Please fill in required fields (Lot Number and Section)', 'warning');
           return;
         }
 
+        const sectionSelect = document.getElementById('newSectionId');
+        const sectionName = sectionSelect.options[sectionSelect.selectedIndex].getAttribute('data-section-name');
+
         const newLotData = {
           lot_number: lotNumber,
-          section: section,
-          block: block,
+          section_id: sectionId,
           position: position || null,
           status: status
         };
@@ -1457,7 +1458,8 @@ if ($conn) {
         lotData = {
           id: lotId,
           lot_number: lotNumber,
-          section: section,
+          section_id: sectionId,
+          section_name: sectionName,
           position: position,
           status: status
         };
@@ -1544,7 +1546,7 @@ if ($conn) {
               const select = document.getElementById('lotSelect');
               const option = document.createElement('option');
               option.value = target.lotData.id;
-              option.textContent = `${target.lotData.lot_number} - ${target.lotData.section} (${target.lotData.status})`;
+              option.textContent = `${target.lotData.lot_number} - ${target.lotData.section_name || target.lotData.section || ''} (${target.lotData.status})`;
               
               const resetLotData = { ...target.lotData, map_x: null, map_y: null, map_width: null, map_height: null };
               option.setAttribute('data-lot', JSON.stringify(resetLotData));

@@ -84,9 +84,11 @@ function handleGet($conn) {
         } else {
             // Get all layers
             $stmt = $conn->query("
-                SELECT ll.*, cl.lot_number, dr.full_name as deceased_name, dr.date_of_burial
+                SELECT ll.*, cl.lot_number, s.name as section_name, b.name as block_name, dr.full_name as deceased_name, dr.date_of_burial
                 FROM lot_layers ll
                 LEFT JOIN cemetery_lots cl ON ll.lot_id = cl.id
+                LEFT JOIN sections s ON cl.section_id = s.id
+                LEFT JOIN blocks b ON s.block_id = b.id
                 LEFT JOIN deceased_records dr ON ll.burial_record_id = dr.id
                 ORDER BY cl.lot_number, ll.layer_number
             ");

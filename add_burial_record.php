@@ -8,9 +8,11 @@ $lots = [];
 if ($conn) {
     try {
         $stmt = $conn->query("
-            SELECT cl.id, cl.lot_number, cl.section, cl.block, cl.status, cl.layers,
+            SELECT cl.id, cl.lot_number, s.name as section, b.name as block, cl.status, cl.layers,
                    (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers
             FROM cemetery_lots cl
+            LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
             WHERE cl.status = 'Vacant' 
                OR (cl.status = 'Occupied' AND (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 0) > 0)
             ORDER BY cl.lot_number

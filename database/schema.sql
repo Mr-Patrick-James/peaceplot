@@ -24,8 +24,7 @@ CREATE TABLE IF NOT EXISTS sections (
 CREATE TABLE IF NOT EXISTS cemetery_lots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     lot_number VARCHAR(20) NOT NULL,
-    section VARCHAR(50) NOT NULL,
-    block VARCHAR(50),
+    section_id INTEGER,
     position VARCHAR(50),
     status VARCHAR(20) NOT NULL CHECK(status IN ('Vacant', 'Occupied', 'Maintenance')),
     size_sqm DECIMAL(10,2),
@@ -37,7 +36,8 @@ CREATE TABLE IF NOT EXISTS cemetery_lots (
     layers INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(lot_number, section)
+    FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE SET NULL,
+    UNIQUE(lot_number, section_id)
 );
 
 -- Deceased Records Table
