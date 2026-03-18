@@ -615,8 +615,8 @@ if ($conn) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             <span class="current">Burial Records</span>
           </div>
-          <h1 class="title">Burial Records</h1>
-          <p class="subtitle">Manage deceased person records and burial information</p>
+          <h1 class="title">Deceased Records</h1>
+          <p class="subtitle">Manage and organize deceased person records and burial information</p>
         </div>
 
         <div class="header-search">

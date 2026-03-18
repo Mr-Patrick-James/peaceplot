@@ -1298,10 +1298,7 @@ if ($conn) {
             <div class="legend-box occupied"></div>
             <span>Occupied</span>
           </div>
-          <div class="legend-item">
-            <div class="legend-box maintenance"></div>
-            <span>Maintenance</span>
-          </div>
+         
         </div>
 
         <?php if ($mapImage): ?>
