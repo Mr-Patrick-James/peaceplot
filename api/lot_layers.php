@@ -53,7 +53,7 @@ function handleGet($conn) {
             
             // Get all burial records for this lot to match with layers
             $burialStmt = $conn->prepare("
-                SELECT id, full_name, date_of_burial, layer 
+                SELECT id, full_name, date_of_burial, layer, next_of_kin, next_of_kin_contact
                 FROM deceased_records 
                 WHERE lot_id = :lot_id AND is_archived = 0
                 ORDER BY layer ASC, created_at DESC

@@ -49,6 +49,9 @@ if ($db) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PeacePlot Admin - Section Management</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
+  <!-- Flatpickr for better date selection -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     /* Specific styles for the modern sections UI */
     .dashboard-header {
@@ -60,7 +63,7 @@ if ($db) {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative; /* Added for absolute search positioning */
+      position: relative;
     }
     .header-left .title {
       font-size: 24px;
@@ -83,90 +86,6 @@ if ($db) {
     .breadcrumbs a { color: #94a3b8; text-decoration: none; }
     .breadcrumbs .current { color: #1e293b; font-weight: 600; }
     
-    /* Universal Search Styles */
-    .search-container {
-      position: relative;
-      width: 400px;
-    }
-    .universal-search-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    .universal-search-wrapper svg {
-      position: absolute;
-      left: 16px;
-      color: #94a3b8;
-      pointer-events: none;
-    }
-    .universal-search-input {
-      width: 100%;
-      padding: 12px 16px 12px 48px;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      font-size: 14px;
-      outline: none;
-      transition: all 0.2s;
-      background: #f8fafc;
-    }
-    .universal-search-input:focus {
-      background: #fff;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    }
-    .search-results-dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      right: 0;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-      border: 1px solid #e2e8f0;
-      z-index: 1000;
-      display: none;
-      overflow: hidden;
-    }
-    .search-result-item {
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: background 0.2s;
-      text-decoration: none;
-      border-bottom: 1px solid #f1f5f9;
-      text-align: left;
-    }
-    .search-result-item:last-child { border-bottom: none; }
-    .search-result-item:hover { background: #f8fafc; }
-    .result-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .icon-lot { background: #eff6ff; color: #3b82f6; }
-    .icon-deceased { background: #fef2f2; color: #ef4444; }
-    .result-info { flex: 1; min-width: 0; }
-    .result-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #1e293b;
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .result-subtitle {
-      font-size: 12px;
-      color: #64748b;
-      display: block;
-    }
-
     .btn-blue {
       background: #3b82f6;
       color: #fff;
@@ -183,6 +102,239 @@ if ($db) {
       transition: all 0.2s;
     }
     .btn-blue:hover { background: #2563eb; transform: translateY(-1px); }
+
+    /* Filter Controls */
+    .filter-controls { display: flex; gap: 12px; align-items: center; }
+    
+    .search-wrapper { position: relative; }
+    .search-wrapper svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+    .search-wrapper input {
+      padding: 10px 16px 10px 40px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      width: 280px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-wrapper input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+    .btn-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+      transition: all 0.2s;
+      position: relative;
+    }
+    .btn-filter:hover { background: #2563eb; transform: translateY(-1px); }
+    .filter-badge {
+      background: #fff;
+      color: #3b82f6;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .filter-popover {
+      position: absolute;
+      top: calc(100% + 12px);
+      right: 0;
+      width: 640px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      border: 1px solid #e2e8f0;
+      z-index: 1000;
+      display: none;
+      overflow: hidden;
+      color: #1e293b;
+      text-align: left;
+    }
+    .filter-popover.active { display: block; }
+    .popover-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .popover-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
+    .popover-body { 
+      display: flex;
+      max-height: 480px; 
+      overflow-y: auto; 
+    }
+    .popover-column {
+      flex: 1;
+      border-right: 1px solid #f1f5f9;
+    }
+    .popover-column:last-child {
+      border-right: none;
+    }
+    
+    .filter-category { border-bottom: 1px solid #f8fafc; }
+    .filter-category:last-child { border-bottom: none; }
+    .category-toggle {
+      width: 100%;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      transition: background 0.2s;
+    }
+    .category-toggle:hover { background: #f8fafc; }
+    .category-toggle svg { width: 16px; height: 16px; color: #94a3b8; transition: transform 0.2s; }
+    .filter-category.active .category-toggle svg { transform: rotate(90deg); }
+    .category-content { display: none; padding: 0 20px 12px 46px; }
+    .filter-category.active .category-content { display: block; }
+    
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      cursor: pointer;
+      font-size: 13.5px;
+      color: #475569;
+    }
+    .filter-option input[type="checkbox"] { width: 16px; height: 16px; border-radius: 4px; border: 2px solid #cbd5e1; cursor: pointer; }
+    
+    .active-filters-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 32px 0 32px;
+    }
+    .filter-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #eff6ff;
+      color: #3b82f6;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .filter-chip .remove { cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.7; }
+    .filter-chip .remove:hover { opacity: 1; }
+
+    /* Date Range Wrapper */
+    .date-range-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+    }
+    .date-range-wrapper label { font-size: 12px; font-weight: 600; color: #64748b; }
+    .date-range-wrapper input { border: none; outline: none; font-size: 13px; color: #1e293b; background: transparent; }
+
+    /* Range Inputs */
+    .range-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .range-input-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .range-input-group label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .range-input-group input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #1e293b;
+      outline: none;
+    }
+    .range-input-group input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    .range-separator {
+      margin-top: 18px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    /* Sorting UI Styles */
+    .table th[data-sort] {
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .table th[data-sort]:hover {
+      background: #f1f5f9 !important;
+      color: #3b82f6 !important;
+    }
+    .th-content {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sort-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+    }
+    .active-sort {
+      color: #3b82f6 !important;
+      background: #eff6ff !important;
+    }
+    
+    .sort-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 4px 0;
+    }
+    .sort-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #1e293b;
+      outline: none;
+      background: #fff;
+    }
+    .sort-select:focus {
+      border-color: #3b82f6;
+    }
 
     .dashboard-stats {
       display: grid;
@@ -227,7 +379,7 @@ if ($db) {
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-      overflow: hidden;
+      overflow: visible; /* Changed from hidden to allow popover */
     }
     .content-header {
       padding: 24px 32px;
@@ -238,11 +390,6 @@ if ($db) {
     }
     .content-title-wrap .title { font-size: 18px; font-weight: 700; color: #1e293b; margin: 0 0 4px 0; }
     .content-title-wrap .subtitle { font-size: 13px; color: #94a3b8; margin: 0; }
-    .filter-controls {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
 
     .table thead th {
       background: #f8fafc;
@@ -602,7 +749,7 @@ if ($db) {
         </div>
         
         <div class="header-actions">
-          <button class="btn-blue" onclick="openAddModal()">
+          <button id="addSectionBtn" class="btn-blue">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Add New Section
           </button>
@@ -650,7 +797,120 @@ if ($db) {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               <input id="sectionSearch" type="text" placeholder="Search sections..." style="padding: 10px 16px 10px 40px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; width: 280px; outline: none; transition: all 0.2s;">
             </div>
+            
+            <div style="position: relative;">
+              <button id="filterBtn" class="btn-filter">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                Filters
+                <span id="filterBadge" class="filter-badge" style="display: none;">0</span>
+              </button>
+
+              <div id="filterPopover" class="filter-popover">
+                <div class="popover-header">
+                  <h3>Advanced Filters</h3>
+                  <button class="btn-text" id="clearAllFilters" style="color: #ef4444; font-size: 12px; font-weight: 600; background: none; border: none; cursor: pointer;">Clear All</button>
+                </div>
+                <div class="popover-body">
+                  <!-- Left Column: Categories -->
+                  <div class="popover-column" style="flex: 0 0 200px; background: #f8fafc;">
+                    <div class="filter-category active" data-category="blocks">
+                      <button class="category-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Blocks
+                      </button>
+                    </div>
+                    <div class="filter-category" data-category="lots">
+                      <button class="category-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Lot Count
+                      </button>
+                    </div>
+                    <div class="filter-category" data-category="date">
+                      <button class="category-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Created Date
+                      </button>
+                    </div>
+                    <div class="filter-category" data-category="sort">
+                      <button class="category-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Sorting
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Right Column: Options -->
+                  <div class="popover-column">
+                    <!-- Blocks Content -->
+                    <div class="category-content" id="cat-blocks" style="display: block; padding: 20px;">
+                      <div style="max-height: 300px; overflow-y: auto;">
+                        <?php foreach ($all_blocks as $block): ?>
+                          <label class="filter-option">
+                            <input type="checkbox" name="block_filter" value="<?php echo $block['id']; ?>" data-name="<?php echo htmlspecialchars($block['name']); ?>">
+                            <span><?php echo htmlspecialchars($block['name']); ?></span>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+
+                    <!-- Lot Count Content -->
+                    <div class="category-content" id="cat-lots" style="display: none; padding: 20px;">
+                      <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Filter sections by the number of lots they contain.</p>
+                      <div class="range-inputs">
+                        <div class="range-input-group">
+                          <label>Min Lots</label>
+                          <input type="number" id="lotMin" placeholder="0" min="0">
+                        </div>
+                        <div class="range-separator">-</div>
+                        <div class="range-input-group">
+                          <label>Max Lots</label>
+                          <input type="number" id="lotMax" placeholder="Any" min="0">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Date Content -->
+                    <div class="category-content" id="cat-date" style="display: none; padding: 20px;">
+                      <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Filter by the date the section was created.</p>
+                      <div class="date-range-wrapper">
+                        <label>Range:</label>
+                        <input type="text" id="dateRange" placeholder="Select date range...">
+                      </div>
+                    </div>
+
+                    <!-- Sorting Content -->
+                    <div class="category-content" id="cat-sort" style="display: none; padding: 20px;">
+                      <div class="sort-group">
+                        <label style="font-size: 12px; font-weight: 600; color: #64748b;">Sort By</label>
+                        <select id="sortBy" class="sort-select">
+                          <option value="name">Section Name</option>
+                          <option value="block_name">Block Name</option>
+                          <option value="lot_count">Lot Count</option>
+                          <option value="created_at">Date Created</option>
+                        </select>
+                        
+                        <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-top: 12px;">Order</label>
+                        <div style="display: flex; gap: 12px;">
+                          <label class="filter-option">
+                            <input type="radio" name="sortOrder" value="ASC" checked>
+                            <span>Ascending</span>
+                          </label>
+                          <label class="filter-option">
+                            <input type="radio" name="sortOrder" value="DESC">
+                            <span>Descending</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div id="activeFiltersRow" class="active-filters-row">
+          <!-- Filter chips will be injected here -->
         </div>
 
         <div class="table-wrap">
@@ -695,15 +955,23 @@ if ($db) {
                   <td><?php echo date('M d, Y', strtotime($section['created_at'])); ?></td>
                   <td align="right">
                     <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                      <button class="btn-action btn-edit" onclick='openEditModal(<?php echo json_encode($section); ?>)' title="Edit Section">
+                      <a href="cemetery-map.php?highlight_section=<?php echo $section['id']; ?>" class="btn-action btn-map" title="View on Map" style="background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; text-decoration: none;">
                         <span class="icon">
-                          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        </span>
+                      </a>
+                      <button class="btn-action btn-edit" onclick='openEditModal(<?php echo htmlspecialchars(json_encode($section), ENT_QUOTES, "UTF-8"); ?>)' title="Edit Section">
+                        <span class="icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 20h9" />
                             <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                           </svg>
                         </span>
                       </button>
-                      <button class="btn-action btn-delete" onclick='deleteSection(<?php echo json_encode($section); ?>)' title="Delete Section">
+                      <button class="btn-action btn-delete" onclick='deleteSection(<?php echo htmlspecialchars(json_encode($section), ENT_QUOTES, "UTF-8"); ?>)' title="Delete Section">
                         <span class="icon">
                           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6h18" />
@@ -784,30 +1052,6 @@ if ($db) {
     </div>
   </div>
 
-  <script>
-    // Local Table Search Logic
-    const sectionSearch = document.getElementById('sectionSearch');
-    const tableBody = document.getElementById('sectionsTableBody');
-
-    if (sectionSearch && tableBody) {
-      sectionSearch.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        const rows = tableBody.querySelectorAll('tr');
-
-        rows.forEach(row => {
-          if (row.cells.length < 2) return; // Skip empty row
-          const name = row.querySelector('.section-info .name')?.textContent.toLowerCase() || '';
-          const desc = row.cells[1]?.textContent.toLowerCase() || '';
-          
-          if (name.includes(query) || desc.includes(query)) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
-        });
-      });
-    }
-  </script>
   <script src="../assets/js/sections.js"></script>
 </body>
 </html>

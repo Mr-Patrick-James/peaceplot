@@ -13,12 +13,74 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     try {
-        $stmt = $db->query("
-            SELECT s.*, b.name as block_name 
+        $search = $_GET['search'] ?? '';
+        $block_id = $_GET['block_id'] ?? '';
+        $lot_min = $_GET['lot_min'] ?? '';
+        $lot_max = $_GET['lot_max'] ?? '';
+        $start_date = $_GET['start_date'] ?? '';
+        $end_date = $_GET['end_date'] ?? '';
+        $sort_by = $_GET['sort_by'] ?? 'name';
+        $sort_order = $_GET['sort_order'] ?? 'ASC';
+
+        $params = [];
+        $where = [];
+
+        if ($search) {
+            $where[] = "(s.name LIKE ? OR s.description LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+
+        if ($block_id) {
+            $ids = explode(',', $block_id);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $where[] = "s.block_id IN ($placeholders)";
+            foreach ($ids as $id) {
+                $params[] = trim($id);
+            }
+        }
+
+        if ($start_date) {
+            $where[] = "date(s.created_at) >= ?";
+            $params[] = $start_date;
+        }
+
+        if ($end_date) {
+            $where[] = "date(s.created_at) <= ?";
+            $params[] = $end_date;
+        }
+
+        $whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
+        
+        $having = [];
+        $havingParams = [];
+        if ($lot_min !== '') {
+            $having[] = "lot_count >= ?";
+            $havingParams[] = $lot_min;
+        }
+        if ($lot_max !== '') {
+            $having[] = "lot_count <= ?";
+            $havingParams[] = $lot_max;
+        }
+        $havingClause = !empty($having) ? "HAVING " . implode(" AND ", $having) : "";
+
+        $allowedSort = ['name', 'block_name', 'lot_count', 'created_at'];
+        if (!in_array($sort_by, $allowedSort)) $sort_by = 'name';
+        $sort_order = strtoupper($sort_order) === 'DESC' ? 'DESC' : 'ASC';
+
+        $query = "
+            SELECT s.*, b.name as block_name,
+                   (SELECT COUNT(*) FROM cemetery_lots WHERE section_id = s.id) as lot_count
             FROM sections s 
             LEFT JOIN blocks b ON s.block_id = b.id 
-            ORDER BY s.name ASC
-        ");
+            $whereClause
+            GROUP BY s.id
+            $havingClause
+            ORDER BY $sort_by $sort_order
+        ";
+
+        $stmt = $db->prepare($query);
+        $stmt->execute(array_merge($params, $havingParams));
         $sections = $stmt->fetchAll();
         echo json_encode($sections);
     } catch (PDOException $e) {

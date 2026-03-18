@@ -1329,6 +1329,7 @@ if ($conn) {
                 ?>
                 <div class="lot-marker <?php echo strtolower($actualStatus); ?> <?php echo $isVertical ? 'vertical' : ''; ?>"
                      data-lot-id="<?php echo $lot['id']; ?>"
+                     data-section-id="<?php echo $lot['section_id']; ?>"
                      style="left: <?php echo $lot['map_x']; ?>%; 
                             top: <?php echo $lot['map_y']; ?>%;
                             width: <?php echo $lot['map_width']; ?>%;
@@ -2387,6 +2388,15 @@ if ($conn) {
           const isOccupied = layerBurials.length > 0 || layer.is_occupied;
           const deceasedName = layerBurials.length > 0 ? layerBurials.map(b => b.full_name).join(', ') : (layer.deceased_name || '');
           
+          // Get Kin information from the first burial if it exists
+          let kinInfo = '';
+          if (layerBurials.length > 0 && layerBurials[0].next_of_kin) {
+            kinInfo = layerBurials[0].next_of_kin;
+            if (layerBurials[0].next_of_kin_contact) {
+              kinInfo += ` (${layerBurials[0].next_of_kin_contact})`;
+            }
+          }
+          d
           return `
             <div class="layer-item ${isOccupied ? 'occupied' : 'vacant'}" 
                  onclick="showLayerDetails(${lotId}, ${layer.layer_number}, '${isOccupied}', '${deceasedName.replace(/'/g, "\\'")}')">
@@ -2400,6 +2410,13 @@ if ($conn) {
                 <div class="layer-deceased-name">
                   ${isOccupied ? deceasedName : '<span style="color: #94a3b8; font-weight: 500;">Vacant Layer</span>'}
                 </div>
+
+                ${isOccupied && kinInfo ? `
+                  <div class="layer-kin-info" style="font-size: 12px; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+                    <span>Kin: ${kinInfo}</span>
+                  </div>
+                ` : ''}
 
                 ${layerBurials.length > 1 ? `
                   <div class="ash-burial-badge">
@@ -2593,37 +2610,67 @@ if ($conn) {
 
 
     
-    // Highlight lot functionality
+    // Highlight lot/section functionality
     function highlightLotOnMap() {
       const urlParams = new URLSearchParams(window.location.search);
-      const highlightLotId = urlParams.get('highlight_lot');
+      const highlightLotIds = urlParams.get('highlight_lot') ? urlParams.get('highlight_lot').split(',') : [];
+      const highlightSectionIds = urlParams.get('highlight_section') ? urlParams.get('highlight_section').split(',') : [];
       
-      if (!highlightLotId) return;
+      if (highlightLotIds.length === 0 && highlightSectionIds.length === 0) return;
 
       const lotMarkers = document.querySelectorAll('.lot-marker');
-      let targetMarker = null;
+      let targetMarkers = [];
       
       lotMarkers.forEach(marker => {
-        if (marker.getAttribute('data-lot-id') === highlightLotId) {
-          targetMarker = marker;
+        const lotId = marker.getAttribute('data-lot-id');
+        // We need the section ID. The marker doesn't have it currently in data attributes.
+        // Let's check if we can get it from the lot data passed to showLotDetails.
+        // Actually, the PHP loop can add data-section-id to the marker.
+        const sectionId = marker.getAttribute('data-section-id');
+        
+        const isHighlightedLot = highlightLotIds.includes(lotId);
+        const isHighlightedSection = highlightSectionIds.includes(sectionId);
+
+        if (isHighlightedLot || isHighlightedSection) {
           marker.classList.add('highlighted-marker');
+          targetMarkers.push(marker);
         } else {
           marker.classList.add('hidden-marker');
         }
       });
       
-      if (targetMarker) {
-        // Position relative to map canvas using percentages
-        const lotX = parseFloat(targetMarker.style.left);
-        const lotY = parseFloat(targetMarker.style.top);
-        const lotW = parseFloat(targetMarker.style.width);
-        const lotH = parseFloat(targetMarker.style.height);
+      if (targetMarkers.length > 0) {
+        // Calculate bounding box of all target markers to center view
+        let minX = 100, minY = 100, maxX = 0, maxY = 0;
         
-        // Smoothly zoom to the lot
+        targetMarkers.forEach(marker => {
+          const x = parseFloat(marker.style.left);
+          const y = parseFloat(marker.style.top);
+          const w = parseFloat(marker.style.width);
+          const h = parseFloat(marker.style.height);
+          
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x + w);
+          maxY = Math.max(maxY, y + h);
+        });
+
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        
+        // Calculate appropriate zoom based on the bounding box size
+        const spanX = maxX - minX;
+        const spanY = maxY - minY;
+        const maxSpan = Math.max(spanX, spanY);
+        
+        // Adjust zoom: smaller span -> larger zoom
+        let targetZoom = 1.5;
+        if (maxSpan > 0) {
+            targetZoom = Math.min(2.5, Math.max(0.5, 40 / maxSpan));
+        }
+
         setTimeout(() => {
-          const centerX = lotX + (lotW / 2);
-          const centerY = lotY + (lotH / 2);
-          zoomToPoint(centerX, centerY, 2.5);
+          zoomToPoint(centerX, centerY, targetZoom);
         }, 300);
         
         // Add clear highlight button
