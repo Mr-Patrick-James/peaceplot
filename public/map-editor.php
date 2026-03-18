@@ -937,6 +937,7 @@ if ($conn) {
             <div class="form-group">
               <label>Lot Number *</label>
               <input type="text" id="newLotNumber" placeholder="e.g., A-001" required>
+              <div id="newLotLatestHint" style="margin-top: 6px; font-size: 12px; color: #64748b;"></div>
             </div>
             
             <div class="form-group">
@@ -1408,11 +1409,17 @@ if ($conn) {
       pendingRect = null;
       
       // Clear new lot form
-      document.getElementById('newLotNumber').value = '';
-      document.getElementById('newSection').value = '';
-      document.getElementById('newBlock').value = '';
-      document.getElementById('newPosition').value = '';
-      document.getElementById('newStatus').value = 'Vacant';
+      const lotNoEl = document.getElementById('newLotNumber');
+      const sectionEl = document.getElementById('newSectionId');
+      const positionEl = document.getElementById('newPosition');
+      const statusEl = document.getElementById('newStatus');
+      const hintEl = document.getElementById('newLotLatestHint');
+
+      if (lotNoEl) lotNoEl.value = '';
+      if (sectionEl) sectionEl.value = '';
+      if (positionEl) positionEl.value = '';
+      if (statusEl) statusEl.value = 'Vacant';
+      if (hintEl) hintEl.textContent = '';
 
       
       // Remove event listeners
@@ -1447,6 +1454,60 @@ if ($conn) {
       } catch (error) {
         console.error('Error creating lot:', error);
         return { success: false, message: error.message };
+      }
+    }
+
+    function suggestNextLotNumber(latestLotNumber) {
+      if (!latestLotNumber || typeof latestLotNumber !== 'string') return '';
+      const match = latestLotNumber.match(/(\d+)(?!.*\d)/);
+      if (!match) return '';
+      const digits = match[1];
+      const num = parseInt(digits, 10);
+      if (Number.isNaN(num)) return '';
+      const nextDigits = String(num + 1).padStart(digits.length, '0');
+      const idx = match.index ?? latestLotNumber.lastIndexOf(digits);
+      return latestLotNumber.slice(0, idx) + nextDigits + latestLotNumber.slice(idx + digits.length);
+    }
+
+    async function refreshNewLotLatestHint() {
+      const sectionEl = document.getElementById('newSectionId');
+      const hintEl = document.getElementById('newLotLatestHint');
+      const lotNoEl = document.getElementById('newLotNumber');
+      if (!sectionEl || !hintEl || !lotNoEl) return;
+
+      const sectionId = sectionEl.value;
+      if (!sectionId) {
+        hintEl.textContent = '';
+        return;
+      }
+
+      hintEl.textContent = 'Loading latest lot number...';
+      try {
+        const response = await fetch(`../api/cemetery_lots.php?latest_lot=1&section_id=${encodeURIComponent(sectionId)}`);
+        const result = await response.json();
+        if (!result.success) {
+          hintEl.textContent = '';
+          return;
+        }
+
+        const latestLotNumber = result.data && result.data.lot_number ? result.data.lot_number : null;
+        if (!latestLotNumber) {
+          hintEl.textContent = 'No existing lots in this section yet';
+          return;
+        }
+
+        const suggested = result.data && result.data.suggested_next
+          ? result.data.suggested_next
+          : suggestNextLotNumber(latestLotNumber);
+        hintEl.textContent = suggested
+          ? `Latest: ${latestLotNumber} • Suggested next: ${suggested}`
+          : `Latest: ${latestLotNumber}`;
+
+        if (lotNoEl.value.trim() === '' && suggested) {
+          lotNoEl.value = suggested;
+        }
+      } catch (e) {
+        hintEl.textContent = '';
       }
     }
 
@@ -1662,6 +1723,11 @@ if ($conn) {
       closeAssignModal();
       showNotification(mode === 'existing' ? 'Lot assigned successfully!' : 'New lot created and assigned successfully!', 'success');
       // window.location.reload(); // Refresh to update selection dropdown
+    }
+
+    const newSectionIdEl = document.getElementById('newSectionId');
+    if (newSectionIdEl) {
+      newSectionIdEl.addEventListener('change', refreshNewLotLatestHint);
     }
 
     async function saveAllLots(silent = false) {

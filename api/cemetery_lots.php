@@ -35,6 +35,104 @@ switch ($method) {
 
 function handleGet($conn) {
     try {
+        if (isset($_GET['latest_lot']) && $_GET['latest_lot'] === '1') {
+            if (!$conn) {
+                echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+                return;
+            }
+
+            $sectionId = isset($_GET['section_id']) && $_GET['section_id'] !== '' ? intval($_GET['section_id']) : null;
+
+            $sql = "
+                SELECT cl.lot_number, cl.section_id, s.name as section_name, cl.created_at, cl.id
+                FROM cemetery_lots cl
+                LEFT JOIN sections s ON cl.section_id = s.id
+            ";
+
+            if ($sectionId !== null) {
+                $sql .= " WHERE cl.section_id = :section_id ";
+            }
+
+            $stmt = $conn->prepare($sql);
+            if ($sectionId !== null) {
+                $stmt->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+            }
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!$rows || count($rows) === 0) {
+                echo json_encode(['success' => true, 'data' => null]);
+                return;
+            }
+
+            $bestRow = null;
+            $bestNum = -1;
+            $bestNumLen = 0;
+            $bestCreatedAt = '';
+            $bestId = 0;
+
+            foreach ($rows as $r) {
+                $lotNumber = isset($r['lot_number']) ? (string)$r['lot_number'] : '';
+                $num = -1;
+                $numLen = 0;
+
+                if (preg_match('/(\d+)(?!.*\d)/', $lotNumber, $m)) {
+                    $num = intval($m[1]);
+                    $numLen = strlen($m[1]);
+                }
+
+                $createdAt = isset($r['created_at']) ? (string)$r['created_at'] : '';
+                $id = isset($r['id']) ? intval($r['id']) : 0;
+
+                $isBetter = false;
+                if ($num > $bestNum) {
+                    $isBetter = true;
+                } elseif ($num === $bestNum && $numLen > $bestNumLen) {
+                    $isBetter = true;
+                } elseif ($num === $bestNum && $numLen === $bestNumLen) {
+                    if ($createdAt > $bestCreatedAt) {
+                        $isBetter = true;
+                    } elseif ($createdAt === $bestCreatedAt && $id > $bestId) {
+                        $isBetter = true;
+                    }
+                }
+
+                if ($isBetter) {
+                    $bestRow = $r;
+                    $bestNum = $num;
+                    $bestNumLen = $numLen;
+                    $bestCreatedAt = $createdAt;
+                    $bestId = $id;
+                }
+            }
+
+            if (!$bestRow) {
+                $bestRow = $rows[0];
+            }
+
+            $suggestedNext = null;
+            $bestLotNumber = isset($bestRow['lot_number']) ? (string)$bestRow['lot_number'] : '';
+            if ($bestLotNumber !== '' && preg_match('/(\d+)(?!.*\d)/', $bestLotNumber, $m)) {
+                $digits = $m[1];
+                $num = intval($digits);
+                $nextDigits = str_pad((string)($num + 1), strlen($digits), '0', STR_PAD_LEFT);
+                $pos = strpos($bestLotNumber, $digits);
+                if ($pos !== false) {
+                    $suggestedNext = substr($bestLotNumber, 0, $pos) . $nextDigits . substr($bestLotNumber, $pos + strlen($digits));
+                }
+            }
+
+            $responseRow = [
+                'lot_number' => $bestLotNumber !== '' ? $bestLotNumber : null,
+                'section_id' => isset($bestRow['section_id']) ? intval($bestRow['section_id']) : null,
+                'section_name' => isset($bestRow['section_name']) ? $bestRow['section_name'] : null,
+                'suggested_next' => $suggestedNext
+            ];
+
+            echo json_encode(['success' => true, 'data' => $responseRow]);
+            return;
+        }
+
         if ($conn) {
             // Force status sync based on active burials for all lots
             $conn->exec("

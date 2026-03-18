@@ -346,6 +346,18 @@ function showEditModal(lotId) {
     showLotModal(lot);
 }
 
+function suggestNextLotNumber(latestLotNumber) {
+    if (!latestLotNumber || typeof latestLotNumber !== 'string') return '';
+    const match = latestLotNumber.match(/(\d+)(?!.*\d)/);
+    if (!match) return '';
+    const digits = match[1];
+    const num = parseInt(digits, 10);
+    if (Number.isNaN(num)) return '';
+    const nextDigits = String(num + 1).padStart(digits.length, '0');
+    const idx = match.index ?? latestLotNumber.lastIndexOf(digits);
+    return latestLotNumber.slice(0, idx) + nextDigits + latestLotNumber.slice(idx + digits.length);
+}
+
 async function showLotModal(lot = null) {
     const isEdit = lot !== null;
     const isAssigned = isEdit && lot.map_x !== null && lot.map_y !== null;
@@ -373,7 +385,8 @@ async function showLotModal(lot = null) {
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Lot Number *</label>
-                            <input type="text" name="lot_number" value="${lot?.lot_number || ''}" required placeholder="e.g. A-101">
+                            <input type="text" id="modalLotNumber" name="lot_number" value="${lot?.lot_number || ''}" required placeholder="e.g. A-101">
+                            <div id="modalLatestLotHint" style="margin-top: 6px; font-size: 12px; color: #64748b;"></div>
                         </div>
                         <div class="form-group">
                             <label>Status *</label>
@@ -433,6 +446,45 @@ async function showLotModal(lot = null) {
         const sectionSelect = modal.querySelector('#modalSection');
         sectionSelect.innerHTML = '<option value="">Select Section (Block)</option>' + 
             sections.map(s => `<option value="${s.id}" ${lot?.section_id == s.id ? 'selected' : ''}>${s.name} (${s.block_name || 'No Block'})</option>`).join('');
+
+        const lotNumberInput = modal.querySelector('#modalLotNumber');
+        const latestHint = modal.querySelector('#modalLatestLotHint');
+
+        const refreshLatestLotHint = async () => {
+            if (!latestHint) return;
+            const selectedSectionId = sectionSelect.value;
+            if (!selectedSectionId) {
+                latestHint.textContent = '';
+                return;
+            }
+
+            latestHint.textContent = 'Loading latest lot number...';
+            const latestRes = await API.fetchLatestLotNumber(selectedSectionId);
+            if (!latestRes.success) {
+                latestHint.textContent = '';
+                return;
+            }
+
+            const latestLotNumber = latestRes.data && latestRes.data.lot_number ? latestRes.data.lot_number : null;
+            if (!latestLotNumber) {
+                latestHint.textContent = 'No existing lots in this section yet';
+                return;
+            }
+
+            const suggested = latestRes.data && latestRes.data.suggested_next
+                ? latestRes.data.suggested_next
+                : suggestNextLotNumber(latestLotNumber);
+            latestHint.textContent = suggested
+                ? `Latest: ${latestLotNumber} • Suggested next: ${suggested}`
+                : `Latest: ${latestLotNumber}`;
+
+            if (!isEdit && lotNumberInput && lotNumberInput.value.trim() === '' && suggested) {
+                lotNumberInput.value = suggested;
+            }
+        };
+
+        sectionSelect.addEventListener('change', refreshLatestLotHint);
+        await refreshLatestLotHint();
 
         // Populate Burial Info if it exists
         if (isEdit && layersRes && layersRes.success) {

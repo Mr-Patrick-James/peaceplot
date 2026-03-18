@@ -33,6 +33,23 @@ const API = {
         }
     },
 
+    async fetchLatestLotNumber(sectionId = null) {
+        try {
+            const url = new URL(`${window.location.origin}${API_BASE_URL}/cemetery_lots.php`);
+            url.searchParams.append('latest_lot', '1');
+            if (sectionId !== null && sectionId !== undefined && String(sectionId).trim() !== '') {
+                url.searchParams.append('section_id', sectionId);
+            }
+
+            const response = await fetch(url.toString());
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching latest lot number:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
     async createLot(lotData) {
         try {
             const response = await fetch(`${API_BASE_URL}/cemetery_lots.php`, {
