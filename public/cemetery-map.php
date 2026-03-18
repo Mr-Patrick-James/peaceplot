@@ -2388,15 +2388,26 @@ if ($conn) {
           const isOccupied = layerBurials.length > 0 || layer.is_occupied;
           const deceasedName = layerBurials.length > 0 ? layerBurials.map(b => b.full_name).join(', ') : (layer.deceased_name || '');
           
-          // Get Kin information from the first burial if it exists
           let kinInfo = '';
-          if (layerBurials.length > 0 && layerBurials[0].next_of_kin) {
-            kinInfo = layerBurials[0].next_of_kin;
-            if (layerBurials[0].next_of_kin_contact) {
-              kinInfo += ` (${layerBurials[0].next_of_kin_contact})`;
+          if (layerBurials.length > 0) {
+            const kinEntries = [...new Set(
+              layerBurials
+                .filter(b => b.next_of_kin)
+                .map(b => {
+                  const contact = b.next_of_kin_contact ? ` (${b.next_of_kin_contact})` : '';
+                  return `${b.next_of_kin}${contact}`;
+                })
+            )];
+
+            if (kinEntries.length === 1) {
+              kinInfo = kinEntries[0];
+            } else if (kinEntries.length === 2) {
+              kinInfo = kinEntries.join(' • ');
+            } else if (kinEntries.length > 2) {
+              kinInfo = `${kinEntries[0]} +${kinEntries.length - 1} more`;
             }
           }
-          d
+          
           return `
             <div class="layer-item ${isOccupied ? 'occupied' : 'vacant'}" 
                  onclick="showLayerDetails(${lotId}, ${layer.layer_number}, '${isOccupied}', '${deceasedName.replace(/'/g, "\\'")}')">
