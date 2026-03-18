@@ -59,25 +59,28 @@ if ($conn) {
   <style>
     .dashboard-header {
       background: #fff;
-      padding: 24px 32px;
-      border-radius: 16px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      padding: 28px 32px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.02);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative; /* Added for absolute search positioning */
+      position: relative;
+      border: 1px solid #f1f5f9;
     }
     .header-left .title {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1e293b;
-      margin: 0 0 4px 0;
+      font-size: 26px;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.02em;
     }
     .header-left .subtitle {
       font-size: 14px;
       color: #64748b;
       margin: 0;
+      font-weight: 400;
     }
     .breadcrumbs {
       display: flex;
@@ -91,88 +94,157 @@ if ($conn) {
     .breadcrumbs .current { color: #1e293b; font-weight: 600; }
     .header-actions { display: flex; gap: 12px; }
 
+    .btn-outline {
+      padding: 10px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover { 
+      background: #f8fafc; 
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .btn-primary-modern {
+      background: #3b82f6;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-primary-modern:hover { 
+      background: #2563eb; 
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+
     .editor-container {
       background: white;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 20px;
+      padding: 32px;
+      margin-top: 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.02);
+      border: 1px solid #f1f5f9;
     }
     
     .editor-toolbar {
       display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-      padding: 12px 16px;
-      background: var(--page);
-      border-radius: 8px;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: #f8fafc;
+      border-radius: 12px;
       flex-wrap: wrap;
       align-items: center;
+      border: 1px solid #f1f5f9;
     }
     
     .tool-btn {
-      padding: 10px 16px;
-      border: 2px solid var(--border);
+      padding: 10px 18px;
+      border: 1px solid #e2e8f0;
       background: white;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
+      color: #475569;
+      font-size: 14px;
       transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     
     .tool-btn:hover {
       border-color: var(--primary);
-      background: var(--primary);
-      color: white;
+      background: #eff6ff;
+      color: var(--primary);
     }
     
     .tool-btn.active {
       background: var(--primary);
       color: white;
       border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(47, 109, 246, 0.2);
     }
     
     .zoom-controls {
+      background: white;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
       display: flex;
-      gap: 8px;
       align-items: center;
+      gap: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .zoom-divider {
+      width: 1px;
+      height: 24px;
+      background: #e2e8f0;
+      margin: 0 4px;
     }
     
     .zoom-btn {
       width: 36px;
       height: 36px;
-      border: 2px solid var(--border);
+      border: 1px solid #e2e8f0;
       background: white;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 20px;
+      font-weight: 500;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: all 0.2s;
     }
     
     .zoom-btn:hover {
       border-color: var(--primary);
       color: var(--primary);
+      background: #eff6ff;
     }
     
     .zoom-level {
       font-weight: 600;
-      min-width: 60px;
+      min-width: 50px;
       text-align: center;
+      color: #475569;
+      font-size: 13px;
+      user-select: none;
     }
     
     .map-canvas-wrapper {
       position: relative;
       width: 100%;
-      height: 500px;
+      height: 650px; /* Increased height */
       overflow: hidden;
-      border-radius: 8px;
-      border: 2px solid var(--border);
-      background: #f5f5f5;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
       cursor: grab;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
     }
     
     .map-canvas-wrapper.grabbing {
@@ -188,11 +260,28 @@ if ($conn) {
       transform-origin: 0 0;
     }
     
-    .map-canvas img {
-      display: block;
-      user-select: none;
-      pointer-events: none;
+    .btn-reset {
+      padding: 0 12px;
+      height: 36px;
+      min-width: auto;
+      border-radius: 8px;
+      box-shadow: none;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-weight: 500;
     }
+    
+    .btn-reset:hover {
+       background: #f1f5f9;
+       color: var(--primary);
+     }
+
+     .map-canvas img {
+       display: block;
+       user-select: none;
+       pointer-events: none;
+     }
     
     .lot-rectangle {
       position: absolute;
@@ -744,7 +833,9 @@ if ($conn) {
 
         <div class="header-actions">
           <button class="btn-outline" onclick="window.location.href='cemetery-map.php'">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
             View Map
           </button>
         </div>
@@ -770,8 +861,9 @@ if ($conn) {
             <button class="zoom-btn" onclick="zoomOut()">−</button>
             <span class="zoom-level" id="zoomLevel">100%</span>
             <button class="zoom-btn" onclick="zoomIn()">+</button>
-            <button class="tool-btn" style="padding: 6px 12px; font-size: 13px;" onclick="resetView()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="zoom-divider"></div>
+            <button class="btn-reset" onclick="resetView()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                 <path d="M3 3v5h5"/>
               </svg>
@@ -779,7 +871,12 @@ if ($conn) {
             </button>
           </div>
           
-          <button class="btn-primary" onclick="saveAllLots()" style="margin-left:auto;">
+          <button class="btn-primary-modern" onclick="saveAllLots()" style="margin-left:auto;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
             Save All Changes
           </button>
         </div>

@@ -186,7 +186,7 @@ if ($conn) {
 
     .content-grid {
       display: grid;
-      grid-template-columns: 1.6fr 1fr;
+      grid-template-columns: 1fr;
       gap: 24px;
       margin-bottom: 24px;
     }
@@ -243,21 +243,6 @@ if ($conn) {
     }
     .table-modern tr:hover td {
       background: #fcfdfe;
-    }
-
-    /* Progress Bar */
-    .progress-track {
-      height: 8px;
-      width: 100%;
-      background: #f1f5f9;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-    .progress-fill {
-      height: 100%;
-      border-radius: 10px;
-      transition: width 1s ease-out;
     }
 
     /* Chart Refinements */
@@ -506,57 +491,6 @@ if ($conn) {
                         </div>
                       </td>
                       <td style="font-weight:400; color:#64748b;"><?php echo $burial['date_of_death'] ? date('M j, Y', strtotime($burial['date_of_death'])) : 'N/A'; ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Block Summary -->
-        <div class="content-card">
-          <div class="content-card-header">
-            <h2 class="content-card-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></svg>
-              Block Health
-            </h2>
-          </div>
-
-          <div class="table-wrap">
-            <table class="table-modern">
-              <thead>
-                <tr>
-                  <th align="left">Block / Section</th>
-                  <th align="right">Occupancy</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php if (empty($stats['sections'])): ?>
-                  <tr>
-                    <td colspan="2" style="text-align:center; padding: 60px; color:#94a3b8;">No blocks found</td>
-                  </tr>
-                <?php else: ?>
-                  <?php foreach ($stats['sections'] as $item): 
-                    $total = max($item['total'], 1);
-                    $occ_perc = round(($item['occupied'] / $total) * 100);
-                    $color = $occ_perc > 80 ? '#ef4444' : ($occ_perc > 50 ? '#f97316' : '#22c55e');
-                  ?>
-                    <tr>
-                      <td>
-                        <div style="display:flex; flex-direction:column; gap:2px;">
-                          <span style="font-weight: 600; color:#0f172a;"><?php echo htmlspecialchars($item['block']); ?></span>
-                          <span style="font-size:11px; color:#94a3b8;"><?php echo htmlspecialchars($item['section']); ?> • <?php echo $item['total']; ?> Total Lots</span>
-                        </div>
-                      </td>
-                      <td align="right">
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-                          <span style="font-weight:600; color:<?php echo $color; ?>; font-size:13px;"><?php echo $occ_perc; ?>%</span>
-                          <div class="progress-track" style="width:100px; height:6px;">
-                            <div class="progress-fill" style="width:<?php echo $occ_perc; ?>%; background:<?php echo $color; ?>;"></div>
-                          </div>
-                        </div>
-                      </td>
                     </tr>
                   <?php endforeach; ?>
                 <?php endif; ?>

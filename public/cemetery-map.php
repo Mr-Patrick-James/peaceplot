@@ -810,137 +810,194 @@ if ($conn) {
     
     .layer-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      padding: 4px;
     }
     
     @media (max-width: 768px) {
       .layer-grid {
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-        gap: 6px;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .layer-grid {
-        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-        gap: 4px;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
       }
     }
     
     .layer-item {
-      border: 2px solid #e8eaed;
-      border-radius: 6px;
-      padding: 8px;
-      text-align: center;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: left;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 140px;
     }
     
     .layer-item:hover {
-      border-color: #1a73e8;
-      transform: translateY(-1px);
-    }
-    
-    .layer-item.occupied .layer-status {
-      color: #ea580c;
-    }
-    
-    .view-details-btn {
-      position: absolute;
-      bottom: 4px;
-      right: 4px;
-      background: rgba(47, 109, 246, 0.9);
-      color: white;
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    
-    .layer-item:hover .view-details-btn {
-      opacity: 1;
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      border-color: #3b82f6;
     }
     
     .layer-item.occupied {
-      background: #fff3e0;
-      border-color: #f57c00;
+      background: #fff;
     }
     
     .layer-item.vacant {
-      background: #e8f5e8;
-      border-color: #2e7d32;
+      background: #f8fafc;
     }
     
-    .layer-number {
-      font-weight: 600;
-      font-size: 14px;
-      color: #202124;
-    }
-    
-    .layer-status {
+    .layer-number-badge {
       font-size: 11px;
-      color: #5f6368;
-      margin-top: 2px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     
-    .layer-indicator {
+    .layer-deceased-name {
+      font-weight: 700;
+      font-size: 15px;
+      color: #1e293b;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .layer-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    
+    .layer-status-pill.occupied {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .layer-status-pill.vacant {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    
+    .ash-burial-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #3b82f6;
+      margin-top: 8px;
+      background: #eff6ff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      width: fit-content;
+    }
+    
+    .layer-indicator-dot {
       position: absolute;
-      top: 2px;
-      right: 2px;
-      width: 6px;
-      height: 6px;
+      top: 12px;
+      right: 12px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
     }
     
-    .layer-indicator.occupied {
-      background: #f57c00;
+    .layer-indicator-dot.occupied {
+      background: #f59e0b;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
     }
-    .layer-indicator.vacant {
-      background: #2e7d32;
+    
+    .layer-indicator-dot.vacant {
+      background: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+    
+    .layer-view-btn {
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #3b82f6;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .layer-item:hover .layer-view-btn {
+      gap: 8px;
     }
     
     .layer-actions {
       display: flex;
-      gap: 8px;
+      gap: 12px;
       align-items: center;
+      background: #f8fafc;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
     }
     
     .add-layer-btn, .remove-layer-btn {
-      padding: 6px 12px;
+      padding: 8px 16px;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      transition: all 0.2s ease;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .add-layer-btn {
-      background: var(--primary);
+      background: #3b82f6;
       color: white;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
     }
     
     .add-layer-btn:hover {
-      background: #0056b3;
+      background: #2563eb;
       transform: translateY(-1px);
+      box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
     }
     
     .remove-layer-btn {
-      background: #dc3545;
+      background: #ef4444;
       color: white;
+      box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
     }
     
     .remove-layer-btn:hover {
-      background: #c82333;
+      background: #dc2626;
       transform: translateY(-1px);
+      box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
     }
     
     .remove-layer-btn:disabled {
-      background: #6c757d;
+      background: #cbd5e1;
+      color: #64748b;
       cursor: not-allowed;
+      box-shadow: none;
       transform: none;
     }
     
@@ -2024,6 +2081,7 @@ if ($conn) {
         }));
         
         const layerModal = document.createElement('div');
+        layerModal.id = 'layerDetailsModal';
         layerModal.className = 'modal-map';
         layerModal.style.zIndex = '2000';
         
@@ -2269,7 +2327,7 @@ if ($conn) {
     }
 
     function closeLayerModal() {
-      const layerModal = document.querySelector('.modal-map');
+      const layerModal = document.getElementById('layerDetailsModal');
       if (layerModal) {
         layerModal.remove();
       }
@@ -2334,17 +2392,40 @@ if ($conn) {
           
           return `
             <div class="layer-item ${isOccupied ? 'occupied' : 'vacant'}" 
-                 onclick="showLayerDetails(${lotId}, ${layer.layer_number}, '${isOccupied}', '${deceasedName.replace(/'/g, "\\'")}')"
-                 style="cursor: pointer; padding: 15px; border-radius: 12px; position: relative; transition: all 0.2s;">
-              <div class="layer-number" style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">Layer ${layer.layer_number}</div>
-              <div class="layer-status" style="font-size: 13px; line-height: 1.4;">
-                ${isOccupied ? `
-                  <div style="font-weight: 600; color: #1e293b;">${deceasedName}</div>
-                  ${layerBurials.length > 1 ? `<div style="font-size: 11px; color: #3b82f6; margin-top: 4px; font-weight: 500;">Multiple Burials (Ash Burial)</div>` : ''}
-                ` : '<span style="color: #94a3b8;">Vacant</span>'}
+                 onclick="showLayerDetails(${lotId}, ${layer.layer_number}, '${isOccupied}', '${deceasedName.replace(/'/g, "\\'")}')">
+              
+              <div>
+                <div class="layer-number-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                  Layer ${layer.layer_number}
+                </div>
+                
+                <div class="layer-deceased-name">
+                  ${isOccupied ? deceasedName : '<span style="color: #94a3b8; font-weight: 500;">Vacant Layer</span>'}
+                </div>
+
+                ${layerBurials.length > 1 ? `
+                  <div class="ash-burial-badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Multiple Burials
+                  </div>
+                ` : ''}
               </div>
-              <div class="layer-indicator ${isOccupied ? 'occupied' : 'vacant'}"></div>
-              ${isOccupied ? '<div class="view-details-btn" style="margin-top: 10px; font-size: 12px; color: #3b82f6; font-weight: 600;">📋 View Details</div>' : ''}
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                <div class="layer-status-pill ${isOccupied ? 'occupied' : 'vacant'}">
+                  ${isOccupied ? 'Occupied' : 'Vacant'}
+                </div>
+                
+                ${isOccupied ? `
+                  <div class="layer-view-btn">
+                    View Details
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </div>
+                ` : ''}
+              </div>
+
+              <div class="layer-indicator-dot ${isOccupied ? 'occupied' : 'vacant'}"></div>
             </div>
           `;
         }).join('');
