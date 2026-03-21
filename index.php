@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PeacePlot — Cemetery Management System</title>
+<title>Holy Spirit Parish Cemetery — Barcenaga, Naujan, Oriental Mindoro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -467,7 +467,7 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
     <button class="modal-close" id="modalClose" aria-label="Close"><i class="fas fa-times"></i></button>
     <div class="modal-body">
       <p class="modal-title" id="modalTitle">Sign In</p>
-      <p class="modal-subtitle">PeacePlot Cemetery Management System</p>
+      <p class="modal-subtitle">Holy Spirit Parish Cemetery — Barcenaga, Naujan</p>
 
       <?php if ($error): ?>
       <div class="error-box"><?php echo htmlspecialchars($error); ?></div>
@@ -551,9 +551,9 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
   <div class="hero-overlay"></div>
   <div class="hero-dots" id="heroDots"></div>
   <div class="hero-content">
-    <div class="hero-badge">Est. 1850 &nbsp;·&nbsp; Serving Our Community</div>
+    <div class="hero-badge">Barcenaga, Naujan &nbsp;·&nbsp; Oriental Mindoro</div>
     <h1>Honoring Memories,<br><span class="grad">Preserving History</span></h1>
-    <p>PeacePlot digitally preserves burial records, maps sacred grounds, and keeps family histories alive for generations to come.</p>
+    <p>The official cemetery management system of Holy Spirit Parish, Barcenaga, Naujan — digitally preserving burial records, mapping sacred grounds, and keeping family histories alive for generations.</p>
     <div class="hero-btns">
       <button class="btn-primary" id="openLoginHero">Access System</button>
       <a href="#about" class="btn-outline">Learn More</a>
@@ -593,19 +593,19 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
   <div class="section-inner">
     <div class="about-grid">
       <div class="about-img-wrap">
-        <img src="assets/images/Hero/Church1.jpg" alt="PeacePlot Cemetery Grounds">
-        <div class="about-img-badge"><i class="fas fa-history"></i> Established 1850</div>
+        <img src="assets/images/Hero/Church1.jpg" alt="Holy Spirit Parish Church, Barcenaga">
+        <div class="about-img-badge"><i class="fas fa-church"></i> Holy Spirit Parish, Barcenaga</div>
       </div>
       <div class="about-text">
         <span class="section-tag">Our Story</span>
-        <h2 class="section-title">Sacred Grounds with a Rich History</h2>
-        <p>For over 170 years, PeacePlot Cemetery has been a place of peace, reflection, and remembrance for our community. Our beautifully maintained grounds hold the stories of generations of families.</p>
-        <p>The cemetery spans over 40 acres of serene landscape, featuring historic monuments, a restored chapel, and meticulously maintained gardens that provide a dignified resting place for all.</p>
-        <p>Our digital management system ensures every record, every plot, and every memory is preserved with the accuracy and respect it deserves.</p>
+        <h2 class="section-title">Sacred Grounds in the Heart of Naujan</h2>
+        <p>Holy Spirit Parish in Barcenaga, Naujan, Oriental Mindoro is a Roman Catholic parish under the Apostolic Vicariate of Calapan. The parish serves the barangay of Barcenaga and surrounding communities in the municipality of Naujan.</p>
+        <p>The parish cemetery is a sacred resting place for generations of families from Barcenaga and nearby barangays. It is maintained and administered by the parish under the guidance of the Apostolic Vicariate of Calapan.</p>
+        <p>This digital management system ensures every burial record, every plot, and every family history is preserved with the accuracy and respect it deserves — accessible to parish staff and administrators.</p>
         <div class="about-highlights">
-          <div class="highlight-item"><i class="fas fa-church"></i><h4>Historic Chapel</h4><p>Restored 19th-century chapel on the grounds</p></div>
-          <div class="highlight-item"><i class="fas fa-tree"></i><h4>40+ Acres</h4><p>Beautifully landscaped and maintained grounds</p></div>
-          <div class="highlight-item"><i class="fas fa-users"></i><h4>Community Focused</h4><p>Serving families across generations since 1850</p></div>
+          <div class="highlight-item"><i class="fas fa-church"></i><h4>Holy Spirit Parish</h4><p>Barcenaga, Naujan, Oriental Mindoro 5204</p></div>
+          <div class="highlight-item"><i class="fas fa-cross"></i><h4>Apostolic Vicariate of Calapan</h4><p>Diocese overseeing the parish and its ministries</p></div>
+          <div class="highlight-item"><i class="fas fa-users"></i><h4>Community Focused</h4><p>Serving families of Barcenaga and Naujan across generations</p></div>
           <div class="highlight-item"><i class="fas fa-shield-alt"></i><h4>Preserved Records</h4><p>Every burial digitally archived and secured</p></div>
         </div>
       </div>
@@ -705,7 +705,7 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
 <!-- ══ CTA BAND ══ -->
 <section class="cta-band">
   <h2>Ready to Access the System?</h2>
-  <p>Authorized staff can log in to manage records, update plots, and generate reports from anywhere.</p>
+  <p>Authorized parish staff can log in to manage burial records, update plots, and generate reports from anywhere.</p>
   <button class="btn-primary" id="openLoginCta">Sign In</button>
 </section>
 
@@ -722,11 +722,11 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
           </div>
           <span>PeacePlot</span>
         </div>
-        <p>Honoring memories and preserving history through modern cemetery management technology since 1850.</p>
+        <p>The official cemetery management system of Holy Spirit Parish, Barcenaga, Naujan — under the Apostolic Vicariate of Calapan.</p>
         <div class="footer-contact">
-          <p><i class="fas fa-map-marker-alt"></i> 123 Memorial Lane, Serenity Valley</p>
-          <p><i class="fas fa-phone"></i> (555) 123-4567</p>
-          <p><i class="fas fa-envelope"></i> info@peaceplot.com</p>
+          <p><i class="fas fa-map-marker-alt"></i> Barcenaga, Naujan, Oriental Mindoro 5204</p>
+          <p><i class="fas fa-church"></i> Apostolic Vicariate of Calapan</p>
+          <p><i class="fas fa-globe"></i> Region IV-B (MIMAROPA)</p>
           <p><i class="fas fa-clock"></i> Mon–Sat: 8:00 AM – 5:00 PM</p>
         </div>
       </div>
@@ -762,7 +762,7 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
       </div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; <?php echo date('Y'); ?> PeacePlot Cemetery Management System. All rights reserved.</span>
+      <span>&copy; <?php echo date('Y'); ?> Holy Spirit Parish Cemetery Management System — Barcenaga, Naujan, Oriental Mindoro. All rights reserved.</span>
       <div class="footer-socials">
         <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
         <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
