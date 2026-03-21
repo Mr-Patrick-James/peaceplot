@@ -154,10 +154,29 @@ body{font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;background:#fff;over
    HERO
 ══════════════════════════════════════ */
 .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.hero-bg{position:absolute;inset:0;background:url('assets/images/cemetery.jpg') center/cover no-repeat}
-.hero-overlay{position:absolute;inset:0;background:linear-gradient(160deg,rgba(4,8,24,.92) 0%,rgba(20,10,50,.78) 100%)}
-.hero-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.hero-content{position:relative;z-index:1;text-align:center;padding:2rem;max-width:860px;margin:0 auto}
+/* slider */
+.hero-slider{position:absolute;inset:0;z-index:0}
+.hero-slide{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  opacity:0;
+  transition:opacity 1.6s ease;
+  z-index:0;
+}
+.hero-slide.active{opacity:1;z-index:1}
+.hero-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(160deg,rgba(4,8,24,.88) 0%,rgba(20,10,50,.72) 100%)}
+/* dots */
+.hero-dots{
+  position:absolute;bottom:5rem;left:50%;transform:translateX(-50%);
+  z-index:4;display:flex;gap:.6rem;
+}
+.hero-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.35);border:none;cursor:pointer;padding:0;
+  transition:background .3s,transform .3s,width .3s;
+}
+.hero-dot.active{background:#fff;width:24px;border-radius:4px;}
+.hero-content{position:relative;z-index:3;text-align:center;padding:2rem;max-width:860px;margin:0 auto}
 .hero-badge{
   display:inline-flex;align-items:center;gap:.5rem;
   background:rgba(79,142,247,.15);border:1px solid rgba(79,142,247,.35);
@@ -193,6 +212,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;background:#fff;over
 .btn-outline:hover{background:rgba(255,255,255,.16);transform:translateY(-2px)}
 .hero-scroll{
   position:absolute;bottom:2.25rem;left:50%;transform:translateX(-50%);
+  z-index:3;
   color:rgba(255,255,255,.35);font-size:.75rem;
   display:flex;flex-direction:column;align-items:center;gap:.4rem;
   animation:scrollBounce 2.2s ease-in-out infinite;
@@ -282,7 +302,6 @@ body{font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;background:#fff;over
 .gallery-item:hover .gallery-overlay{opacity:1}
 .gallery-overlay span{color:#fff;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:.4rem}
 .gallery-item.large{grid-column:span 2}
-
 /* ══════════════════════════════════════
    CTA BAND
 ══════════════════════════════════════ */
@@ -516,8 +535,21 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
 
 <!-- ══ HERO ══ -->
 <section class="hero" id="home">
-  <div class="hero-bg"></div>
+  <div class="hero-slider" id="heroSlider">
+    <div class="hero-slide active" style="background-image:url('assets/images/Hero/cemetery1.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/cemetery2.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/cemetery3.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/cemetery4.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/cemetery6.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/cemetery7.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/Church1.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/Church2.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/Church3.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/Church4.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('assets/images/Hero/5.jpg')"></div>
+  </div>
   <div class="hero-overlay"></div>
+  <div class="hero-dots" id="heroDots"></div>
   <div class="hero-content">
     <div class="hero-badge">Est. 1850 &nbsp;·&nbsp; Serving Our Community</div>
     <h1>Honoring Memories,<br><span class="grad">Preserving History</span></h1>
@@ -561,7 +593,7 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
   <div class="section-inner">
     <div class="about-grid">
       <div class="about-img-wrap">
-        <img src="assets/images/cemetery.png" alt="PeacePlot Cemetery Grounds">
+        <img src="assets/images/Hero/Church1.jpg" alt="PeacePlot Cemetery Grounds">
         <div class="about-img-badge"><i class="fas fa-history"></i> Established 1850</div>
       </div>
       <div class="about-text">
@@ -631,19 +663,39 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
     <h2 class="section-title">Our Grounds &amp; Facilities</h2>
     <div class="gallery-grid">
       <div class="gallery-item large">
-        <img src="assets/images/cemetery.jpg" alt="Cemetery Grounds">
+        <img src="assets/images/Hero/cemetery1.jpg" alt="Cemetery Grounds">
         <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Cemetery Grounds</span></div>
       </div>
       <div class="gallery-item">
-        <img src="assets/images/cemetery.png" alt="Cemetery Overview">
-        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Overview</span></div>
+        <img src="assets/images/Hero/Church1.jpg" alt="Historic Chapel">
+        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Historic Chapel</span></div>
       </div>
       <div class="gallery-item">
-        <img src="assets/images/cemetery-map.jpg" alt="Cemetery Map">
-        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Cemetery Map</span></div>
+        <img src="assets/images/Hero/Church2.jpg" alt="Church Exterior">
+        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Church Exterior</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/Hero/cemetery2.jpg" alt="Cemetery Sections">
+        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Cemetery Sections</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/Hero/cemetery3.jpg" alt="Burial Grounds">
+        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Burial Grounds</span></div>
       </div>
       <div class="gallery-item large">
-        <img src="assets/images/cemetery.png" alt="Peaceful Grounds">
+        <img src="assets/images/Hero/Church3.jpg" alt="Chapel Interior">
+        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Chapel Interior</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/Hero/cemetery4.jpg" alt="Memorial Area">
+        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Memorial Area</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/Hero/Church4.jpg" alt="Church Grounds">
+        <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Church Grounds</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/Hero/cemetery6.jpg" alt="Peaceful Grounds">
         <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Peaceful Grounds</span></div>
       </div>
     </div>
@@ -722,6 +774,43 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
 
 <script>
 (function(){
+  /* ── Hero Slider ── */
+  (function(){
+    const slides   = Array.from(document.querySelectorAll('.hero-slide'));
+    const dotsWrap = document.getElementById('heroDots');
+    if(!slides.length) return;
+
+    let cur = 0;
+
+    // build dots
+    slides.forEach(function(_, i){
+      const d = document.createElement('button');
+      d.className = 'hero-dot' + (i === 0 ? ' active' : '');
+      d.setAttribute('aria-label', 'Slide ' + (i+1));
+      d.addEventListener('click', function(){ goTo(i); resetTimer(); });
+      dotsWrap.appendChild(d);
+    });
+
+    function goTo(n){
+      slides[cur].classList.remove('active');
+      dotsWrap.children[cur].classList.remove('active');
+      cur = (n + slides.length) % slides.length;
+      slides[cur].classList.add('active');
+      dotsWrap.children[cur].classList.add('active');
+    }
+
+    let timer = setInterval(function(){ goTo(cur + 1); }, 5000);
+
+    function resetTimer(){
+      clearInterval(timer);
+      timer = setInterval(function(){ goTo(cur + 1); }, 5000);
+    }
+
+    const hero = document.querySelector('.hero');
+    hero.addEventListener('mouseenter', function(){ clearInterval(timer); });
+    hero.addEventListener('mouseleave', function(){ resetTimer(); });
+  })();
+
   /* ── Modal ── */
   const modal   = document.getElementById('loginModal');
   const closBtn = document.getElementById('modalClose');
