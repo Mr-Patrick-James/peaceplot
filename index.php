@@ -781,13 +781,14 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
     if(!slides.length) return;
 
     let cur = 0;
+    let timer = null;
 
     // build dots
     slides.forEach(function(_, i){
       const d = document.createElement('button');
       d.className = 'hero-dot' + (i === 0 ? ' active' : '');
       d.setAttribute('aria-label', 'Slide ' + (i+1));
-      d.addEventListener('click', function(){ goTo(i); resetTimer(); });
+      d.addEventListener('click', function(){ goTo(i); });
       dotsWrap.appendChild(d);
     });
 
@@ -799,16 +800,18 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
       dotsWrap.children[cur].classList.add('active');
     }
 
-    let timer = setInterval(function(){ goTo(cur + 1); }, 5000);
-
-    function resetTimer(){
-      clearInterval(timer);
+    function startTimer(){
+      if(timer) clearInterval(timer);
       timer = setInterval(function(){ goTo(cur + 1); }, 5000);
     }
 
-    const hero = document.querySelector('.hero');
-    hero.addEventListener('mouseenter', function(){ clearInterval(timer); });
-    hero.addEventListener('mouseleave', function(){ resetTimer(); });
+    // always running — restart whenever tab becomes visible again
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden){ clearInterval(timer); timer = null; }
+      else { startTimer(); }
+    });
+
+    startTimer();
   })();
 
   /* ── Modal ── */
