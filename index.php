@@ -251,7 +251,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;background:#fff;over
 .section-sub{font-size:1.05rem;color:#64748b;max-width:560px;line-height:1.75}
 
 /* ══════════════════════════════════════
-   ABOUT
+   ABOUT — extended
 ══════════════════════════════════════ */
 .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;margin-top:4rem}
 .about-img-wrap{position:relative;border-radius:24px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.18)}
@@ -271,6 +271,52 @@ body{font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;background:#fff;over
 .highlight-item i{color:#4f8ef7;margin-bottom:.6rem;font-size:1.15rem;display:block}
 .highlight-item h4{font-size:.9rem;font-weight:700;margin-bottom:.3rem}
 .highlight-item p{font-size:.8rem;color:#64748b;margin:0;line-height:1.5}
+
+/* timeline */
+.about-timeline{margin-top:4rem;padding-top:3.5rem;border-top:1px solid #e8edf5}
+.timeline-header{text-align:center;margin-bottom:2.75rem}
+.timeline-header h3{font-size:1.5rem;font-weight:800;letter-spacing:-.5px;color:#0f172a}
+.timeline-header p{color:#64748b;font-size:.95rem;margin-top:.4rem}
+.timeline{position:relative;max-width:860px;margin:0 auto}
+.timeline::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,#4f8ef7,#7c3aed);transform:translateX(-50%)}
+.tl-item{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;margin-bottom:2.5rem;position:relative}
+.tl-item:nth-child(odd) .tl-content{grid-column:1;text-align:right}
+.tl-item:nth-child(odd) .tl-spacer{grid-column:2}
+.tl-item:nth-child(even) .tl-spacer{grid-column:1}
+.tl-item:nth-child(even) .tl-content{grid-column:2;text-align:left}
+.tl-dot{
+  position:absolute;left:50%;top:1rem;transform:translateX(-50%);
+  width:14px;height:14px;border-radius:50%;
+  background:linear-gradient(135deg,#4f8ef7,#7c3aed);
+  border:3px solid #fff;box-shadow:0 0 0 3px rgba(79,142,247,.25);
+  z-index:1;
+}
+.tl-content{background:#f8fafc;border-radius:14px;padding:1.35rem 1.5rem;border:1px solid #e8edf5;transition:box-shadow .2s}
+.tl-content:hover{box-shadow:0 8px 28px rgba(0,0,0,.08)}
+.tl-year{font-size:.75rem;font-weight:700;color:#4f8ef7;letter-spacing:.8px;text-transform:uppercase;margin-bottom:.35rem}
+.tl-content h4{font-size:.95rem;font-weight:700;color:#0f172a;margin-bottom:.35rem}
+.tl-content p{font-size:.82rem;color:#64748b;line-height:1.6;margin:0}
+
+/* parish info band */
+.parish-band{
+  background:linear-gradient(135deg,#080c1c,#12103a);
+  border-radius:20px;margin-top:3.5rem;padding:2.5rem 3rem;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;
+}
+.parish-stat{text-align:center}
+.parish-stat .ps-num{font-size:2rem;font-weight:900;color:#fff;letter-spacing:-1px}
+.parish-stat .ps-lbl{font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.3rem;font-weight:500;letter-spacing:.3px}
+
+@media(max-width:768px){
+  .timeline::before{left:20px}
+  .tl-item{grid-template-columns:1fr;padding-left:3rem}
+  .tl-item:nth-child(odd) .tl-content,
+  .tl-item:nth-child(even) .tl-content{grid-column:1;text-align:left}
+  .tl-item:nth-child(odd) .tl-spacer,
+  .tl-item:nth-child(even) .tl-spacer{display:none}
+  .tl-dot{left:20px}
+  .parish-band{grid-template-columns:1fr;gap:1.25rem}
+}
 
 /* ══════════════════════════════════════
    FEATURES
@@ -565,37 +611,6 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
   <div class="hero-scroll"><span>Scroll</span><i class="fas fa-chevron-down"></i></div>
 </section>
 
-<!-- ══ STATS ══ -->
-<section class="stats-strip">
-  <div class="stats-inner">
-    <div class="stat-item">
-      <div class="stat-icon-wrap" style="background:rgba(79,142,247,.15)"><i class="fas fa-cross" style="color:#60a5fa"></i></div>
-      <div class="stat-num"><?php echo number_format($stats['total_burials']); ?></div>
-      <div class="stat-lbl">Burial Records</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-icon-wrap" style="background:rgba(124,58,237,.15)"><i class="fas fa-map-marker-alt" style="color:#a78bfa"></i></div>
-      <div class="stat-num"><?php echo number_format($stats['total_lots']); ?></div>
-      <div class="stat-lbl">Cemetery Lots</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-icon-wrap" style="background:rgba(16,185,129,.15)"><i class="fas fa-layer-group" style="color:#34d399"></i></div>
-      <div class="stat-num"><?php echo number_format($stats['total_sections']); ?></div>
-      <div class="stat-lbl">Sections</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-icon-wrap" style="background:rgba(236,72,153,.15)"><i class="fas fa-th-large" style="color:#f472b6"></i></div>
-      <div class="stat-num"><?php echo number_format($stats['total_blocks']); ?></div>
-      <div class="stat-lbl">Blocks</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-icon-wrap" style="background:rgba(245,158,11,.15)"><i class="fas fa-images" style="color:#fbbf24"></i></div>
-      <div class="stat-num"><?php echo number_format($stats['total_images']); ?></div>
-      <div class="stat-lbl">Memorial Images</div>
-    </div>
-  </div>
-</section>
-
 <!-- ══ ABOUT ══ -->
 <section class="section" id="about">
   <div class="section-inner">
@@ -607,9 +622,9 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
       <div class="about-text">
         <span class="section-tag">Our Story</span>
         <h2 class="section-title">Sacred Grounds in the Heart of Naujan</h2>
-        <p>Holy Spirit Parish in Barcenaga, Naujan, Oriental Mindoro is a Roman Catholic parish under the Apostolic Vicariate of Calapan. The parish serves the barangay of Barcenaga and surrounding communities in the municipality of Naujan.</p>
-        <p>The parish cemetery is a sacred resting place for generations of families from Barcenaga and nearby barangays. It is maintained and administered by the parish under the guidance of the Apostolic Vicariate of Calapan.</p>
-        <p>This digital management system ensures every burial record, every plot, and every family history is preserved with the accuracy and respect it deserves — accessible to parish staff and administrators.</p>
+        <p>Holy Spirit Parish is a Roman Catholic parish located in Barangay Barcenaga, Naujan, Oriental Mindoro — a municipality in the MIMAROPA region of the Philippines. The parish is under the pastoral care of the <strong style="color:#0f172a;font-weight:600">Apostolic Vicariate of Calapan</strong>, which oversees Catholic communities across Oriental Mindoro.</p>
+        <p>The parish cemetery serves as a sacred resting place for generations of families from Barcenaga and surrounding barangays. Maintained and administered by the parish, it stands as a testament to the community's deep faith and reverence for the departed.</p>
+        <p>To honor this legacy, PeacePlot was developed as a dedicated digital management system — ensuring every burial record, every plot, and every family history is preserved with the accuracy, care, and respect it deserves.</p>
         <div class="about-highlights">
           <div class="highlight-item"><i class="fas fa-church"></i><h4>Holy Spirit Parish</h4><p>Barcenaga, Naujan, Oriental Mindoro 5204</p></div>
           <div class="highlight-item"><i class="fas fa-cross"></i><h4>Apostolic Vicariate of Calapan</h4><p>Diocese overseeing the parish and its ministries</p></div>
@@ -618,6 +633,84 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
         </div>
       </div>
     </div>
+
+    <!-- Parish Stats Band -->
+    <div class="parish-band">
+      <div class="parish-stat">
+        <div class="ps-num">IV-B</div>
+        <div class="ps-lbl">MIMAROPA Region</div>
+      </div>
+      <div class="parish-stat">
+        <div class="ps-num">5204</div>
+        <div class="ps-lbl">ZIP Code, Naujan</div>
+      </div>
+      <div class="parish-stat">
+        <div class="ps-num">109K+</div>
+        <div class="ps-lbl">Naujan Population (2024)</div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="about-timeline">
+      <div class="timeline-header">
+        <h3>A History of Faith &amp; Service</h3>
+        <p>Key milestones in the life of Holy Spirit Parish and its cemetery</p>
+      </div>
+      <div class="timeline">
+
+        <div class="tl-item">
+          <div class="tl-content">
+            <div class="tl-year">17th Century</div>
+            <h4>Recollect Missionaries Arrive</h4>
+            <p>Augustinian Recollect missionaries establish Catholic communities across Naujan and Oriental Mindoro, laying the foundation for parish life in the region.</p>
+          </div>
+          <div class="tl-spacer"></div>
+          <div class="tl-dot"></div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-spacer"></div>
+          <div class="tl-content">
+            <div class="tl-year">Early Parish Era</div>
+            <h4>Holy Spirit Parish Established</h4>
+            <p>Holy Spirit Parish in Barcenaga is formally established to serve the growing Catholic community of the barangay and its neighboring areas in Naujan.</p>
+          </div>
+          <div class="tl-dot"></div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-content">
+            <div class="tl-year">Parish Growth</div>
+            <h4>Cemetery Grounds Consecrated</h4>
+            <p>The parish cemetery is consecrated and dedicated as a sacred resting place for the faithful of Barcenaga — a tradition of dignified burial maintained to this day.</p>
+          </div>
+          <div class="tl-spacer"></div>
+          <div class="tl-dot"></div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-spacer"></div>
+          <div class="tl-content">
+            <div class="tl-year">Apostolic Vicariate</div>
+            <h4>Under the Vicariate of Calapan</h4>
+            <p>Holy Spirit Parish continues its ministry under the Apostolic Vicariate of Calapan, strengthening its pastoral programs and community outreach across Oriental Mindoro.</p>
+          </div>
+          <div class="tl-dot"></div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-content">
+            <div class="tl-year">Present Day</div>
+            <h4>PeacePlot Digital System Launched</h4>
+            <p>The parish adopts PeacePlot — a modern cemetery management system — to digitally preserve burial records, manage cemetery lots, and serve families with greater efficiency and transparency.</p>
+          </div>
+          <div class="tl-spacer"></div>
+          <div class="tl-dot"></div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -706,6 +799,37 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
         <img src="assets/images/Hero/cemetery6.jpg" alt="Peaceful Grounds">
         <div class="gallery-overlay"><span><i class="fas fa-expand-alt"></i> Peaceful Grounds</span></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ STATS ══ -->
+<section class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-icon-wrap" style="background:rgba(79,142,247,.15)"><i class="fas fa-cross" style="color:#60a5fa"></i></div>
+      <div class="stat-num"><?php echo number_format($stats['total_burials']); ?></div>
+      <div class="stat-lbl">Burial Records</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon-wrap" style="background:rgba(124,58,237,.15)"><i class="fas fa-map-marker-alt" style="color:#a78bfa"></i></div>
+      <div class="stat-num"><?php echo number_format($stats['total_lots']); ?></div>
+      <div class="stat-lbl">Cemetery Lots</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon-wrap" style="background:rgba(16,185,129,.15)"><i class="fas fa-layer-group" style="color:#34d399"></i></div>
+      <div class="stat-num"><?php echo number_format($stats['total_sections']); ?></div>
+      <div class="stat-lbl">Sections</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon-wrap" style="background:rgba(236,72,153,.15)"><i class="fas fa-th-large" style="color:#f472b6"></i></div>
+      <div class="stat-num"><?php echo number_format($stats['total_blocks']); ?></div>
+      <div class="stat-lbl">Blocks</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon-wrap" style="background:rgba(245,158,11,.15)"><i class="fas fa-images" style="color:#fbbf24"></i></div>
+      <div class="stat-num"><?php echo number_format($stats['total_images']); ?></div>
+      <div class="stat-lbl">Memorial Images</div>
     </div>
   </div>
 </section>
