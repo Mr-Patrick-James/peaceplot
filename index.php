@@ -4,14 +4,17 @@ if (isset($_SESSION['user_id'])) { header('Location: public/dashboard.php'); exi
 require_once __DIR__ . '/config/database.php';
 
 $error = '';
-$stats = ['total_burials'=>0,'total_lots'=>0,'total_sections'=>0,'total_images'=>0];
+$stats = ['total_burials'=>0,'total_lots'=>0,'total_sections'=>0,'total_blocks'=>0,'total_images'=>0];
 try {
     $db = new Database(); $conn = $db->getConnection();
     if ($conn) {
-        $stats['total_burials']  = $conn->query("SELECT COUNT(*) FROM burial_records")->fetchColumn();
+        $stats['total_burials']  = $conn->query("SELECT COUNT(*) FROM deceased_records WHERE is_archived=0")->fetchColumn();
         $stats['total_lots']     = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
         $stats['total_sections'] = $conn->query("SELECT COUNT(*) FROM sections")->fetchColumn();
-        $stats['total_images']   = $conn->query("SELECT COUNT(*) FROM burial_images")->fetchColumn();
+        $stats['total_blocks']   = $conn->query("SELECT COUNT(*) FROM blocks")->fetchColumn();
+        try {
+            $stats['total_images'] = $conn->query("SELECT COUNT(*) FROM burial_record_images")->fetchColumn();
+        } catch (Exception $e) { $stats['total_images'] = 0; }
     }
 } catch (Exception $e) {}
 
@@ -223,7 +226,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;background:#fff;over
    STATS STRIP
 ══════════════════════════════════════ */
 .stats-strip{background:linear-gradient(135deg,#080c1c,#12103a);padding:3.5rem 2rem}
-.stats-inner{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+.stats-inner{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem}
 .stat-item{
   text-align:center;padding:2rem 1.5rem;border-radius:18px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
@@ -436,7 +439,7 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
    RESPONSIVE
 ══════════════════════════════════════ */
 @media(max-width:1024px){
-  .stats-inner{grid-template-columns:repeat(2,1fr)}
+  .stats-inner{grid-template-columns:repeat(3,1fr)}
   .about-grid{grid-template-columns:1fr;gap:2.5rem}
   .features-grid{grid-template-columns:repeat(2,1fr)}
   .footer-top{grid-template-columns:1fr 1fr}
@@ -473,16 +476,16 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
       <div class="error-box"><?php echo htmlspecialchars($error); ?></div>
       <?php endif; ?>
 
-      <form method="POST" action="" id="loginForm">
+      <form method="POST" action="" id="loginForm" autocomplete="off">
         <div class="form-group">
           <label for="username">Username</label>
           <input type="text" id="username" name="username" placeholder="Enter your username"
-            value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>" required autocomplete="username">
+            value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>" required autocomplete="off">
         </div>
         <div class="form-group">
           <label for="password">Password</label>
           <div class="pw-wrap">
-            <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+            <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="new-password">
             <button type="button" class="eye-toggle" id="eyeToggle" aria-label="Toggle password visibility">
               <i class="fas fa-eye" id="eyeIcon"></i>
             </button>
@@ -579,6 +582,11 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
       <div class="stat-icon-wrap" style="background:rgba(16,185,129,.15)"><i class="fas fa-layer-group" style="color:#34d399"></i></div>
       <div class="stat-num"><?php echo number_format($stats['total_sections']); ?></div>
       <div class="stat-lbl">Sections</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon-wrap" style="background:rgba(236,72,153,.15)"><i class="fas fa-th-large" style="color:#f472b6"></i></div>
+      <div class="stat-num"><?php echo number_format($stats['total_blocks']); ?></div>
+      <div class="stat-lbl">Blocks</div>
     </div>
     <div class="stat-item">
       <div class="stat-icon-wrap" style="background:rgba(245,158,11,.15)"><i class="fas fa-images" style="color:#fbbf24"></i></div>
