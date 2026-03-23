@@ -76,6 +76,19 @@ try {
             $headers = ['Full Name', 'Lot Number', 'Section', 'Block', 'Date of Birth', 'Date of Death', 'Date of Burial', 'Age'];
             break;
 
+        case 'deceased_records':
+            $stmt = $conn->query("
+                SELECT dr.full_name, cl.lot_number, s.name as section, b.name as block, dr.date_of_birth, dr.date_of_death, dr.date_of_burial, dr.age, dr.gender, dr.religion 
+                FROM deceased_records dr
+                LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
+                LEFT JOIN sections s ON cl.section_id = s.id
+                LEFT JOIN blocks b ON s.block_id = b.id
+                ORDER BY dr.full_name ASC
+            ");
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $headers = ['Full Name', 'Lot Number', 'Section', 'Block', 'Date of Birth', 'Date of Death', 'Date of Burial', 'Age', 'Gender', 'Religion'];
+            break;
+
         default:
             die("Invalid report type");
     }

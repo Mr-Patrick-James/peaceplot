@@ -14,7 +14,7 @@ $stats = [
     'total_lots' => 0,
     'vacant_lots' => 0,
     'occupied_lots' => 0,
-    'occupied_lots' => 0,
+    'total_burials' => 0,
     'sections' => [],
     'recent_burials' => []
 ];
@@ -25,6 +25,7 @@ if ($conn) {
         $stats['total_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
         $stats['vacant_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Vacant'")->fetchColumn();
         $stats['occupied_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Occupied'")->fetchColumn();
+        $stats['total_burials'] = $conn->query("SELECT COUNT(*) FROM deceased_records")->fetchColumn();
         
         // Get section-wise summary
         $stmt = $conn->query("
@@ -318,6 +319,42 @@ if ($conn) {
               <span>Print</span>
             </button>
             <button class="report-btn report-btn-export" onclick="exportToCSV('occupied_lots')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="report-card" style="border-top-color: #f43f5e;">
+          <div class="report-icon" style="color: #f43f5e; background: #fff1f2;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M8 6h8" /><path d="M8 10h8" />
+            </svg>
+          </div>
+          <div class="report-number"><?php echo $stats['total_burials']; ?></div>
+          <div class="report-title">Total Burial Records</div>
+          <div class="report-desc">Complete database of all registered deceased individuals</div>
+          <div class="report-actions">
+            <a href="burial-records.php" class="report-btn report-btn-view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span>View Report</span>
+            </a>
+            <button class="report-btn report-btn-print" onclick="window.print()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9V2h12v7" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <path d="M6 14h12v8H6z" />
+              </svg>
+              <span>Print</span>
+            </button>
+            <button class="report-btn report-btn-export" onclick="exportToCSV('deceased_records')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />

@@ -16,6 +16,7 @@ $stats = [
     'occupied_lots' => 0,
     'total_sections' => 0,
     'total_blocks' => 0,
+    'total_burials' => 0,
     'sections' => []
 ];
 
@@ -50,6 +51,7 @@ if ($conn) {
         // Fetch Section and Block counts
         $stats['total_sections'] = $conn->query("SELECT COUNT(*) FROM sections")->fetchColumn();
         $stats['total_blocks'] = $conn->query("SELECT COUNT(*) FROM blocks")->fetchColumn();
+        $stats['total_burials'] = $conn->query("SELECT COUNT(*) FROM deceased_records")->fetchColumn();
         
         $stmt = $conn->query("
             SELECT 
@@ -406,6 +408,22 @@ if ($conn) {
           <div class="dash-stat-icon bg-purple-soft" style="background:#f5f3ff; color:#a855f7;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="dash-stat-card">
+          <div class="dash-stat-info">
+            <div class="label">Total Burial Records</div>
+            <div class="value"><?php echo $stats['total_burials']; ?></div>
+            <div class="subtext">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              Registered records
+            </div>
+          </div>
+          <div class="dash-stat-icon" style="background:#fff1f2; color:#f43f5e;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M8 6h8" /><path d="M8 10h8" />
             </svg>
           </div>
         </div>
