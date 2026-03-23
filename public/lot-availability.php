@@ -18,7 +18,16 @@ $filterBlock = isset($_GET['block']) ? $_GET['block'] : '';
 
 if ($conn) {
     try {
-        // Get section statistics
+        // Get overall statistics
+        $overallStats = $conn->query("
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'Vacant' THEN 1 ELSE 0 END) as vacant,
+                SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied
+            FROM cemetery_lots
+        ")->fetch(PDO::FETCH_ASSOC);
+
+        // Get section statistics (still needed for filter dropdown)
         $stmt = $conn->query("
             SELECT 
                 s.name as section,
@@ -37,7 +46,7 @@ if ($conn) {
         $blocks = $blockStmt->fetchAll();
         
         // Pagination parameters
-        $itemsPerPage = 20;
+        $itemsPerPage = isset($_GET['print_all']) ? 999999 : 20;
         $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
         $offset = ($currentPage - 1) * $itemsPerPage;
 
@@ -178,6 +187,7 @@ if ($conn) {
           </div>
           <h1 class="title">Lots Monitoring</h1>
           <p class="subtitle">Quick overview of lot availability and statistics</p>
+          <p class="print-only" style="display:none; font-size: 12px; color: #64748b; margin-top: 8px;">Report generated on: <?php echo date('F j, Y, g:i a'); ?></p>
         </div>
 
         <div class="header-search">
@@ -191,10 +201,27 @@ if ($conn) {
         </div>
 
         <div class="header-actions">
-          <button class="btn-outline" onclick="window.print()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v8H6z" /></svg>
-            Print
-          </button>
+          <div class="export-dropdown">
+            <button class="btn-outline" id="exportBtn" style="padding: 10px 20px; border-radius: 12px; display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+              Export / Print
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="export-menu" id="exportMenu">
+              <a href="#" onclick="printCurrentPage(); return false;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v8H6z" /></svg>
+                Print Current View
+              </a>
+              <a href="#" onclick="printAllRecords(); return false;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                Print All Records (PDF)
+              </a>
+              <a href="#" onclick="exportToExcel(); return false;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                Export to Excel (.csv)
+              </a>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -204,53 +231,57 @@ if ($conn) {
         </div>
       <?php else: ?>
 
-      <div class="stats-grid">
-        <?php if (empty($sections)): ?>
-          <div class="card" style="padding:20px; color:#6b7280;">
-            No sections found. Add cemetery lots to see statistics.
+      <div class="stats-summary">
+        <div class="stat-card-modern">
+          <div class="stat-icon-wrapper bg-blue-light">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
           </div>
-        <?php else: ?>
-          <?php foreach ($sections as $section): ?>
-            <div class="stat-card">
-              <div class="stat-header"><?php echo htmlspecialchars($section['section']); ?></div>
-              <div class="stat-row">
-                <span class="stat-label">Vacant</span>
-                <span class="stat-value stat-vacant"><?php echo $section['vacant']; ?></span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">Occupied</span>
-                <span class="stat-value stat-occupied"><?php echo $section['occupied']; ?></span>
-              </div>
-              <div class="stat-total">
-                <span class="stat-label">Total</span>
-                <span class="stat-value"><?php echo $section['total']; ?></span>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        <?php endif; ?>
+          <div class="stat-content">
+            <div class="stat-label">Total Lots</div>
+            <div class="stat-value"><?php echo $overallStats['total']; ?></div>
+          </div>
+        </div>
+        <div class="stat-card-modern">
+          <div class="stat-icon-wrapper bg-green-light">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Vacant</div>
+            <div class="stat-value"><?php echo $overallStats['vacant']; ?></div>
+          </div>
+        </div>
+        <div class="stat-card-modern">
+          <div class="stat-icon-wrapper bg-orange-light">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Occupied</div>
+            <div class="stat-value"><?php echo $overallStats['occupied']; ?></div>
+          </div>
+        </div>
       </div>
 
-      <section class="card" style="margin-top:20px">
-        <div class="tabs">
-          <a href="?status=Vacant<?php echo $filterSection ? '&section=' . urlencode($filterSection) : ''; ?>" 
-             class="tab <?php echo $filterStatus === 'Vacant' ? 'active' : ''; ?>">
+      <div class="card-monitoring">
+        <div class="monitoring-tabs">
+          <a href="?status=Vacant<?php echo $filterSection ? '&section=' . urlencode($filterSection) : ''; ?><?php echo $filterBlock ? '&block=' . urlencode($filterBlock) : ''; ?>" 
+             class="monitoring-tab <?php echo $filterStatus === 'Vacant' ? 'active' : ''; ?>">
             Vacant Lots
           </a>
-          <a href="?status=Occupied<?php echo $filterSection ? '&section=' . urlencode($filterSection) : ''; ?>" 
-             class="tab <?php echo $filterStatus === 'Occupied' ? 'active' : ''; ?>">
+          <a href="?status=Occupied<?php echo $filterSection ? '&section=' . urlencode($filterSection) : ''; ?><?php echo $filterBlock ? '&block=' . urlencode($filterBlock) : ''; ?>" 
+             class="monitoring-tab <?php echo $filterStatus === 'Occupied' ? 'active' : ''; ?>">
             Occupied Lots
           </a>
         </div>
 
-        <div class="card-head" style="border-top:1px solid var(--border); padding:16px 18px;">
+        <div class="monitoring-filters">
           <div>
-            <h2 class="card-title"><?php echo htmlspecialchars($filterStatus); ?> Lots</h2>
-            <p class="card-sub">
-              Showing <?php echo $totalItems > 0 ? ($offset + 1) : 0; ?>-<?php echo min($offset + $itemsPerPage, $totalItems); ?> of <?php echo $totalItems; ?> <?php echo strtolower($filterStatus); ?> lots
+            <h2 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;"><?php echo htmlspecialchars($filterStatus); ?> Lots Inventory</h2>
+            <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">
+              Showing <?php echo $totalItems > 0 ? ($offset + 1) : 0; ?>-<?php echo min($offset + $itemsPerPage, $totalItems); ?> of <?php echo $totalItems; ?> records
             </p>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <select id="blockFilter" style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;">
+          <div class="filter-group">
+            <select id="blockFilter" class="filter-select">
               <option value="">All Blocks</option>
               <?php foreach ($blocks as $block): ?>
                 <option value="<?php echo htmlspecialchars($block['name']); ?>" 
@@ -259,7 +290,7 @@ if ($conn) {
                 </option>
               <?php endforeach; ?>
             </select>
-            <select id="sectionFilter" style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;">
+            <select id="sectionFilter" class="filter-select">
               <option value="">All Sections</option>
               <?php foreach ($sections as $section): ?>
                 <option value="<?php echo htmlspecialchars($section['section']); ?>" 
@@ -272,17 +303,17 @@ if ($conn) {
         </div>
 
         <div class="table-wrap">
-          <table class="table">
+          <table class="table-modern">
             <thead>
               <tr>
-                <th align="left">Lot Number</th>
-                <th align="left">Section</th>
-                <th align="left">Block</th>
-                <th align="left">Position</th>
-                <th align="left">Status</th>
-                <th align="left">Layer Occupancy</th>
+                <th>Lot Number</th>
+                <th>Section</th>
+                <th>Block</th>
+                <th>Position</th>
+                <th>Status</th>
+                <th>Layers</th>
                 <?php if ($filterStatus === 'Occupied'): ?>
-                  <th align="left">Deceased Name</th>
+                  <th>Deceased Name</th>
                 <?php endif; ?>
                 <th align="right">Actions</th>
               </tr>
@@ -290,41 +321,44 @@ if ($conn) {
             <tbody>
               <?php if (empty($filteredLots)): ?>
                 <tr>
-                  <td colspan="<?php echo $filterStatus === 'Occupied' ? '9' : '8'; ?>" style="text-align:center; color:#6b7280;">
+                  <td colspan="<?php echo $filterStatus === 'Occupied' ? '8' : '7'; ?>" style="text-align:center; padding: 60px; color:#94a3b8;">
+                    <div style="margin-bottom:12px; opacity:0.5;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div>
                     No <?php echo strtolower($filterStatus); ?> lots found
                   </td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($filteredLots as $lot): ?>
                   <tr>
-                    <td><?php echo htmlspecialchars($lot['lot_number']); ?></td>
+                    <td style="font-weight: 600; color: #1e293b;"><?php echo htmlspecialchars($lot['lot_number']); ?></td>
                     <td><?php echo htmlspecialchars($lot['section_name'] ?? '—'); ?></td>
                     <td><?php echo htmlspecialchars($lot['block_name'] ?: '—'); ?></td>
-                    <td><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></td>
-                    <td><span class="badge <?php echo strtolower($lot['status']); ?>"><?php echo htmlspecialchars($lot['status']); ?></span></td>
+                    <td><span style="font-family: monospace; font-size: 12px; color: #64748b;"><?php echo htmlspecialchars($lot['position'] ?: '—'); ?></span></td>
                     <td>
-                      <?php 
-                        $total = intval($lot['total_layers_count'] ?: 1);
-                        $occupied = intval($lot['occupied_layers_count'] ?: 0);
-                        echo "$occupied / $total layers";
-                      ?>
+                      <span class="lot-badge <?php echo $lot['status'] === 'Vacant' ? 'badge-vacant' : 'badge-occupied'; ?>">
+                        <?php echo htmlspecialchars($lot['status']); ?>
+                      </span>
+                    </td>
+                    <td>
+                      <div style="display:flex; flex-direction:column; gap:4px;">
+                        <span style="font-weight: 600; font-size: 13px;">
+                          <?php echo intval($lot['occupied_layers_count'] ?: 0); ?> / <?php echo intval($lot['total_layers_count'] ?: 1); ?>
+                        </span>
+                        <div style="width: 60px; height: 4px; background: #f1f5f9; border-radius: 2px; overflow: hidden;">
+                          <?php 
+                            $percent = (intval($lot['occupied_layers_count'] ?: 0) / intval($lot['total_layers_count'] ?: 1)) * 100;
+                          ?>
+                          <div style="width: <?php echo $percent; ?>%; height: 100%; background: #3b82f6;"></div>
+                        </div>
+                      </div>
                     </td>
                     <?php if ($filterStatus === 'Occupied'): ?>
-                      <td><?php echo htmlspecialchars($lot['deceased_name'] ?: '—'); ?></td>
+                      <td style="font-weight: 500; color: #334155;"><?php echo htmlspecialchars($lot['deceased_name'] ?: '—'); ?></td>
                     <?php endif; ?>
-                    <td>
-                      <div class="actions">
-                        <button class="btn-action btn-map" onclick="handleMapRedirect(<?php echo $lot['id']; ?>, '<?php echo htmlspecialchars($lot['lot_number']); ?>')">
-                          <span class="icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="currentColor" fill-opacity="0.2"/>
-                              <circle cx="12" cy="10" r="3" fill="currentColor"/>
-                              <path d="M12 2v20" stroke-width="1" opacity="0.3"/>
-                            </svg>
-                          </span>
-                          <span>View on Map</span>
-                        </button>
-                      </div>
+                    <td align="right">
+                      <button class="btn-view-map" onclick="handleMapRedirect(<?php echo $lot['id']; ?>, '<?php echo htmlspecialchars($lot['lot_number']); ?>')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                        View on Map
+                      </button>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -370,6 +404,7 @@ if ($conn) {
 
   <script src="../assets/js/app.js"></script>
   <style>
+    /* Modern UI Refinements */
     .dashboard-header {
       background: #fff;
       padding: 24px 32px;
@@ -379,7 +414,7 @@ if ($conn) {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative; /* Added for absolute search positioning */
+      position: relative;
     }
     .header-left .title {
       font-size: 24px;
@@ -402,7 +437,146 @@ if ($conn) {
     }
     .breadcrumbs a { color: #94a3b8; text-decoration: none; }
     .breadcrumbs .current { color: #1e293b; font-weight: 600; }
-    .header-actions { display: flex; gap: 12px; }
+    
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .stat-card-modern {
+      background: #fff;
+      padding: 24px;
+      border-radius: 20px;
+      border: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: all 0.3s ease;
+    }
+    .stat-card-modern:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+    }
+    .stat-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stat-content .stat-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .stat-content .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1;
+    }
+    
+    .bg-blue-light { background: #eff6ff; color: #3b82f6; }
+    .bg-green-light { background: #f0fdf4; color: #22c55e; }
+    .bg-orange-light { background: #fff7ed; color: #f97316; }
+
+    .card-monitoring {
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid #f1f5f9;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+
+    .monitoring-tabs {
+      display: flex;
+      background: #f8fafc;
+      padding: 6px;
+      gap: 4px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .monitoring-tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #64748b;
+      text-decoration: none;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+    .monitoring-tab.active {
+      background: #fff;
+      color: #3b82f6;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .monitoring-filters {
+      padding: 20px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .filter-select {
+      padding: 10px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #475569;
+      font-weight: 500;
+      background: #fff;
+      min-width: 160px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .filter-select:hover { border-color: #cbd5e1; }
+    .filter-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+    .table-modern {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .table-modern th {
+      background: #f8fafc;
+      padding: 16px 28px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .table-modern td {
+      padding: 18px 28px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 14px;
+      color: #334155;
+    }
+    .table-modern tr:last-child td { border-bottom: none; }
+    .table-modern tr:hover td { background: #fcfdfe; }
+
+    .lot-badge {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-vacant { background: #f0fdf4; color: #166534; }
+    .badge-occupied { background: #fff7ed; color: #9a3412; }
 
     .pagination-btn {
       padding: 8px 14px;
@@ -432,6 +606,146 @@ if ($conn) {
       pointer-events: none;
       cursor: not-allowed;
     }
+
+    .btn-view-map {
+      padding: 8px 16px;
+      background: #eff6ff;
+      color: #3b82f6;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-view-map:hover { background: #dbeafe; }
+
+    /* Export Dropdown Styles */
+    .export-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .export-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      background: white;
+      min-width: 200px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      padding: 8px;
+      z-index: 1000;
+      border: 1px solid #f1f5f9;
+      margin-top: 8px;
+    }
+    .export-menu.active {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .export-menu a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .export-menu a:hover {
+      background: #f8fafc;
+      color: #3b82f6;
+    }
+    .export-menu a svg {
+      color: #94a3b8;
+    }
+    .export-menu a:hover svg {
+      color: #3b82f6;
+    }
+
+    /* Print Styles */
+    @media print {
+      @page {
+        margin: 1cm;
+        size: auto;
+      }
+      body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .sidebar, .dashboard-header .header-search, .header-actions, 
+      .monitoring-tabs, .monitoring-filters .filter-group, 
+      .btn-view-map, .pagination-wrap, .universal-search-wrapper, .search-results-dropdown {
+        display: none !important;
+      }
+      .app {
+        display: block !important;
+      }
+      .main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      .dashboard-header {
+        box-shadow: none !important;
+        border-bottom: 2px solid #eee !important;
+        margin-bottom: 30px !important;
+        padding: 0 0 20px 0 !important;
+      }
+      .stats-summary {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 15px !important;
+        margin-bottom: 30px !important;
+      }
+      .stat-card-modern {
+        border: 1px solid #eee !important;
+        box-shadow: none !important;
+        padding: 15px !important;
+      }
+      .card-monitoring {
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .table-modern {
+        border: 1px solid #eee !important;
+      }
+      .table-modern th {
+        background: #f9fafb !important;
+        color: #000 !important;
+        border-bottom: 2px solid #eee !important;
+      }
+      .table-modern td {
+        border-bottom: 1px solid #eee !important;
+      }
+      .lot-badge {
+        border: 1px solid #eee !important;
+        background: transparent !important;
+        color: #000 !important;
+        padding: 2px 6px !important;
+      }
+      .table-modern td:last-child, .table-modern th:last-child {
+        display: none !important;
+      }
+      .monitoring-filters {
+        padding: 0 0 15px 0 !important;
+      }
+      .breadcrumbs {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+    }
   </style>
 
   <script>
@@ -453,6 +767,42 @@ if ($conn) {
       const section = '<?php echo $filterSection; ?>';
       window.location.href = '?status=' + status + (section ? '&section=' + encodeURIComponent(section) : '') + (block ? '&block=' + encodeURIComponent(block) : '');
     });
+
+    // Export Dropdown Logic
+    const exportBtn = document.getElementById('exportBtn');
+    const exportMenu = document.getElementById('exportMenu');
+
+    if (exportBtn && exportMenu) {
+      exportBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        exportMenu.classList.toggle('active');
+      });
+
+      document.addEventListener('click', () => {
+        exportMenu.classList.remove('active');
+      });
+    }
+
+    function printCurrentPage() {
+      window.print();
+    }
+
+    function printAllRecords() {
+      const url = new URL(window.location.href);
+      url.searchParams.set('print_all', '1');
+      const printWindow = window.open(url.href, '_blank');
+      printWindow.addEventListener('load', () => {
+        printWindow.print();
+        // Optional: close window after print
+        // printWindow.close();
+      }, true);
+    }
+
+    function exportToExcel() {
+      const status = '<?php echo $filterStatus; ?>';
+      const reportType = status === 'Vacant' ? 'vacant_lots' : 'occupied_lots';
+      window.location.href = `../api/export_csv.php?type=${reportType}`;
+    }
   </script>
 </body>
 </html>

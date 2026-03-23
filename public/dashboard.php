@@ -363,7 +363,7 @@ if ($conn) {
       <?php else: ?>
 
       <div class="dashboard-stats">
-        <div class="dash-stat-card">
+        <div class="dash-stat-card" onclick="window.location.href='index.php'" style="cursor:pointer;">
           <div class="dash-stat-info">
             <div class="label">Total Cemetery Lots</div>
             <div class="value"><?php echo $stats['total_lots']; ?></div>
@@ -380,7 +380,7 @@ if ($conn) {
           </div>
         </div>
 
-        <div class="dash-stat-card">
+        <div class="dash-stat-card" onclick="window.location.href='sections.php'" style="cursor:pointer;">
           <div class="dash-stat-info">
             <div class="label">Total Sections</div>
             <div class="value"><?php echo $stats['total_sections']; ?></div>
@@ -396,7 +396,7 @@ if ($conn) {
           </div>
         </div>
 
-        <div class="dash-stat-card">
+        <div class="dash-stat-card" onclick="window.location.href='blocks.php'" style="cursor:pointer;">
           <div class="dash-stat-info">
             <div class="label">Total Blocks</div>
             <div class="value"><?php echo $stats['total_blocks']; ?></div>
@@ -412,7 +412,7 @@ if ($conn) {
           </div>
         </div>
 
-        <div class="dash-stat-card">
+        <div class="dash-stat-card" onclick="window.location.href='burial-records.php'" style="cursor:pointer;">
           <div class="dash-stat-info">
             <div class="label">Total Burial Records</div>
             <div class="value"><?php echo $stats['total_burials']; ?></div>
@@ -428,7 +428,7 @@ if ($conn) {
           </div>
         </div>
 
-        <div class="dash-stat-card">
+        <div class="dash-stat-card" onclick="window.location.href='lot-availability.php?status=Vacant'" style="cursor:pointer;">
           <div class="dash-stat-info">
             <div class="label">Available Lots</div>
             <div class="value"><?php echo $stats['available_lots']; ?></div>
@@ -444,7 +444,7 @@ if ($conn) {
           </div>
         </div>
 
-        <div class="dash-stat-card">
+        <div class="dash-stat-card" onclick="window.location.href='lot-availability.php?status=Occupied'" style="cursor:pointer;">
           <div class="dash-stat-info">
             <div class="label">Occupied Lots</div>
             <div class="value"><?php echo $stats['occupied_lots']; ?></div>
