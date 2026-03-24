@@ -39,6 +39,11 @@ if ($db) {
             ORDER BY b.name ASC
         ");
         $blocks = $stmt->fetchAll();
+
+        // Fetch all blocks with defined areas for the map picker
+        $blocksWithAreas = array_filter($blocks, function($b) {
+            return !empty($b['map_x']) && !empty($b['map_y']);
+        });
     } catch (PDOException $e) {
         $error = $e->getMessage();
     }
@@ -685,7 +690,17 @@ if ($db) {
                   <td><?php echo date('M d, Y', strtotime($block['created_at'])); ?></td>
                   <td align="right">
                     <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                      <button class="btn-action btn-edit" onclick='openEditModal(<?php echo $block['id']; ?>, <?php echo json_encode($block['name']); ?>, <?php echo json_encode($block['description']); ?>)' title="Edit Block">
+                      <?php if (!empty($block['map_x']) && !empty($block['map_y'])): ?>
+                        <a href="cemetery-map.php?highlight_block=<?php echo $block['id']; ?>" class="btn-action btn-map" title="View on Map" style="background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                          <span class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                              <circle cx="12" cy="10" r="3" />
+                            </svg>
+                          </span>
+                        </a>
+                      <?php endif; ?>
+                      <button class="btn-action btn-edit" onclick='openEditModal(<?php echo htmlspecialchars(json_encode($block), ENT_QUOTES, "UTF-8"); ?>)' title="Edit Block">
                         <span class="icon">
                           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 20h9" />
@@ -735,6 +750,10 @@ if ($db) {
       <form id="blockForm">
         <div class="modal-body">
           <input type="hidden" id="blockId" name="id">
+          <input type="hidden" id="map_x" name="map_x">
+          <input type="hidden" id="map_y" name="map_y">
+          <input type="hidden" id="map_width" name="map_width">
+          <input type="hidden" id="map_height" name="map_height">
           <div class="form-group">
             <label for="name">Block Name</label>
             <input type="text" id="name" name="name" required placeholder="e.g. Block 1">
@@ -742,6 +761,18 @@ if ($db) {
           <div class="form-group">
             <label for="description">Description</label>
             <textarea id="description" name="description" rows="4" placeholder="Brief description of the block..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Block Area on Map</label>
+            <div id="blockMapPreview" style="width: 100%; height: 120px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 13px; cursor: pointer; transition: all 0.2s; overflow: hidden; position: relative;" onclick="openMapPicker()">
+              <div id="previewContent" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>
+                <span>Draw Block Area on Map</span>
+              </div>
+              <div id="coordinatesInfo" style="display: none; position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; color: #3b82f6; border: 1px solid #dbeafe;">
+                Area Defined
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -788,6 +819,58 @@ if ($db) {
         });
       });
     }
+  </script>
+  <!-- Map Area Picker Overlay -->
+  <div id="mapPickerOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 10000; flex-direction: column;">
+    <div style="padding: 20px 32px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Define Block Area</h2>
+        <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Click and drag on the map to draw a rectangle for the block area.</p>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <button type="button" class="btn-secondary" onclick="closeMapPicker()" style="padding: 8px 16px;">Cancel</button>
+        <button type="button" class="btn-blue" onclick="saveMapArea()" style="padding: 8px 24px;">Confirm Area</button>
+      </div>
+    </div>
+    <div id="mapPickerWrapper" style="flex: 1; overflow: hidden; position: relative; background: #f8fafc;">
+      <div id="mapPickerCanvas" style="position: absolute; transform-origin: 0 0; transition: transform 0.1s ease-out;">
+        <img src="../assets/images/cemetery.jpg" id="mapPickerImage" style="display: block; -webkit-user-drag: none; user-select: none; pointer-events: none;">
+        <div id="selectionRect" style="display: none; position: absolute; border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.1); pointer-events: none; z-index: 100;"></div>
+      </div>
+      
+      <!-- Toolbar Overlay -->
+      <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; z-index: 200;">
+        <button type="button" id="pickerDrawBtn" onclick="setPickerTool('draw')" style="padding: 10px 18px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);" class="active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          Draw Area
+        </button>
+        <button type="button" id="pickerPanBtn" onclick="setPickerTool('pan')" style="padding: 10px 18px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+          Pan Map
+        </button>
+      </div>
+
+      <!-- Zoom Controls -->
+      <div style="position: absolute; bottom: 32px; right: 32px; display: flex; flex-direction: column; gap: 8px; z-index: 200;">
+        <button onclick="zoomMap(1.25)" style="width: 44px; height: 44px; border-radius: 12px; background: white; border: 1px solid #e2e8f0; color: #1e293b; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+        <button onclick="zoomMap(0.8)" style="width: 44px; height: 44px; border-radius: 12px; background: white; border: 1px solid #e2e8f0; color: #1e293b; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+        <button onclick="resetPickerView()" style="width: 44px; height: 44px; border-radius: 12px; background: white; border: 1px solid #e2e8f0; color: #1e293b; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #pickerDrawBtn.active, #pickerPanBtn.active {
+      background: #3b82f6 !important;
+      color: white !important;
+      border-color: #3b82f6 !important;
+    }
+    #mapPickerWrapper.grabbing { cursor: grabbing; }
+    #mapPickerWrapper.crosshair { cursor: crosshair; }
+  </style>
+
+  <script>
+    window.existingBlockAreas = <?php echo json_encode(array_values($blocksWithAreas)); ?>;
   </script>
   <script src="../assets/js/api.js"></script>
   <script src="../assets/js/blocks.js"></script>

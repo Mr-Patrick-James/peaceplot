@@ -23,24 +23,37 @@ if ($conn) {
     try {
         // Get all lots with their map coordinates and layer information
         $stmt = $conn->query("
-            SELECT cl.*, s.name as section_name, b.name as block_name,
-                   (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
-                   (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
-                   COUNT(DISTINCT dr.id) as burial_count,
-                   GROUP_CONCAT(DISTINCT dr.full_name || '|' || COALESCE(dr.layer, 1)) as burial_info,
-                   CASE 
-                       WHEN COUNT(DISTINCT dr.id) > 0 THEN 'Occupied'
-                       WHEN EXISTS (SELECT 1 FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) THEN 'Occupied'
-                       ELSE cl.status
-                   END as actual_status
-            FROM cemetery_lots cl 
-            LEFT JOIN sections s ON cl.section_id = s.id
-            LEFT JOIN blocks b ON s.block_id = b.id
-            LEFT JOIN deceased_records dr ON cl.id = dr.lot_id
-            GROUP BY cl.id
-            ORDER BY LENGTH(cl.lot_number), cl.lot_number
-        ");
-        $lots = $stmt->fetchAll();
+        SELECT cl.*, s.name as section_name, b.name as block_name,
+               (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
+               (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
+               COUNT(DISTINCT dr.id) as burial_count,
+               GROUP_CONCAT(DISTINCT dr.full_name || '|' || COALESCE(dr.layer, 1)) as burial_info,
+               CASE 
+                   WHEN COUNT(DISTINCT dr.id) > 0 THEN 'Occupied'
+                   WHEN EXISTS (SELECT 1 FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) THEN 'Occupied'
+                   ELSE cl.status
+               END as actual_status
+        FROM cemetery_lots cl 
+        LEFT JOIN sections s ON cl.section_id = s.id
+        LEFT JOIN blocks b ON s.block_id = b.id
+        LEFT JOIN deceased_records dr ON cl.id = dr.lot_id
+        GROUP BY cl.id
+        ORDER BY LENGTH(cl.lot_number), cl.lot_number
+    ");
+    $lots = $stmt->fetchAll();
+
+    // Fetch all sections with their map coordinates and block name
+    $stmt_sections = $conn->query("
+        SELECT s.id, s.name, s.map_x, s.map_y, s.map_width, s.map_height, b.name as block_name 
+        FROM sections s 
+        LEFT JOIN blocks b ON s.block_id = b.id 
+        WHERE s.map_x IS NOT NULL AND s.map_y IS NOT NULL
+    ");
+    $map_sections = $stmt_sections->fetchAll();
+
+    // Fetch all blocks with their map coordinates
+    $stmt_blocks = $conn->query("SELECT id, name, map_x, map_y, map_width, map_height FROM blocks WHERE map_x IS NOT NULL AND map_y IS NOT NULL");
+    $map_blocks = $stmt_blocks->fetchAll();
         
     } catch (PDOException $e) {
         $error = $e->getMessage();
@@ -97,6 +110,78 @@ if ($conn) {
     .map-canvas {
       position: relative;
       transform-origin: 0 0;
+    }
+
+    .section-rectangle {
+      position: absolute;
+      border: 3px solid #3b82f6;
+      background: rgba(59, 130, 246, 0.15);
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+      border-radius: 4px;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+    }
+
+    .section-rectangle.active {
+      display: block;
+      animation: pulse-border 2s infinite;
+    }
+
+    .block-rectangle {
+      position: absolute;
+      border: 3px solid #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      pointer-events: none;
+      z-index: 4;
+      display: none;
+      border-radius: 4px;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+    }
+
+    .block-rectangle.active {
+      display: block;
+      animation: pulse-border-green 2s infinite;
+    }
+
+    @keyframes pulse-border-green {
+      0% { border-color: rgba(16, 185, 129, 1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { border-color: rgba(16, 185, 129, 0.8); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+      100% { border-color: rgba(16, 185, 129, 1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .block-label-badge {
+      position: absolute;
+      top: -24px;
+      left: 0;
+      background: #10b981;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    @keyframes pulse-border {
+      0% { border-color: rgba(59, 130, 246, 1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+      70% { border-color: rgba(59, 130, 246, 0.8); box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+      100% { border-color: rgba(59, 130, 246, 1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .section-label-badge {
+      position: absolute;
+      top: -24px;
+      left: 0;
+      background: #3b82f6;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
     .map-image {
@@ -207,39 +292,6 @@ if ($conn) {
       max-width: calc(100% - 0.4px);
     }
 
-    .lot-marker.vertical .lot-label {
-      width: auto;
-      max-width: calc(100% - 0.4px);
-    }
-
-    .lot-label .section-tag {
-      font-size: 0.75em; /* Increased section name font */
-      opacity: 0.85;
-      font-weight: 600;
-      margin-top: 0.1px;
-    }
-
-    .lot-marker.vertical .section-tag {
-      position: absolute;
-      bottom: 0.2px;
-      left: 0.2px;
-      width: calc(100% - 0.4px);
-      background: rgba(0,0,0,0.9);
-      padding: 0.2px 0.5px;
-      border-radius: 0 0 0.2px 0.2px;
-      text-align: center;
-      font-size: 2.5px; /* Increased by 1px (from 1.5px to 2.5px) */
-      opacity: 1;
-      font-weight: 700;
-      line-height: 1;
-      z-index: 2;
-      box-sizing: border-box;
-    }
-    
-    .lot-marker.vertical .lot-label .section-tag {
-      display: none;
-    }
-    
     .hidden-marker {
       display: none !important;
     }
@@ -1309,8 +1361,43 @@ if ($conn) {
                    class="map-image"
                    id="cemeteryMapImage"
                    draggable="false">
-            
-            <?php foreach ($lots as $lot): ?>
+              
+              <!-- Section Rectangles -->
+              <?php if (!empty($map_sections)): ?>
+                <?php foreach ($map_sections as $section): ?>
+                  <div class="section-rectangle" 
+                       id="section-rect-<?php echo $section['id']; ?>"
+                       data-section-id="<?php echo $section['id']; ?>"
+                       style="left: <?php echo $section['map_x']; ?>%; 
+                              top: <?php echo $section['map_y']; ?>%; 
+                              width: <?php echo $section['map_width']; ?>%; 
+                              height: <?php echo $section['map_height']; ?>%;">
+                    <div class="section-label-badge">
+                      <?php if (!empty($section['block_name'])): ?>
+                        <span style="opacity: 0.8; font-weight: 500; margin-right: 4px;"><?php echo htmlspecialchars($section['block_name']); ?></span>
+                      <?php endif; ?>
+                      <?php echo htmlspecialchars($section['name']); ?>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
+
+              <!-- Block Rectangles -->
+              <?php if (!empty($map_blocks)): ?>
+                <?php foreach ($map_blocks as $block): ?>
+                  <div class="block-rectangle" 
+                       id="block-rect-<?php echo $block['id']; ?>"
+                       data-block-id="<?php echo $block['id']; ?>"
+                       style="left: <?php echo $block['map_x']; ?>%; 
+                              top: <?php echo $block['map_y']; ?>%; 
+                              width: <?php echo $block['map_width']; ?>%; 
+                              height: <?php echo $block['map_height']; ?>%;">
+                    <div class="block-label-badge"><?php echo htmlspecialchars($block['name']); ?></div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
+
+              <?php foreach ($lots as $lot): ?>
               <?php 
               // Check if lot has map coordinates (works for both DB and sample data)
               $hasCoords = isset($lot['map_x']) && isset($lot['map_y']) && 
@@ -1329,7 +1416,6 @@ if ($conn) {
                 ?>
                 <div class="lot-marker <?php echo strtolower($actualStatus); ?> <?php echo $isVertical ? 'vertical' : ''; ?>"
                      data-lot-id="<?php echo $lot['id']; ?>"
-                     data-section-id="<?php echo $lot['section_id']; ?>"
                      style="left: <?php echo $lot['map_x']; ?>%; 
                             top: <?php echo $lot['map_y']; ?>%;
                             width: <?php echo $lot['map_width']; ?>%;
@@ -1338,11 +1424,7 @@ if ($conn) {
                      title="<?php echo htmlspecialchars($lot['lot_number']); ?> - <?php echo $actualStatus; ?>">
                   <div class="lot-label">
                     <span><?php echo htmlspecialchars($lot['lot_number']); ?></span>
-                    <span class="section-tag"><?php echo htmlspecialchars($lot['section_name'] ?? ''); ?></span>
                   </div>
-                  <?php if ($isVertical): ?>
-                    <div class="section-tag"><?php echo htmlspecialchars($lot['section_name'] ?? ''); ?></div>
-                  <?php endif; ?>
                   <?php if ($totalLayers > 1): ?>
                     <div class="lot-layer-indicator" title="<?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?> layers occupied"><?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?></div>
                   <?php endif; ?>
@@ -2621,45 +2703,80 @@ if ($conn) {
 
 
     
-    // Highlight lot/section functionality
     function highlightLotOnMap() {
       const urlParams = new URLSearchParams(window.location.search);
       const highlightLotIds = urlParams.get('highlight_lot') ? urlParams.get('highlight_lot').split(',') : [];
       const highlightSectionIds = urlParams.get('highlight_section') ? urlParams.get('highlight_section').split(',') : [];
+      const highlightBlockIds = urlParams.get('highlight_block') ? urlParams.get('highlight_block').split(',') : [];
       
-      if (highlightLotIds.length === 0 && highlightSectionIds.length === 0) return;
+      if (highlightLotIds.length === 0 && highlightSectionIds.length === 0 && highlightBlockIds.length === 0) return;
 
       const lotMarkers = document.querySelectorAll('.lot-marker');
+      const sectionRects = document.querySelectorAll('.section-rectangle');
+      const blockRects = document.querySelectorAll('.block-rectangle');
       let targetMarkers = [];
+      let targetRects = [];
       
+      // Handle lot highlighting
       lotMarkers.forEach(marker => {
         const lotId = marker.getAttribute('data-lot-id');
-        // We need the section ID. The marker doesn't have it currently in data attributes.
-        // Let's check if we can get it from the lot data passed to showLotDetails.
-        // Actually, the PHP loop can add data-section-id to the marker.
-        const sectionId = marker.getAttribute('data-section-id');
-        
         const isHighlightedLot = highlightLotIds.includes(lotId);
-        const isHighlightedSection = highlightSectionIds.includes(sectionId);
 
-        if (isHighlightedLot || isHighlightedSection) {
+        if (isHighlightedLot) {
           marker.classList.add('highlighted-marker');
           targetMarkers.push(marker);
-        } else {
+        } else if (highlightLotIds.length > 0) {
           marker.classList.add('hidden-marker');
         }
       });
+
+      // Handle section highlighting
+      sectionRects.forEach(rect => {
+        const sectionId = rect.getAttribute('data-section-id');
+        const isHighlightedSection = highlightSectionIds.includes(sectionId);
+
+        if (isHighlightedSection) {
+          rect.classList.add('active');
+          targetRects.push(rect);
+        } else {
+          rect.classList.remove('active');
+        }
+      });
+
+      // Handle block highlighting
+      blockRects.forEach(rect => {
+        const blockId = rect.getAttribute('data-block-id');
+        const isHighlightedBlock = highlightBlockIds.includes(blockId);
+
+        if (isHighlightedBlock) {
+          rect.classList.add('active');
+          targetRects.push(rect);
+        } else {
+          rect.classList.remove('active');
+        }
+      });
       
-      if (targetMarkers.length > 0) {
-        // Calculate bounding box of all target markers to center view
+      if (targetMarkers.length > 0 || targetRects.length > 0) {
         let minX = 100, minY = 100, maxX = 0, maxY = 0;
         
+        // Calculate bounding box for lots
         targetMarkers.forEach(marker => {
           const x = parseFloat(marker.style.left);
           const y = parseFloat(marker.style.top);
           const w = parseFloat(marker.style.width);
           const h = parseFloat(marker.style.height);
-          
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x + w);
+          maxY = Math.max(maxY, y + h);
+        });
+
+        // Calculate bounding box for sections
+        targetRects.forEach(rect => {
+          const x = parseFloat(rect.style.left);
+          const y = parseFloat(rect.style.top);
+          const w = parseFloat(rect.style.width);
+          const h = parseFloat(rect.style.height);
           minX = Math.min(minX, x);
           minY = Math.min(minY, y);
           maxX = Math.max(maxX, x + w);
@@ -2669,12 +2786,10 @@ if ($conn) {
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
         
-        // Calculate appropriate zoom based on the bounding box size
         const spanX = maxX - minX;
         const spanY = maxY - minY;
         const maxSpan = Math.max(spanX, spanY);
         
-        // Adjust zoom: smaller span -> larger zoom
         let targetZoom = 1.5;
         if (maxSpan > 0) {
             targetZoom = Math.min(2.5, Math.max(0.5, 40 / maxSpan));
@@ -2684,7 +2799,6 @@ if ($conn) {
           zoomToPoint(centerX, centerY, targetZoom);
         }, 300);
         
-        // Add clear highlight button
         const actionsContainer = document.querySelector('.dashboard-header .header-actions');
         if (actionsContainer && !document.getElementById('clearHighlightBtn')) {
            const clearBtn = document.createElement('button');

@@ -1206,3 +1206,57 @@ body{
     page-break-after: avoid;
   }
 }
+
+/* Section Map Styles */
+.section-icon {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.section-icon.has-area {
+  background: #f0f9ff;
+  color: #3b82f6;
+  border: 1px solid #dbeafe;
+}
+
+.area-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.section-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-info .name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.section-info .sub {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}

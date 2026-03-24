@@ -103,11 +103,15 @@ if ($method === 'GET') {
     }
 
     try {
-        $stmt = $db->prepare("INSERT INTO sections (name, description, block_id) VALUES (?, ?, ?)");
+        $stmt = $db->prepare("INSERT INTO sections (name, description, block_id, map_x, map_y, map_width, map_height) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['name'], 
             $data['description'] ?? '',
-            $data['block_id']
+            $data['block_id'],
+            $data['map_x'] ?? null,
+            $data['map_y'] ?? null,
+            $data['map_width'] ?? null,
+            $data['map_height'] ?? null
         ]);
         echo json_encode(['id' => $db->lastInsertId(), 'message' => 'Section created successfully']);
     } catch (PDOException $e) {
@@ -134,11 +138,15 @@ if ($method === 'GET') {
     }
 
     try {
-        $stmt = $db->prepare("UPDATE sections SET name = ?, description = ?, block_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt = $db->prepare("UPDATE sections SET name = ?, description = ?, block_id = ?, map_x = ?, map_y = ?, map_width = ?, map_height = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->execute([
             $data['name'], 
             $data['description'] ?? '', 
             $data['block_id'],
+            $data['map_x'] ?? null,
+            $data['map_y'] ?? null,
+            $data['map_width'] ?? null,
+            $data['map_height'] ?? null,
             $data['id']
         ]);
         echo json_encode(['message' => 'Section updated successfully']);

@@ -31,8 +31,15 @@ if ($method === 'GET') {
     }
 
     try {
-        $stmt = $db->prepare("INSERT INTO blocks (name, description) VALUES (?, ?)");
-        $stmt->execute([$data['name'], $data['description'] ?? '']);
+        $stmt = $db->prepare("INSERT INTO blocks (name, description, map_x, map_y, map_width, map_height) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $data['name'], 
+            $data['description'] ?? '',
+            $data['map_x'] ?? null,
+            $data['map_y'] ?? null,
+            $data['map_width'] ?? null,
+            $data['map_height'] ?? null
+        ]);
         $lastId = $db->lastInsertId();
         
         logActivity($db, 'ADD_BLOCK', 'blocks', $lastId, "New block '" . $data['name'] . "' added");
@@ -56,8 +63,16 @@ if ($method === 'GET') {
     }
 
     try {
-        $stmt = $db->prepare("UPDATE blocks SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-        $stmt->execute([$data['name'], $data['description'] ?? '', $data['id']]);
+        $stmt = $db->prepare("UPDATE blocks SET name = ?, description = ?, map_x = ?, map_y = ?, map_width = ?, map_height = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([
+            $data['name'], 
+            $data['description'] ?? '', 
+            $data['map_x'] ?? null,
+            $data['map_y'] ?? null,
+            $data['map_width'] ?? null,
+            $data['map_height'] ?? null,
+            $data['id']
+        ]);
         
         logActivity($db, 'UPDATE_BLOCK', 'blocks', $data['id'], "Block '" . $data['name'] . "' updated");
         
