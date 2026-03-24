@@ -573,7 +573,7 @@ if ($conn && $isAdmin) {
                           <div style="font-size: 13px; font-weight: 500; color: #1e293b;"><?php echo $u['last_login'] ? date('M d, Y', strtotime($u['last_login'])) : 'Never'; ?></div>
                         </div>
                         <?php if ($u['id'] != $user['id']): ?>
-                          <button class="modern-btn btn-danger-modern" style="padding: 10px;" onclick="confirmDeleteUser(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['full_name']); ?>')">
+                          <button class="modern-btn btn-danger-modern" style="padding: 10px; display: none;" onclick="confirmDeleteUser(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['full_name']); ?>')">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                           </button>
                         <?php else: ?>
@@ -624,7 +624,7 @@ if ($conn && $isAdmin) {
       <button class="modern-btn btn-secondary-modern" style="background: #2d333b; color: #94a3b8;" onclick="closeDialog('delete-dialog')">Cancel</button>
       <form method="POST" style="margin: 0;">
         <input type="hidden" name="user_id" id="delete-user-id">
-        <button type="submit" name="delete_user" class="modern-btn btn-primary-modern" style="background: #2f6df6;">Delete Account</button>
+        <button type="submit" name="delete_user" class="modern-btn btn-primary-modern" style="background: #2f6df6; display: none;">Delete Account</button>
       </form>
     </div>
   </div>
