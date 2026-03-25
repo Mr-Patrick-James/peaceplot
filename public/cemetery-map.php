@@ -1441,7 +1441,7 @@ if ($conn) {
                   <div class="lot-label">
                     <span><?php echo htmlspecialchars($lot['lot_number']); ?></span>
                     <?php if (!empty($lot['kin_names'])): ?>
-                      <span class="kin-tag"><?php echo htmlspecialchars($lot['kin_names']); ?></span>
+                      <span class="kin-tag">K: <?php echo htmlspecialchars($lot['kin_names']); ?></span>
                     <?php endif; ?>
                   </div>
                   <?php if ($totalLayers > 1): ?>
@@ -2215,7 +2215,7 @@ if ($conn) {
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                           ${index > 0 ? '<span style="background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Ash Burial</span>' : '<span style="background: #f0fdf4; color: #16a34a; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Primary Burial</span>'}
                         </div>
-                        <h2 style="margin: 0 0 4px 0; font-size: 1.75rem; font-weight: 800; color: #1e293b; letter-spacing: -0.025em;">${fullRecord.full_name}</h2>
+                        <h2 style="margin: 0 0 4px 0; font-size: 1.75rem; font-weight: 800; color: #1e293b; letter-spacing: -0.025em;">D: ${fullRecord.full_name}</h2>
                         <div style="display: flex; align-items: center; gap: 12px; color: #64748b; font-size: 14px; font-weight: 500;">
                           <div style="display: flex; align-items: center; gap: 4px;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2235,8 +2235,8 @@ if ($conn) {
                       <div style="display: flex; align-items: flex-start; gap: 12px;">
                         <div style="width: 36px; height: 36px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                         <div>
-                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Age</div>
-                          <div style="font-size: 15px; font-weight: 700; color: #1e293b;">${fullRecord.age ? fullRecord.age + ' years old' : 'N/A'}</div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Deceased Name</div>
+                          <div style="font-size: 15px; font-weight: 700; color: #1e293b;">D: ${fullRecord.full_name}</div>
                         </div>
                       </div>
                       <div style="display: flex; align-items: flex-start; gap: 12px;">
@@ -2280,8 +2280,8 @@ if ($conn) {
                       </div>
                       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
                         <div>
-                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Name</div>
-                          <div style="font-size: 15px; color: #1e293b; font-weight: 700;">${fullRecord.next_of_kin || 'N/A'}</div>
+                          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Kin Name</div>
+                          <div style="font-size: 15px; color: #1e293b; font-weight: 700;">K: ${fullRecord.next_of_kin || 'N/A'}</div>
                         </div>
                         <div>
                           <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Contact Details</div>
@@ -2519,16 +2519,16 @@ if ($conn) {
                   Layer ${layer.layer_number}
                 </div>
                 
-                <div class="layer-deceased-name">
-                  ${isOccupied ? deceasedName : '<span style="color: #94a3b8; font-weight: 500;">Vacant Layer</span>'}
-                </div>
-
                 ${isOccupied && kinInfo ? `
-                  <div class="layer-kin-info" style="font-size: 12px; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
-                    <span>Kin: ${kinInfo}</span>
+                  <div class="layer-kin-info" style="font-size: 13px; color: #1e293b; font-weight: 700; margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+                    <span>K: ${kinInfo}</span>
                   </div>
                 ` : ''}
+
+                <div class="layer-deceased-name" style="${isOccupied && kinInfo ? 'font-size: 14px; color: #64748b; font-weight: 500; margin-top: 2px;' : ''}">
+                  ${isOccupied ? 'D: ' + deceasedName : '<span style="color: #94a3b8; font-weight: 500;">Vacant Layer</span>'}
+                </div>
 
                 ${layerBurials.length > 1 ? `
                   <div class="ash-burial-badge">
