@@ -45,7 +45,7 @@ if ($conn) {
 
     // Fetch all sections with their map coordinates and block name
     $stmt_sections = $conn->query("
-        SELECT s.id, s.name, s.map_x, s.map_y, s.map_width, s.map_height, b.name as block_name 
+        SELECT s.id, s.name, s.map_x, s.map_y, s.map_width, s.map_height, s.block_id, b.name as block_name 
         FROM sections s 
         LEFT JOIN blocks b ON s.block_id = b.id 
         WHERE s.map_x IS NOT NULL AND s.map_y IS NOT NULL
@@ -1383,6 +1383,7 @@ if ($conn) {
                   <div class="section-rectangle" 
                        id="section-rect-<?php echo $section['id']; ?>"
                        data-section-id="<?php echo $section['id']; ?>"
+                       data-block-id="<?php echo $section['block_id']; ?>"
                        style="left: <?php echo $section['map_x']; ?>%; 
                               top: <?php echo $section['map_y']; ?>%; 
                               width: <?php echo $section['map_width']; ?>%; 
@@ -2751,9 +2752,11 @@ if ($conn) {
       // Handle section highlighting
       sectionRects.forEach(rect => {
         const sectionId = rect.getAttribute('data-section-id');
+        const blockId = rect.getAttribute('data-block-id');
         const isHighlightedSection = highlightSectionIds.includes(sectionId);
+        const isPartOfHighlightedBlock = highlightBlockIds.includes(blockId);
 
-        if (isHighlightedSection) {
+        if (isHighlightedSection || isPartOfHighlightedBlock) {
           rect.classList.add('active');
           targetRects.push(rect);
         } else {
