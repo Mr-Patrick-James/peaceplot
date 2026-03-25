@@ -28,6 +28,7 @@ if ($conn) {
                (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
                COUNT(DISTINCT dr.id) as burial_count,
                GROUP_CONCAT(DISTINCT dr.full_name || '|' || COALESCE(dr.layer, 1)) as burial_info,
+               GROUP_CONCAT(DISTINCT dr.next_of_kin) as kin_names,
                CASE 
                    WHEN COUNT(DISTINCT dr.id) > 0 THEN 'Occupied'
                    WHEN EXISTS (SELECT 1 FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) THEN 'Occupied'
@@ -156,9 +157,9 @@ if ($conn) {
       left: 0;
       background: #10b981;
       color: white;
-      padding: 3px 10px;
+      padding: 2px 8px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 600;
       white-space: nowrap;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -176,9 +177,9 @@ if ($conn) {
       left: 0;
       background: #3b82f6;
       color: white;
-      padding: 3px 10px;
+      padding: 2px 8px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 600;
       white-space: nowrap;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -279,17 +280,31 @@ if ($conn) {
       left: 0.2px;
       background: rgba(0,0,0,0.9);
       color: white;
-      padding: 0.2px 0.5px;
+      padding: 0.3px 0.6px;
       border-radius: 0.2px;
       font-size: 3.2px; /* Lot name a bit bigger */
       font-weight: 900;
       pointer-events: none;
       display: flex;
       flex-direction: column;
-      line-height: 1;
+      line-height: 1.2; /* Increased line-height for better vertical spacing */
       z-index: 2;
       box-sizing: border-box;
       max-width: calc(100% - 0.4px);
+    }
+
+    .lot-label .kin-tag {
+      font-size: 2.2px; /* Increased font-size for readability */
+      opacity: 1; /* Full opacity for better readability */
+      font-weight: 700;
+      margin-top: 0.4px; /* More vertical separation */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-transform: uppercase;
+      display: block;
+      width: 100%;
+      letter-spacing: 0.1px;
     }
 
     .hidden-marker {
@@ -1424,6 +1439,9 @@ if ($conn) {
                      title="<?php echo htmlspecialchars($lot['lot_number']); ?> - <?php echo $actualStatus; ?>">
                   <div class="lot-label">
                     <span><?php echo htmlspecialchars($lot['lot_number']); ?></span>
+                    <?php if (!empty($lot['kin_names'])): ?>
+                      <span class="kin-tag"><?php echo htmlspecialchars($lot['kin_names']); ?></span>
+                    <?php endif; ?>
                   </div>
                   <?php if ($totalLayers > 1): ?>
                     <div class="lot-layer-indicator" title="<?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?> layers occupied"><?php echo $occupiedLayers; ?>/<?php echo $totalLayers; ?></div>
@@ -1793,7 +1811,7 @@ if ($conn) {
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
-                <span>${lot.section}</span>
+                <span>${lot.block_name ? lot.block_name + ', ' : ''}${lot.section_name || 'No Section'}</span>
               </div>
             </div>
             <div class="status-badge ${lot.status.toLowerCase()}">
