@@ -94,6 +94,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    // 4. Admin edits a user account
+    if (isset($_POST['edit_user']) && $isAdmin) {
+        $editId       = intval($_POST['edit_user_id'] ?? 0);
+        $editFullName = trim($_POST['edit_full_name'] ?? '');
+        $editEmail    = trim($_POST['edit_email'] ?? '');
+        $editRole     = $_POST['edit_role'] ?? 'staff';
+        $editPassword = trim($_POST['edit_password'] ?? '');
+
+        if ($editId) {
+            // Fetch old info for log
+            $oldStmt = $conn->prepare("SELECT full_name, username FROM users WHERE id = :id");
+            $oldStmt->execute([':id' => $editId]);
+            $oldUser = $oldStmt->fetch();
+
+            if ($editPassword !== '') {
+                $upd = $conn->prepare("UPDATE users SET full_name=:fn, email=:em, role=:ro, password_hash=:pw, updated_at=CURRENT_TIMESTAMP WHERE id=:id");
+                $upd->execute([':fn'=>$editFullName,':em'=>$editEmail,':ro'=>$editRole,':pw'=>$editPassword,':id'=>$editId]);
+                logActivity($conn, 'UPDATE_USER', 'users', $editId, "Admin updated account & reset password for " . ($oldUser['username'] ?? "ID $editId"));
+            } else {
+                $upd = $conn->prepare("UPDATE users SET full_name=:fn, email=:em, role=:ro, updated_at=CURRENT_TIMESTAMP WHERE id=:id");
+                $upd->execute([':fn'=>$editFullName,':em'=>$editEmail,':ro'=>$editRole,':id'=>$editId]);
+                logActivity($conn, 'UPDATE_USER', 'users', $editId, "Admin updated account info for " . ($oldUser['username'] ?? "ID $editId"));
+            }
+            $success = 'Account updated successfully';
+        }
+    }
+
+    // 5. Staff submits a password reset request
+    if (isset($_POST['request_password_reset']) && !$isAdmin) {
+        try {
+            $conn->exec("CREATE TABLE IF NOT EXISTS password_reset_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                resolved_at DATETIME,
+                new_password VARCHAR(255),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )");
+            // Only one pending request at a time
+            $existing = $conn->prepare("SELECT id FROM password_reset_requests WHERE user_id=:uid AND status='pending'");
+            $existing->execute([':uid' => $user['id']]);
+            if ($existing->fetch()) {
+                $error = 'You already have a pending reset request. Please wait for admin approval.';
+            } else {
+                $ins = $conn->prepare("INSERT INTO password_reset_requests (user_id) VALUES (:uid)");
+                $ins->execute([':uid' => $user['id']]);
+                logActivity($conn, 'PASSWORD_RESET_REQUEST', 'users', $user['id'], $user['username'] . " requested a password reset");
+                $success = 'Password reset request sent to admin.';
+            }
+        } catch (PDOException $e) {
+            $error = 'Failed to submit request.';
+        }
+    }
+
+    // 6. Admin approves a reset request (sets new password)
+    if (isset($_POST['approve_reset']) && $isAdmin) {
+        $reqId      = intval($_POST['req_id'] ?? 0);
+        $newPass    = trim($_POST['approved_password'] ?? '');
+        $targetUid  = intval($_POST['req_user_id'] ?? 0);
+        if ($reqId && $newPass && $targetUid) {
+            $conn->prepare("UPDATE users SET password_hash=:pw, updated_at=CURRENT_TIMESTAMP WHERE id=:id")
+                 ->execute([':pw'=>$newPass, ':id'=>$targetUid]);
+            $conn->prepare("UPDATE password_reset_requests SET status='approved', resolved_at=CURRENT_TIMESTAMP WHERE id=:id")
+                 ->execute([':id'=>$reqId]);
+            $nameRow = $conn->prepare("SELECT username FROM users WHERE id=:id");
+            $nameRow->execute([':id'=>$targetUid]);
+            $uname = $nameRow->fetchColumn() ?: "ID $targetUid";
+            logActivity($conn, 'CHANGE_PASSWORD', 'users', $targetUid, "Admin approved password reset for $uname");
+            $success = 'Password reset approved and applied.';
+        }
+    }
+
+    // 7. Admin denies a reset request
+    if (isset($_POST['deny_reset']) && $isAdmin) {
+        $reqId = intval($_POST['req_id'] ?? 0);
+        if ($reqId) {
+            $conn->prepare("UPDATE password_reset_requests SET status='denied', resolved_at=CURRENT_TIMESTAMP WHERE id=:id")
+                 ->execute([':id'=>$reqId]);
+            $success = 'Reset request denied.';
+        }
+    }
 }
 
 // 4. Database Export (Admin Only)
@@ -120,6 +203,43 @@ $allUsers = [];
 if ($conn && $isAdmin) {
     $stmt = $conn->query("SELECT * FROM users ORDER BY created_at DESC");
     $allUsers = $stmt->fetchAll();
+}
+
+// Fetch pending password reset requests (admin)
+$pendingResets = [];
+if ($conn && $isAdmin) {
+    try {
+        $conn->exec("CREATE TABLE IF NOT EXISTS password_reset_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            status VARCHAR(20) DEFAULT 'pending',
+            requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            resolved_at DATETIME,
+            new_password VARCHAR(255),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+        $rStmt = $conn->query("SELECT r.*, u.full_name, u.username FROM password_reset_requests r JOIN users u ON r.user_id=u.id WHERE r.status='pending' ORDER BY r.requested_at DESC");
+        $pendingResets = $rStmt->fetchAll();
+    } catch (PDOException $e) { /* table may not exist yet */ }
+}
+
+// Check if current staff has a pending request
+$hasPendingRequest = false;
+if ($conn && !$isAdmin) {
+    try {
+        $conn->exec("CREATE TABLE IF NOT EXISTS password_reset_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            status VARCHAR(20) DEFAULT 'pending',
+            requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            resolved_at DATETIME,
+            new_password VARCHAR(255),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+        $chk = $conn->prepare("SELECT id FROM password_reset_requests WHERE user_id=:uid AND status='pending'");
+        $chk->execute([':uid' => $user['id']]);
+        $hasPendingRequest = (bool)$chk->fetch();
+    } catch (PDOException $e) { /* ignore */ }
 }
 ?>
 <!doctype html>
@@ -421,6 +541,9 @@ if ($conn && $isAdmin) {
 
     .status-alert.error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
     .status-alert.success { background: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
+    .role-admin { background: #dbeafe; color: #1d4ed8; }
+    .role-staff { background: #f1f5f9; color: #475569; }
+    .user-row:hover { background: #f1f5f9; border-color: #e2e8f0; }
   </style>
 </head>
 <body>
@@ -545,13 +668,59 @@ if ($conn && $isAdmin) {
                     <button type="submit" name="change_password" class="modern-btn btn-primary-modern">Update Password</button>
                   </div>
                 </form>
+
+                <?php if (!$isAdmin): ?>
+                  <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #f1f5f9;">
+                    <span class="section-label">FORGOT PASSWORD?</span>
+                    <p style="font-size: 13px; color: #64748b; margin: 0 0 14px;">If you forgot your current password, you can ask an admin to reset it for you.</p>
+                    <?php if ($hasPendingRequest): ?>
+                      <div class="status-alert" style="background:#fef9c3; color:#854d0e; border:1px solid #fde68a; margin-bottom:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        Your password reset request is pending admin approval.
+                      </div>
+                    <?php else: ?>
+                      <form method="POST">
+                        <button type="submit" name="request_password_reset" class="modern-btn btn-secondary-modern">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                          Request Password Reset
+                        </button>
+                      </form>
+                    <?php endif; ?>
+                  </div>
+                <?php endif; ?>
               </div>
             </div>
 
             <?php if ($isAdmin): ?>
               <!-- Admin Tab -->
               <div id="admin-tab" class="tab-panel">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+
+                <?php if (!empty($pendingResets)): ?>
+                  <div style="margin-bottom: 28px;">
+                    <span class="section-label">PENDING PASSWORD RESET REQUESTS</span>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+                      <?php foreach ($pendingResets as $req): ?>
+                        <div style="display:flex; align-items:center; justify-content:space-between; background:#fef9c3; border:1px solid #fde68a; border-radius:12px; padding:14px 18px;">
+                          <div>
+                            <div style="font-size:14px; font-weight:600; color:#1e293b;"><?php echo htmlspecialchars($req['full_name']); ?> <span style="color:#64748b; font-weight:400;">(@<?php echo htmlspecialchars($req['username']); ?>)</span></div>
+                            <div style="font-size:12px; color:#92400e; margin-top:2px;">Requested <?php echo date('M d, Y h:i A', strtotime($req['requested_at'])); ?></div>
+                          </div>
+                          <div style="display:flex; gap:8px; align-items:center;">
+                            <button class="modern-btn btn-primary-modern" style="padding:8px 14px; font-size:13px;" onclick="showApproveReset(<?php echo $req['id']; ?>, <?php echo $req['user_id']; ?>, '<?php echo htmlspecialchars($req['full_name']); ?>')">
+                              Approve & Set Password
+                            </button>
+                            <form method="POST" style="margin:0;">
+                              <input type="hidden" name="req_id" value="<?php echo $req['id']; ?>">
+                              <button type="submit" name="deny_reset" class="modern-btn btn-danger-modern" style="padding:8px 14px; font-size:13px;">Deny</button>
+                            </form>
+                          </div>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
+                <?php endif; ?>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                   <span class="section-label" style="margin-bottom: 0;">ADMINISTRATORS & STAFF</span>
                   <button class="modern-btn btn-primary-modern" onclick="showAddUserModal()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="14" y2="12"/></svg>
@@ -561,27 +730,21 @@ if ($conn && $isAdmin) {
 
                 <div class="team-grid">
                   <?php foreach ($allUsers as $u): ?>
-                    <div class="user-row">
+                    <div class="user-row" style="cursor:pointer;" onclick="showEditUser(<?php echo htmlspecialchars(json_encode($u)); ?>)">
                       <div class="user-info">
-                        <div class="user-avatar-sm"><?php echo getInitials($u['full_name']); ?></div>
+                        <div class="user-avatar-sm" style="background: <?php echo $u['role']==='admin' ? '#2f6df6' : '#64748b'; ?>;"><?php echo getInitials($u['full_name']); ?></div>
                         <div class="user-details">
                           <h4><?php echo htmlspecialchars($u['full_name']); ?></h4>
                           <p><?php echo htmlspecialchars($u['email'] ?: $u['username']); ?></p>
                         </div>
                       </div>
-                      <div style="display: flex; align-items: center; gap: 20px;">
-                        <span class="badge-modern role-<?php echo $u['role']; ?>"><?php echo $u['role']; ?></span>
-                        <div style="text-align: right; min-width: 120px;">
+                      <div style="display: flex; align-items: center; gap: 16px;">
+                        <span class="badge-modern role-<?php echo $u['role']; ?>"><?php echo ucfirst($u['role']); ?></span>
+                        <div style="text-align: right; min-width: 110px;">
                           <div style="font-size: 12px; color: #64748b;">Last Login</div>
                           <div style="font-size: 13px; font-weight: 500; color: #1e293b;"><?php echo $u['last_login'] ? date('M d, Y', strtotime($u['last_login'])) : 'Never'; ?></div>
                         </div>
-                        <?php if ($u['id'] != $user['id']): ?>
-                          <button class="modern-btn btn-danger-modern" style="padding: 10px; display: none;" onclick="confirmDeleteUser(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['full_name']); ?>')">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                          </button>
-                        <?php else: ?>
-                          <div style="width: 38px;"></div>
-                        <?php endif; ?>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                       </div>
                     </div>
                   <?php endforeach; ?>
@@ -614,7 +777,7 @@ if ($conn && $isAdmin) {
     </main>
   </div>
 
-  <!-- Delete User Dialog (Black style like image) -->
+  <!-- Delete User Dialog -->
   <div id="delete-dialog" class="modern-dialog">
     <div style="width: 48px; height: 48px; background: #2d333b; color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
@@ -627,14 +790,116 @@ if ($conn && $isAdmin) {
       <button class="modern-btn btn-secondary-modern" style="background: #2d333b; color: #94a3b8;" onclick="closeDialog('delete-dialog')">Cancel</button>
       <form method="POST" style="margin: 0;">
         <input type="hidden" name="user_id" id="delete-user-id">
-        <button type="submit" name="delete_user" class="modern-btn btn-primary-modern" style="background: #2f6df6; display: none;">Delete Account</button>
+        <button type="submit" name="delete_user" class="modern-btn btn-primary-modern" style="background: #ef4444;">Delete Account</button>
       </form>
     </div>
   </div>
 
-  <!-- Add User Modal (Standard styling) -->
-  <div id="add-user-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 999; align-items: center; justify-content: center;">
-    <div class="modern-card" style="width: 100%; max-width: 500px;">
+  <!-- Edit User Modal -->
+  <div id="edit-user-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:1000; align-items:center; justify-content:center;">
+    <div class="modern-card" style="width:100%; max-width:520px; position:relative; z-index:1001;">
+      <div class="settings-header" style="padding:22px 28px; display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="font-size:18px; margin:0;">Account Details</h2>
+        <button onclick="closeModal('edit-user-modal')" style="background:none; border:none; cursor:pointer; color:#64748b;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form method="POST" style="padding:28px;">
+        <input type="hidden" name="edit_user_id" id="edit_user_id">
+
+        <!-- Account info display -->
+        <div style="display:flex; align-items:center; gap:14px; background:#f8fafc; border-radius:12px; padding:16px; margin-bottom:22px;">
+          <div id="edit_avatar" style="width:48px; height:48px; border-radius:12px; background:#2f6df6; color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px;"></div>
+          <div>
+            <div id="edit_username_display" style="font-size:15px; font-weight:700; color:#1e293b;"></div>
+            <div id="edit_created_display" style="font-size:12px; color:#64748b;"></div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="modern-input-group">
+            <label class="section-label">Full Name</label>
+            <input type="text" name="edit_full_name" id="edit_full_name" class="modern-input" required>
+          </div>
+          <div class="modern-input-group">
+            <label class="section-label">Email</label>
+            <input type="email" name="edit_email" id="edit_email" class="modern-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="modern-input-group">
+            <label class="section-label">Role</label>
+            <select name="edit_role" id="edit_role" class="modern-input">
+              <option value="staff">Staff Member</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          <div class="modern-input-group">
+            <label class="section-label">Username</label>
+            <input type="text" id="edit_username_field" class="modern-input" disabled>
+          </div>
+        </div>
+
+        <!-- Password section -->
+        <div style="border-top:1px solid #f1f5f9; padding-top:18px; margin-top:4px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span class="section-label" style="margin:0;">PASSWORD</span>
+            <button type="button" onclick="togglePasswordField()" id="toggle_pw_btn" style="font-size:12px; color:#2f6df6; background:none; border:none; cursor:pointer; font-weight:600;">Change Password</button>
+          </div>
+          <div id="password_field_wrap" style="display:none;">
+            <div class="modern-input-group" style="margin-bottom:8px;">
+              <label class="section-label">Current Password</label>
+              <div style="position:relative;">
+                <input type="password" id="edit_pw_display" class="modern-input" disabled style="font-family:monospace; letter-spacing:2px;">
+                <button type="button" onclick="toggleShowPassword()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#64748b;">
+                  <svg id="eye_icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="modern-input-group" style="margin-bottom:0;">
+              <label class="section-label">Set New Password</label>
+              <input type="password" name="edit_password" id="edit_password" class="modern-input" placeholder="Leave blank to keep current">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:22px;">
+          <div id="delete_btn_wrap"></div>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="modern-btn btn-secondary-modern" onclick="closeModal('edit-user-modal')">Cancel</button>
+            <button type="submit" name="edit_user" class="modern-btn btn-primary-modern">Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Approve Reset Modal -->
+  <div id="approve-reset-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:1000; align-items:center; justify-content:center;">
+    <div class="modern-card" style="width:100%; max-width:420px; position:relative; z-index:1001;">
+      <div class="settings-header" style="padding:22px 28px;">
+        <h2 style="font-size:18px; margin:0;">Approve Password Reset</h2>
+      </div>
+      <form method="POST" style="padding:28px;">
+        <input type="hidden" name="req_id" id="approve_req_id">
+        <input type="hidden" name="req_user_id" id="approve_user_id">
+        <p style="font-size:14px; color:#475569; margin:0 0 18px;">Set a new password for <strong id="approve_user_name"></strong>.</p>
+        <div class="modern-input-group">
+          <label class="section-label">New Password</label>
+          <input type="text" name="approved_password" class="modern-input" placeholder="Enter new password" required>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+          <button type="button" class="modern-btn btn-secondary-modern" onclick="closeModal('approve-reset-modal')">Cancel</button>
+          <button type="submit" name="approve_reset" class="modern-btn btn-primary-modern">Approve & Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+  <div id="add-user-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; align-items: center; justify-content: center;">
+    <div class="modern-card" style="width: 100%; max-width: 500px; position:relative; z-index:1001;">
       <div class="settings-header" style="padding: 25px 35px;">
         <h2 style="font-size: 20px; margin: 0;">Create New User Account</h2>
       </div>
@@ -661,7 +926,6 @@ if ($conn && $isAdmin) {
             <select name="role" class="modern-input">
               <option value="staff">Staff Member</option>
               <option value="admin">Administrator</option>
-              <option value="viewer">Viewer Only</option>
             </select>
           </div>
         </div>
@@ -676,34 +940,26 @@ if ($conn && $isAdmin) {
   <div id="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 998;" onclick="closeAllModals()"></div>
 
   <script>
+    const currentUserId = <?php echo $user['id']; ?>;
+
     function switchTab(tabId) {
-        // Update nav
+        document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+        document.getElementById(tabId + '-tab').classList.add('active');
+        // match button by onclick attribute
         document.querySelectorAll('.tab-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.textContent.toLowerCase().includes(tabId)) {
+            if (link.getAttribute('onclick') && link.getAttribute('onclick').includes("'" + tabId + "'")) {
                 link.classList.add('active');
             }
         });
-        
-        // Update panels
-        document.querySelectorAll('.tab-panel').forEach(panel => {
-            panel.classList.remove('active');
-        });
-        document.getElementById(tabId + '-tab').classList.add('active');
-        
-        // Save to URL for persistence on refresh
         const url = new URL(window.location);
         url.searchParams.set('tab', tabId);
         window.history.pushState({}, '', url);
     }
 
-    // Check URL for active tab on load
     window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tab = urlParams.get('tab');
-        if (tab && document.getElementById(tab + '-tab')) {
-            switchTab(tab);
-        }
+        const tab = new URLSearchParams(window.location.search).get('tab');
+        if (tab && document.getElementById(tab + '-tab')) switchTab(tab);
     };
 
     function showAddUserModal() {
@@ -711,10 +967,69 @@ if ($conn && $isAdmin) {
         document.getElementById('modal-overlay').style.display = 'block';
     }
 
+    function showEditUser(u) {
+        document.getElementById('edit_user_id').value = u.id;
+        document.getElementById('edit_full_name').value = u.full_name || '';
+        document.getElementById('edit_email').value = u.email || '';
+        document.getElementById('edit_role').value = u.role || 'staff';
+        document.getElementById('edit_username_field').value = u.username || '';
+        document.getElementById('edit_username_display').textContent = '@' + (u.username || '');
+        document.getElementById('edit_created_display').textContent = 'Joined ' + (u.created_at ? u.created_at.substring(0,10) : 'N/A');
+        // Avatar initials
+        const parts = (u.full_name || '').split(' ');
+        const initials = parts.length >= 2 ? parts[0][0] + parts[1][0] : (u.full_name || '?').substring(0,2);
+        document.getElementById('edit_avatar').textContent = initials.toUpperCase();
+        document.getElementById('edit_avatar').style.background = u.role === 'admin' ? '#2f6df6' : '#64748b';
+        // Store password for reveal
+        document.getElementById('edit_pw_display').value = u.password_hash || '';
+        // Delete button — hide for own account
+        const wrap = document.getElementById('delete_btn_wrap');
+        if (u.id != currentUserId) {
+            wrap.innerHTML = `<button type="button" class="modern-btn btn-danger-modern" onclick="confirmDeleteUser(${u.id}, '${(u.full_name||'').replace(/'/g,"\\'")}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                Delete Account
+            </button>`;
+        } else {
+            wrap.innerHTML = '';
+        }
+        // Reset password field
+        document.getElementById('password_field_wrap').style.display = 'none';
+        document.getElementById('toggle_pw_btn').textContent = 'Change Password';
+        document.getElementById('edit-user-modal').style.display = 'flex';
+        document.getElementById('modal-overlay').style.display = 'block';
+    }
+
+    function togglePasswordField() {
+        const wrap = document.getElementById('password_field_wrap');
+        const btn = document.getElementById('toggle_pw_btn');
+        const visible = wrap.style.display !== 'none';
+        wrap.style.display = visible ? 'none' : 'block';
+        btn.textContent = visible ? 'Change Password' : 'Hide';
+    }
+
+    let pwVisible = false;
+    function toggleShowPassword() {
+        pwVisible = !pwVisible;
+        const input = document.getElementById('edit_pw_display');
+        input.type = pwVisible ? 'text' : 'password';
+        document.getElementById('eye_icon').innerHTML = pwVisible
+            ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+            : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+
     function confirmDeleteUser(id, name) {
         document.getElementById('delete-user-id').value = id;
         document.getElementById('delete-user-name').textContent = name;
+        closeModal('edit-user-modal');
         document.getElementById('delete-dialog').style.display = 'block';
+        document.getElementById('modal-overlay').style.display = 'block';
+    }
+
+    function showApproveReset(reqId, userId, name) {
+        document.getElementById('approve_req_id').value = reqId;
+        document.getElementById('approve_user_id').value = userId;
+        document.getElementById('approve_user_name').textContent = name;
+        document.getElementById('approve-reset-modal').style.display = 'flex';
         document.getElementById('modal-overlay').style.display = 'block';
     }
 
@@ -729,8 +1044,9 @@ if ($conn && $isAdmin) {
     }
 
     function closeAllModals() {
-        document.getElementById('add-user-modal').style.display = 'none';
-        document.getElementById('delete-dialog').style.display = 'none';
+        ['add-user-modal','edit-user-modal','delete-dialog','approve-reset-modal'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
         document.getElementById('modal-overlay').style.display = 'none';
     }
   </script>
