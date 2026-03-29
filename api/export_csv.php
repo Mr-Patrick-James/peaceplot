@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/auth.php';
+require_once __DIR__ . '/../config/logger.php';
 
 // Check if user is logged in
 if (!isLoggedIn()) {
@@ -92,6 +93,17 @@ try {
         default:
             die("Invalid report type");
     }
+
+    // Log the export before sending headers
+    $reportLabels = [
+        'all_lots'        => 'All Lots',
+        'vacant_lots'     => 'Vacant Lots',
+        'occupied_lots'   => 'Occupied Lots',
+        'recent_burials'  => 'Recent Burials',
+        'deceased_records'=> 'Deceased Records',
+    ];
+    $reportLabel = $reportLabels[$reportType] ?? $reportType;
+    logActivity($conn, 'EXPORT_CSV', 'reports', null, "Exported CSV report: $reportLabel");
 
     // Set headers for download
     header('Content-Type: text/csv; charset=utf-8');

@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/logger.php';
 
 $database = new Database();
 $conn = $database->getConnection();
@@ -121,6 +122,12 @@ function handlePost($conn, $input) {
         
         if ($stmt->execute()) {
             $lastId = $conn->lastInsertId();
+            // Get burial record name for logging
+            $nameStmt = $conn->prepare("SELECT full_name FROM deceased_records WHERE id = :id");
+            $nameStmt->bindParam(':id', $input['burial_record_id']);
+            $nameStmt->execute();
+            $recordName = $nameStmt->fetchColumn() ?: 'ID ' . $input['burial_record_id'];
+            logActivity($conn, 'ADD_IMAGE', 'burial_record_images', $lastId, "Image added for burial record of $recordName");
             echo json_encode(['success' => true, 'message' => 'Image added successfully', 'id' => $lastId]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to add image']);
@@ -176,6 +183,7 @@ function handlePut($conn, $input) {
         $stmt->bindParam(':is_primary', $input['is_primary']);
         
         if ($stmt->execute()) {
+            logActivity($conn, 'UPDATE_IMAGE', 'burial_record_images', $input['id'], "Image ID " . $input['id'] . " updated");
             echo json_encode(['success' => true, 'message' => 'Image updated successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update image']);
@@ -194,10 +202,18 @@ function handleDelete($conn, $input) {
             return;
         }
         
+        // Get burial record name before deletion
+        $imgStmt = $conn->prepare("SELECT bri.burial_record_id, dr.full_name FROM burial_record_images bri LEFT JOIN deceased_records dr ON bri.burial_record_id = dr.id WHERE bri.id = :id");
+        $imgStmt->bindParam(':id', $id);
+        $imgStmt->execute();
+        $imgInfo = $imgStmt->fetch();
+        $recordName = $imgInfo ? ($imgInfo['full_name'] ?: 'ID ' . $imgInfo['burial_record_id']) : 'unknown';
+
         $stmt = $conn->prepare("DELETE FROM burial_record_images WHERE id = :id");
         $stmt->bindParam(':id', $id);
         
         if ($stmt->execute()) {
+            logActivity($conn, 'DELETE_IMAGE', 'burial_record_images', $id, "Image deleted from burial record of $recordName");
             echo json_encode(['success' => true, 'message' => 'Image deleted successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete image']);

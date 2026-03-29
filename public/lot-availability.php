@@ -10,6 +10,8 @@ require_once __DIR__ . '/../config/database.php';
 $database = new Database();
 $conn = $database->getConnection();
 
+require_once __DIR__ . '/includes/page_tracker.php';
+
 $sections = [];
 $blocks = [];
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : 'Vacant';

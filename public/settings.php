@@ -12,6 +12,8 @@ require_once __DIR__ . '/../config/logger.php';
 $database = new Database();
 $conn = $database->getConnection();
 
+require_once __DIR__ . '/includes/page_tracker.php';
+
 $error = '';
 $success = '';
 
@@ -98,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($action === 'export_db' && $isAdmin) {
     $dbPath = __DIR__ . '/../database/peaceplot.db';
     if (file_exists($dbPath)) {
+        logActivity($conn, 'EXPORT_DB', 'database', null, 'Admin exported a full database backup');
         header('Content-Description: File Transfer');
         header('Content-Type: application/x-sqlite3');
         header('Content-Disposition: attachment; filename="peaceplot_backup_' . date('Y-m-d_His') . '.db"');

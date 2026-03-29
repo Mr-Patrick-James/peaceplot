@@ -10,6 +10,8 @@ require_once __DIR__ . '/../config/database.php';
 $database = new Database();
 $conn = $database->getConnection();
 
+require_once __DIR__ . '/includes/page_tracker.php';
+
 $stats = [
     'total_lots' => 0,
     'vacant_lots' => 0,

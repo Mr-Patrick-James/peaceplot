@@ -10,6 +10,8 @@ require_once __DIR__ . '/../config/database.php';
 $database = new Database();
 $conn = $database->getConnection();
 
+require_once __DIR__ . '/includes/page_tracker.php';
+
 $availableLots = [];
 $sections = [];
 $blocks = [];
@@ -630,7 +632,7 @@ if ($conn) {
         </div>
 
         <div class="header-actions">
-          <button id="viewArchivedBtn" class="btn-outline">
+          <button id="viewArchivedBtn" class="btn-outline" style="display: none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
             <span id="viewArchivedText">View Archived</span>
           </button>
@@ -669,7 +671,7 @@ if ($conn) {
           <div class="stat-info">
             <div class="stat-label">Active Records</div>
             <div class="stat-number"><?php echo $totalRecords; ?></div>
-            <div class="stat-sub">Excluding archived</div>
+            <div class="stat-sub" style="display: none;">Excluding archived</div>
           </div>
         </div>
         <div class="stat-box">

@@ -3,6 +3,7 @@ require_once __DIR__ . '/../config/auth.php';
 requireLogin();
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/logger.php';
 
 $database = new Database();
 $db = $database->getConnection();
@@ -113,7 +114,9 @@ if ($method === 'GET') {
             $data['map_width'] ?? null,
             $data['map_height'] ?? null
         ]);
-        echo json_encode(['id' => $db->lastInsertId(), 'message' => 'Section created successfully']);
+        $newId = $db->lastInsertId();
+        logActivity($db, 'ADD_SECTION', 'sections', $newId, "New section '" . $data['name'] . "' added");
+        echo json_encode(['id' => $newId, 'message' => 'Section created successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
         $error = $e->getMessage();
@@ -149,6 +152,7 @@ if ($method === 'GET') {
             $data['map_height'] ?? null,
             $data['id']
         ]);
+        logActivity($db, 'UPDATE_SECTION', 'sections', $data['id'], "Section '" . $data['name'] . "' updated");
         echo json_encode(['message' => 'Section updated successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
@@ -170,6 +174,7 @@ if ($method === 'GET') {
     try {
         $stmt = $db->prepare("DELETE FROM sections WHERE id = ?");
         $stmt->execute([$id]);
+        logActivity($db, 'DELETE_SECTION', 'sections', $id, "Section ID $id deleted");
         echo json_encode(['message' => 'Section deleted successfully']);
     } catch (PDOException $e) {
         http_response_code(500);

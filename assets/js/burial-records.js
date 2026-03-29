@@ -1137,10 +1137,11 @@ function createViewModal(record) {
                                 <label>Age</label>
                                 <span>${record.age || 'N/A'}</span>
                             </div>
-                            <div class="info-item full-width">
+                            <!-- Cause of Death hidden temporarily -->
+                            <!-- <div class="info-item full-width">
                                 <label>Cause of Death</label>
                                 <span>${record.cause_of_death || 'N/A'}</span>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                     
@@ -1173,6 +1174,8 @@ function createViewModal(record) {
                     </div>
                 </div>
                 
+                <!-- Next of Kin hidden temporarily -->
+                <!--
                 <div class="info-section" style="margin-bottom:25px;">
                     <div class="section-header">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1194,8 +1197,10 @@ function createViewModal(record) {
                         </div>
                     </div>
                 </div>
+                -->
                 
-                <!-- Notes Section -->
+                <!-- Farewell Notes hidden temporarily -->
+                <!--
                 <div class="info-section" style="margin-bottom:25px;">
                     <div class="section-header">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1208,6 +1213,7 @@ function createViewModal(record) {
                         ${record.deceased_info || 'N/A'}
                     </div>
                 </div>
+                -->
                 
                 <div class="info-section">
                     <div class="section-header">
@@ -1307,10 +1313,11 @@ function createRecordModal(record = null) {
                             <label>Age</label>
                             <input type="number" name="age" value="${record?.age || ''}" min="0" placeholder="e.g. 75">
                         </div>
-                        <div class="form-group">
+                        <!-- Cause of Death hidden temporarily -->
+                        <!-- <div class="form-group">
                             <label>Cause of Death</label>
                             <input type="text" name="cause_of_death" value="${record?.cause_of_death || ''}" placeholder="e.g. Natural Causes">
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -1344,7 +1351,8 @@ function createRecordModal(record = null) {
                     </div>
                 </div>
 
-                <!-- Next of Kin Section -->
+                <!-- Next of Kin Section hidden temporarily -->
+                <!--
                 <div class="info-section" style="margin-bottom: 25px;">
                     <div class="section-header">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1366,8 +1374,10 @@ function createRecordModal(record = null) {
                         </div>
                     </div>
                 </div>
+                -->
 
-                <!-- Notes Section -->
+                <!-- Farewell Notes hidden temporarily -->
+                <!--
                 <div class="info-section" style="margin-bottom: 25px;">
                     <div class="section-header">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1380,6 +1390,7 @@ function createRecordModal(record = null) {
                         <textarea name="deceased_info" style="min-height:100px;" placeholder="Brief info about the deceased person...">${record?.deceased_info || ''}</textarea>
                     </div>
                 </div>
+                -->
 
                 <!-- Image Upload Section -->
                 <div class="info-section">

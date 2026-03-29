@@ -16,20 +16,25 @@ $showArchived = isset($_GET['view']) && $_GET['view'] === 'archived';
 
 if ($conn) {
     try {
-        // Ensure column exists (migration helper)
+        // Ensure columns exist (migration helpers)
         $conn->exec("ALTER TABLE activity_logs ADD COLUMN is_archived BOOLEAN DEFAULT 0");
+    } catch (PDOException $e) {
+        // Ignore if already exists
+    }
+    try {
+        $conn->exec("ALTER TABLE activity_logs ADD COLUMN session_id VARCHAR(128)");
     } catch (PDOException $e) {
         // Ignore if already exists
     }
 
     try {
         $archivedCondition = $showArchived ? "al.is_archived = 1" : "al.is_archived = 0";
-        // Fetch activity logs, excluding login actions
+        // Fetch all activity logs including session events
         $stmt = $conn->query("
             SELECT al.*, u.full_name as user_name 
             FROM activity_logs al 
             LEFT JOIN users u ON al.user_id = u.id 
-            WHERE al.action != 'LOGIN' AND $archivedCondition
+            WHERE $archivedCondition
             ORDER BY al.created_at DESC
         ");
         $logs = $stmt->fetchAll();
@@ -179,7 +184,7 @@ if ($conn) {
         </div>
 
         <div class="header-actions">
-          <a href="history.php?view=<?php echo $showArchived ? 'active' : 'archived'; ?>" class="btn-outline" style="text-decoration:none;">
+          <a href="history.php?view=<?php echo $showArchived ? 'active' : 'archived'; ?>" class="btn-outline" style="text-decoration:none; display: none;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 8v13H3V8"></path>
               <path d="M1 3h22v5H1z"></path>
@@ -254,6 +259,13 @@ if ($conn) {
                         if (strpos($log['action'], 'DELETE') !== false) $badgeClass = 'badge-danger';
                         if (strpos($log['action'], 'ADD') !== false) $badgeClass = 'badge-success';
                         if (strpos($log['action'], 'UPDATE') !== false) $badgeClass = 'badge-warning';
+                        if ($log['action'] === 'LOGIN') $badgeClass = 'badge-login';
+                        if ($log['action'] === 'LOGOUT') $badgeClass = 'badge-logout';
+                        if ($log['action'] === 'FAILED_LOGIN') $badgeClass = 'badge-danger';
+                        if ($log['action'] === 'PAGE_VIEW') $badgeClass = 'badge-page';
+                        if ($log['action'] === 'EXPORT_CSV') $badgeClass = 'badge-warning';
+                        if ($log['action'] === 'EXPORT_DB') $badgeClass = 'badge-warning';
+                        if (strpos($log['action'], 'IMAGE') !== false) $badgeClass = 'badge-image';
                       ?>
                       <span class="badge <?php echo $badgeClass; ?>" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; text-transform: uppercase;">
                         <?php echo htmlspecialchars($log['action']); ?>
@@ -264,7 +276,8 @@ if ($conn) {
                       <button class="btn-action archive-single-btn" 
                               data-id="<?php echo $log['id']; ?>" 
                               data-action-type="<?php echo $showArchived ? 'restore' : 'archive'; ?>"
-                              title="<?php echo $showArchived ? 'Restore to Active' : 'Move to Archive'; ?>">
+                              title="<?php echo $showArchived ? 'Restore to Active' : 'Move to Archive'; ?>"
+                              style="display: none;">
                         <span class="icon">
                           <?php if ($showArchived): ?>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -295,6 +308,10 @@ if ($conn) {
     .badge-danger { background: #fee2e2; color: #991b1b; }
     .badge-warning { background: #fef9c3; color: #854d0e; }
     .badge-info { background: #e0f2fe; color: #075985; }
+    .badge-login { background: #ede9fe; color: #5b21b6; }
+    .badge-logout { background: #f1f5f9; color: #475569; }
+    .badge-page { background: #f0fdf4; color: #15803d; }
+    .badge-image { background: #fdf4ff; color: #7e22ce; }
   </style>
 
   <script src="../assets/js/app.js"></script>

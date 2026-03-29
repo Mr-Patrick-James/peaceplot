@@ -37,8 +37,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['email']     = $user['email'];
                     $_SESSION['role']      = $user['role'];
                     $conn->prepare("UPDATE users SET last_login=CURRENT_TIMESTAMP WHERE id=:id")->execute([':id'=>$user['id']]);
+                    // Log successful login
+                    require_once __DIR__ . '/config/logger.php';
+                    logActivity($conn, 'LOGIN', 'users', $user['id'], 'User "' . $user['username'] . '" logged in from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
                     header('Location: public/dashboard.php'); exit;
-                } else { $error = 'Invalid username or password.'; }
+                } else {
+                    $error = 'Invalid username or password.';
+                    // Log failed login attempt
+                    try {
+                        require_once __DIR__ . '/config/logger.php';
+                        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+                        $stmt2 = $conn->prepare("INSERT INTO activity_logs (user_id, action, table_name, record_id, description, ip_address, session_id) VALUES (NULL, 'FAILED_LOGIN', 'users', NULL, :desc, :ip, :sid)");
+                        $stmt2->execute([':desc' => 'Failed login attempt for username "' . htmlspecialchars($username) . '" from ' . $ip, ':ip' => $ip, ':sid' => session_id()]);
+                    } catch (Exception $e) { /* silent */ }
+                }
             } else { $error = 'Database connection failed.'; }
         } catch (Exception $e) { $error = 'Error: '.$e->getMessage(); }
     } else { $error = 'Please enter both username and password.'; }
