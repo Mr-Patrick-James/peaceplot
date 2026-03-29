@@ -645,21 +645,12 @@ if ($db) {
           </a>
           <div class="dropdown-content">
             <a href="index.php"><span>Manage Lots</span></a>
-            <a href="sections.php" class="active"><span>Manage Sections</span></a>
             <a href="blocks.php"><span>Manage Blocks</span></a>
+            <a href="sections.php" class="active"><span>Manage Sections</span></a>
+            <a href="lot-availability.php"><span>Lots</span></a>
+            <a href="map-editor.php"><span>Map Editor</span></a>
           </div>
         </div>
-
-        <a href="lot-availability.php">
-          <span class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v20" />
-              <path d="M2 12h20" />
-              <path d="M4 4l16 16" />
-            </svg>
-          </span>
-          <span>Lots</span>
-        </a>
 
         <a href="cemetery-map.php">
           <span class="icon">
@@ -670,16 +661,6 @@ if ($db) {
             </svg>
           </span>
           <span>Cemetery Map</span>
-        </a>
-
-        <a href="map-editor.php">
-          <span class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
-          </span>
-          <span>Map Editor</span>
         </a>
 
         <a href="burial-records.php">

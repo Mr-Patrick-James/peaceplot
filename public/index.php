@@ -1062,21 +1062,12 @@ if ($conn) {
           </a>
           <div class="dropdown-content">
             <a href="index.php" class="active"><span>Manage Lots</span></a>
-            <a href="sections.php"><span>Manage Sections</span></a>
             <a href="blocks.php"><span>Manage Blocks</span></a>
+            <a href="sections.php"><span>Manage Sections</span></a>
+            <a href="lot-availability.php"><span>Lots</span></a>
+            <a href="map-editor.php"><span>Map Editor</span></a>
           </div>
         </div>
-
-        <a href="lot-availability.php">
-          <span class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v20" />
-              <path d="M2 12h20" />
-              <path d="M4 4l16 16" />
-            </svg>
-          </span>
-          <span>Lots</span>
-        </a>
 
         <a href="cemetery-map.php">
           <span class="icon">
@@ -1087,16 +1078,6 @@ if ($conn) {
             </svg>
           </span>
           <span>Cemetery Map</span>
-        </a>
-
-        <a href="map-editor.php">
-          <span class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </span>
-          <span>Map Editor</span>
         </a>
 
         <a href="burial-records.php">
@@ -1171,7 +1152,7 @@ if ($conn) {
         </div>
 
         <div class="header-actions">
-          <button class="btn-outline">
+          <button class="btn-outline" style="display: none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
             Archived
           </button>
