@@ -102,24 +102,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $editEmail    = trim($_POST['edit_email'] ?? '');
         $editRole     = $_POST['edit_role'] ?? 'staff';
         $editPassword = trim($_POST['edit_password'] ?? '');
+        $editUsername = trim($_POST['edit_username'] ?? '');
 
         if ($editId) {
-            // Fetch old info for log
             $oldStmt = $conn->prepare("SELECT full_name, username FROM users WHERE id = :id");
             $oldStmt->execute([':id' => $editId]);
             $oldUser = $oldStmt->fetch();
 
+            // Check username uniqueness if changed
+            if ($editUsername && $editUsername !== $oldUser['username']) {
+                $chk = $conn->prepare("SELECT id FROM users WHERE username = :u AND id != :id");
+                $chk->execute([':u' => $editUsername, ':id' => $editId]);
+                if ($chk->fetch()) {
+                    $error = "Username \"$editUsername\" is already taken.";
+                    goto skip_edit;
+                }
+            }
+
+            $newUsername = $editUsername ?: $oldUser['username'];
+
             if ($editPassword !== '') {
-                $upd = $conn->prepare("UPDATE users SET full_name=:fn, email=:em, role=:ro, password_hash=:pw, updated_at=CURRENT_TIMESTAMP WHERE id=:id");
-                $upd->execute([':fn'=>$editFullName,':em'=>$editEmail,':ro'=>$editRole,':pw'=>$editPassword,':id'=>$editId]);
-                logActivity($conn, 'UPDATE_USER', 'users', $editId, "Admin updated account & reset password for " . ($oldUser['username'] ?? "ID $editId"));
+                $upd = $conn->prepare("UPDATE users SET full_name=:fn, email=:em, role=:ro, username=:un, password_hash=:pw, updated_at=CURRENT_TIMESTAMP WHERE id=:id");
+                $upd->execute([':fn'=>$editFullName,':em'=>$editEmail,':ro'=>$editRole,':un'=>$newUsername,':pw'=>$editPassword,':id'=>$editId]);
+                logActivity($conn, 'UPDATE_USER', 'users', $editId, "Admin updated account & reset password for " . $oldUser['username']);
             } else {
-                $upd = $conn->prepare("UPDATE users SET full_name=:fn, email=:em, role=:ro, updated_at=CURRENT_TIMESTAMP WHERE id=:id");
-                $upd->execute([':fn'=>$editFullName,':em'=>$editEmail,':ro'=>$editRole,':id'=>$editId]);
-                logActivity($conn, 'UPDATE_USER', 'users', $editId, "Admin updated account info for " . ($oldUser['username'] ?? "ID $editId"));
+                $upd = $conn->prepare("UPDATE users SET full_name=:fn, email=:em, role=:ro, username=:un, updated_at=CURRENT_TIMESTAMP WHERE id=:id");
+                $upd->execute([':fn'=>$editFullName,':em'=>$editEmail,':ro'=>$editRole,':un'=>$newUsername,':id'=>$editId]);
+                logActivity($conn, 'UPDATE_USER', 'users', $editId, "Admin updated account info for " . $oldUser['username']);
             }
             $success = 'Account updated successfully';
         }
+        skip_edit:;
     }
 
     // 5. Staff submits a password reset request
@@ -649,44 +662,26 @@ if ($conn && !$isAdmin) {
 
               <div class="form-section" style="margin-bottom: 0;">
                 <span class="section-label">SECURITY</span>
-                <form method="POST">
-                  <div class="modern-input-group">
-                    <label class="section-label">Current password</label>
-                    <input type="password" name="current_password" class="modern-input" placeholder="••••••••" required>
+                <?php if (!$isAdmin): ?>
+                <p style="font-size:13px; color:#64748b; margin:0 0 18px;">To change your password, submit a reset request and an admin will set a new one for you.</p>
+                <?php if ($hasPendingRequest): ?>
+                  <div class="status-alert" style="background:#fef9c3; color:#854d0e; border:1px solid #fde68a; margin-bottom:0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Your password reset request is pending admin approval.
                   </div>
-                  <div class="form-row">
-                    <div class="modern-input-group">
-                      <label class="section-label">New password</label>
-                      <input type="password" name="new_password" class="modern-input" placeholder="Minimum 8 characters" required>
-                    </div>
-                    <div class="modern-input-group">
-                      <label class="section-label">Confirm new password</label>
-                      <input type="password" name="confirm_password" class="modern-input" placeholder="Re-type new password" required>
-                    </div>
-                  </div>
-                  <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
-                    <button type="submit" name="change_password" class="modern-btn btn-primary-modern">Update Password</button>
-                  </div>
-                </form>
+                <?php else: ?>
+                  <form method="POST">
+                    <button type="submit" name="request_password_reset" class="modern-btn btn-secondary-modern">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      Request Password Reset
+                    </button>
+                  </form>
+                <?php endif; ?>
+                <?php else: ?>
+                <p style="font-size:13px; color:#64748b; margin:0;">Manage your password from the <strong>Admin Management</strong> tab by clicking your account.</p>
+                <?php endif; ?>
 
                 <?php if (!$isAdmin): ?>
-                  <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #f1f5f9;">
-                    <span class="section-label">FORGOT PASSWORD?</span>
-                    <p style="font-size: 13px; color: #64748b; margin: 0 0 14px;">If you forgot your current password, you can ask an admin to reset it for you.</p>
-                    <?php if ($hasPendingRequest): ?>
-                      <div class="status-alert" style="background:#fef9c3; color:#854d0e; border:1px solid #fde68a; margin-bottom:0;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Your password reset request is pending admin approval.
-                      </div>
-                    <?php else: ?>
-                      <form method="POST">
-                        <button type="submit" name="request_password_reset" class="modern-btn btn-secondary-modern">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                          Request Password Reset
-                        </button>
-                      </form>
-                    <?php endif; ?>
-                  </div>
                 <?php endif; ?>
               </div>
             </div>
@@ -837,7 +832,7 @@ if ($conn && !$isAdmin) {
           </div>
           <div class="modern-input-group">
             <label class="section-label">Username</label>
-            <input type="text" id="edit_username_field" class="modern-input" disabled>
+            <input type="text" name="edit_username" id="edit_username_field" class="modern-input">
           </div>
         </div>
 
