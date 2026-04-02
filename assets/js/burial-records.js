@@ -581,7 +581,7 @@ function renderRecords(records) {
                         <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #3b82f6; border-color: #dbeafe;" data-action="edit" data-record-id="${record.id}" title="Edit Record">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         </button>
-                        <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #ef4444; border-color: #fee2e2; display: none;" data-action="delete" data-record-id="${record.id}" title="Archive Record">
+                        <button class="btn-outline" style="padding: 6px; width: 32px; height: 32px; justify-content: center; color: #ef4444; border-color: #fee2e2;" data-action="delete" data-record-id="${record.id}" title="Archive Record">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     ` : `
