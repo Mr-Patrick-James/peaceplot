@@ -1141,7 +1141,10 @@ function createViewModal(record) {
                             <!-- <div class="info-item full-width">
                                 <label>Cause of Death</label>
                                 <span>${record.cause_of_death || 'N/A'}</span>
-                            </div> -->
+                            </div> -->                           <div class="info-item full-width">
+                                <label>Cause of Death</label>
+                                <span>${record.cause_of_death || 'N/A'}</span>
+                            </div>
                         </div>
                     </div>
                     
@@ -1214,6 +1217,41 @@ function createViewModal(record) {
                     </div>
                 </div>
                 -->
+                
+                <div class="info-section">         <div class="info-section" style="margin-bottom:25px;">
+                    <div class="section-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="8.5" cy="7" r="4"/>
+                            <line x1="20" y1="8" x2="20" y2="14"/>
+                            <line x1="23" y1="11" x2="17" y2="11"/>
+                        </svg>
+                        <h3>Next of Kin</h3>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Name</label>
+                            <span>${record.next_of_kin || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Contact</label>
+                            <span>${record.next_of_kin_contact || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-section" style="margin-bottom:25px;">
+                    <div class="section-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <h3>Farewell Notes</h3>
+                    </div>
+                    <div class="remarks-content">
+                        ${record.deceased_info || 'N/A'}
+                    </div>
+                </div>
                 
                 <div class="info-section">
                     <div class="section-header">
@@ -1317,7 +1355,10 @@ function createRecordModal(record = null) {
                         <!-- <div class="form-group">
                             <label>Cause of Death</label>
                             <input type="text" name="cause_of_death" value="${record?.cause_of_death || ''}" placeholder="e.g. Natural Causes">
-                        </div> -->
+                        </div> -->                  <div class="form-group">
+                            <label>Cause of Death</label>
+                            <input type="text" name="cause_of_death" value="${record?.cause_of_death || ''}" placeholder="e.g. Natural Causes">
+                        </div>
                     </div>
                 </div>
 
@@ -1391,6 +1432,41 @@ function createRecordModal(record = null) {
                     </div>
                 </div>
                 -->
+
+                <!-- Image Upload Section -->              <div class="info-section" style="margin-bottom: 25px;">
+                    <div class="section-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="8.5" cy="7" r="4"/>
+                            <line x1="20" y1="8" x2="20" y2="14"/>
+                            <line x1="23" y1="11" x2="17" y2="11"/>
+                        </svg>
+                        <h3>Next of Kin Information</h3>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="form-group">
+                            <label>Next of Kin Name</label>
+                            <input type="text" name="next_of_kin" value="${record?.next_of_kin || ''}" placeholder="Contact Person Name">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number / Address</label>
+                            <input type="text" name="next_of_kin_contact" value="${record?.next_of_kin_contact || ''}" placeholder="Phone or Email">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section" style="margin-bottom: 25px;">
+                    <div class="section-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <h3>Farewell Notes</h3>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <textarea name="deceased_info" style="min-height:100px;" placeholder="Brief info about the deceased person...">${record?.deceased_info || ''}</textarea>
+                    </div>
+                </div>
 
                 <!-- Image Upload Section -->
                 <div class="info-section">
