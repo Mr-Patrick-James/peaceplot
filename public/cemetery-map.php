@@ -1442,6 +1442,9 @@ if ($conn) {
                      title="<?php echo htmlspecialchars($lot['lot_number']); ?> - <?php echo $actualStatus; ?>">
                   <div class="lot-label">
                     <span><?php echo htmlspecialchars($lot['lot_number']); ?></span>
+                    <?php if (!empty($lot['section_name'])): ?>
+                      <span class="kin-tag"><?php echo htmlspecialchars($lot['section_name']); ?></span>
+                    <?php endif; ?>
                     <?php if (!empty($lot['deceased_names'])): ?>
                       <span class="deceased-tag">Deceased: <?php echo htmlspecialchars($lot['deceased_names']); ?></span>
                     <?php endif; ?>
@@ -2677,6 +2680,9 @@ if ($conn) {
             const label = marker.querySelector('.lot-label');
             if (label) {
                 let labelHtml = `<span>${lot.lot_number}</span>`;
+                if (lot.section_name) {
+                    labelHtml += `<span class="kin-tag">${lot.section_name}</span>`;
+                }
                 if (lot.deceased_names) {
                     labelHtml += `<span class="deceased-tag">Deceased: ${lot.deceased_names}</span>`;
                 }
