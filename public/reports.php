@@ -343,12 +343,12 @@ if ($conn) {
                 style="padding:8px 12px 8px 34px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
             </div>
             <div style="position:relative;">
-              <button id="blockFilterBtn" onclick="togglePopover('blockFilterPopover')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <button id="blockFilterBtn" onclick="event.stopPropagation(); openFilterPopover('blockFilterPopover')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                 Filters
                 <span id="blockFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
               </button>
-              <div id="blockFilterPopover" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:280px; padding:20px;">
+              <div id="blockFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:280px; padding:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                   <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
                   <button onclick="clearBlockFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
@@ -418,12 +418,12 @@ if ($conn) {
                 style="padding:8px 12px 8px 34px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
             </div>
             <div style="position:relative;">
-              <button id="sectionFilterBtn" onclick="togglePopover('sectionFilterPopover')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <button id="sectionFilterBtn" onclick="event.stopPropagation(); openFilterPopover('sectionFilterPopover')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                 Filters
                 <span id="sectionFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
               </button>
-              <div id="sectionFilterPopover" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:320px; padding:20px;">
+              <div id="sectionFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:320px; padding:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                   <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
                   <button onclick="clearSectionFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
@@ -503,14 +503,14 @@ if ($conn) {
                 style="padding:8px 12px 8px 34px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:200px;">
             </div>
             <div style="position:relative;">
-              <button id="burialFilterBtn" onclick="togglePopover('burialFilterPopover')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <button id="burialFilterBtn" onclick="event.stopPropagation(); openFilterPopover('burialFilterPopover')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                 Filters
                 <span id="burialFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
               </button>
 
               <!-- Filter Popover -->
-              <div id="burialFilterPopover" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:520px; padding:20px;">
+              <div id="burialFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:520px; padding:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                   <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
                   <div style="display:flex; gap:12px;">
@@ -560,6 +560,18 @@ if ($conn) {
                       <input type="date" id="burialDateTo" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
                     </div>
                   </div>
+                  <!-- Age Range -->
+                  <div style="grid-column:1/-1;">
+                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      Age Range
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                      <input type="number" id="burialAgeMin" min="0" max="150" placeholder="Min age" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                      <span style="color:#94a3b8; font-size:13px;">to</span>
+                      <input type="number" id="burialAgeMax" min="0" max="150" placeholder="Max age" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -593,7 +605,8 @@ if ($conn) {
                   <tr data-name="<?php echo strtolower(htmlspecialchars($burial['full_name'])); ?>"
                       data-section="<?php echo strtolower(htmlspecialchars($burial['section'] ?? '')); ?>"
                       data-block="<?php echo strtolower(htmlspecialchars($burial['block'] ?? '')); ?>"
-                      data-date="<?php echo $burial['date_of_burial'] ?? ''; ?>">
+                      data-date="<?php echo $burial['date_of_burial'] ?? ''; ?>"
+                      data-age="<?php echo intval($burial['age'] ?? 0); ?>">
                     <td><?php echo htmlspecialchars($burial['full_name']); ?></td>
                     <td><?php echo htmlspecialchars($burial['lot_number'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars($burial['section'] ?: '—'); ?></td>
@@ -620,7 +633,7 @@ if ($conn) {
     // ── Popover toggle ─────────────────────────────────────────
     const POPOVERS = ['blockFilterPopover','sectionFilterPopover','burialFilterPopover'];
 
-    function togglePopover(popId) {
+    function openFilterPopover(popId) {
       const isOpen = document.getElementById(popId).style.display === 'block';
       POPOVERS.forEach(id => document.getElementById(id).style.display = 'none');
       if (!isOpen) document.getElementById(popId).style.display = 'block';
@@ -705,6 +718,8 @@ if ($conn) {
       const search   = (document.getElementById('burialSearch').value || '').toLowerCase().trim();
       const dateFrom = document.getElementById('burialDateFrom').value;
       const dateTo   = document.getElementById('burialDateTo').value;
+      const ageMin   = document.getElementById('burialAgeMin').value !== '' ? parseInt(document.getElementById('burialAgeMin').value) : null;
+      const ageMax   = document.getElementById('burialAgeMax').value !== '' ? parseInt(document.getElementById('burialAgeMax').value) : null;
       const blocks   = [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value);
       const sections = [...document.querySelectorAll('.burial-section-cb:checked')].map(c => c.value);
       let visible = 0;
@@ -713,16 +728,19 @@ if ($conn) {
         const sec  = (row.dataset.section || '').toLowerCase();
         const blk  = (row.dataset.block   || '').toLowerCase();
         const date =  row.dataset.date    || '';
+        const age  = parseInt(row.dataset.age  || 0);
         let show = !search || name.includes(search);
         if (blocks.length)   show = show && blocks.includes(blk);
         if (sections.length) show = show && sections.includes(sec);
         if (dateFrom)        show = show && date >= dateFrom;
         if (dateTo)          show = show && date <= dateTo;
+        if (ageMin !== null) show = show && age >= ageMin;
+        if (ageMax !== null) show = show && age <= ageMax;
         row.style.display = show ? '' : 'none';
         if (show) visible++;
       });
       document.getElementById('burialCount').textContent = `Showing ${visible} record${visible !== 1 ? 's' : ''}`;
-      const activeCount = blocks.length + sections.length + (dateFrom || dateTo ? 1 : 0);
+      const activeCount = blocks.length + sections.length + (dateFrom || dateTo ? 1 : 0) + (ageMin !== null || ageMax !== null ? 1 : 0);
       const badge = document.getElementById('burialFilterBadge');
       badge.style.display = activeCount > 0 ? 'inline' : 'none';
       badge.textContent = activeCount;
@@ -731,6 +749,8 @@ if ($conn) {
       document.querySelectorAll('.burial-block-cb, .burial-section-cb').forEach(cb => cb.checked = false);
       document.getElementById('burialDateFrom').value = '';
       document.getElementById('burialDateTo').value   = '';
+      document.getElementById('burialAgeMin').value   = '';
+      document.getElementById('burialAgeMax').value   = '';
       document.getElementById('burialSearch').value   = '';
       applyBurialFilters();
     }
