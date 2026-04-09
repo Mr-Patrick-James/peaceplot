@@ -1,101 +1,96 @@
-# PeacePlot - Cemetery Management System
+<div align="center">
 
-A comprehensive web-based cemetery management system for tracking cemetery lots, burial records, reservations, and maintenance with a visual map editor.
+<img src="assets/preview/landing.png" alt="PeacePlot Landing Page" width="100%" style="border-radius:12px;" />
+
+<br/><br/>
+
+# ⛪ PeacePlot
+### Cemetery Management System
+
+**Barcenaga Holy Spirit Parish** — Digital cemetery records, lot management, and burial tracking.
+
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](#license)
+[![PHP](https://img.shields.io/badge/PHP-8.x-blue.svg)](https://php.net)
+[![SQLite](https://img.shields.io/badge/Database-SQLite-lightblue.svg)](https://sqlite.org)
+
+</div>
+
+---
+
+<div align="center">
+
+<img src="assets/preview/dash.png" alt="PeacePlot Dashboard" width="100%" style="border-radius:12px;" />
+
+</div>
+
+---
+
+## Overview
+
+PeacePlot is a web-based cemetery management system built for **Barcenaga Holy Spirit Parish**. It provides a complete digital solution for managing cemetery lots, burial records, and administrative operations — replacing manual paper-based processes with a clean, modern interface.
+
+---
+
+## Features
+
+- **Cemetery Map** — Interactive visual map with lot markers showing section, block, and occupancy status
+- **Burial Records** — Full CRUD for deceased records with archiving, restore, and image attachments
+- **Lot Management** — Manage cemetery lots with multi-layer burial support
+- **Block & Section Management** — Organize lots into blocks and sections with map coordinates
+- **Reports** — Printable reports for lots, sections, blocks, and burial records with advanced filtering
+- **System History** — Full audit trail tracking all user actions, logins, page visits, and data changes
+- **User Management** — Admin can add, edit, delete staff accounts and approve password reset requests
+- **Settings Security** — Identity verification gate before accessing system settings
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | PHP 8.x |
+| Database | SQLite (via PDO) |
+| Frontend | Vanilla JS, HTML5, CSS3 |
+| Server | Apache (WAMP/XAMPP) |
+
+---
+
+## Getting Started
+
+**Requirements:** PHP 8.x, Apache, SQLite PDO extension enabled
+
+```bash
+# 1. Clone or copy to your web server directory
+#    e.g. C:/wamp64/www/peaceplot
+
+# 2. Initialize the database
+# Open in browser:
+http://localhost/peaceplot/database/web_init.php
+
+# 3. Access the system
+http://localhost/peaceplot/
+```
+
+Default admin credentials are set during database initialization.
+
+---
 
 ## Project Structure
 
 ```
 peaceplot/
-├── api/                    # API endpoints for CRUD operations
-│   ├── burial_images.php   # Handle burial photo uploads/retrieval
-│   ├── burial_records.php  # CRUD for deceased records
-│   ├── cemetery_lots.php   # CRUD for lot management
-│   ├── lot_layers.php      # Multi-layer burial management
-│   └── save_map_coordinates.php # Save lot positions on map
-├── assets/                 # Static assets
-│   ├── css/               # Stylesheets (styles.css)
-│   ├── js/                # JavaScript files (api.js, app.js)
-│   └── images/            # Map and burial images
-├── config/                # Configuration files
-│   ├── auth.php           # Session and login management
-│   └── database.php       # Database connection class
-├── database/              # Database files and scripts
-│   ├── schema.sql         # Database schema
-│   ├── seed.sql           # Sample data
-│   ├── init.php           # Database initialization script
-│   └── peaceplot.db       # SQLite database (generated)
-└── public/                # Public PHP pages
-    ├── index.php          # Lot Management dashboard
-    ├── dashboard.php      # Main analytics dashboard
-    ├── lot-availability.php # Lot status overview
-    ├── cemetery-map.php   # Interactive visual map viewer
-    ├── map-editor.php     # Visual lot coordinate editor
-    ├── burial-records.php # Burial record management
-    ├── history.php        # Activity history log
-    └── reports.php        # System reports
+├── public/          # All page views (dashboard, map, records, reports...)
+├── api/             # REST API endpoints
+├── assets/          # CSS, JS, images
+├── config/          # Database, auth, logger
+├── database/        # SQLite DB file and schema
+└── index.php        # Login / landing page
 ```
 
-## Features
+---
 
-- **Interactive Cemetery Map**: Visual representation of the cemetery layout with real-time status indicators (Vacant, Occupied, Maintenance).
-- **Advanced Map Editor**: Draw and assign coordinates to lots directly on the map image.
-- **Accurate Pinning & Centering**: High-precision coordinate system that ensures markers align perfectly across all zoom levels and screen sizes.
-- **World-Space Centering**: Automatically focuses and zooms into specific lots when highlighted from other pages.
-- **Multi-Layer Burials**: Manage multiple burials within a single lot using a layer-based system.
-- **Burial Image Gallery**: Upload and view multiple photos per burial record with a modern lightbox viewer.
-- **Dashboard Analytics**: Real-time overview of lot availability, section summaries, and system statistics.
-- **Audit Logging**: Comprehensive activity history to track all changes made to lots and records.
+## License
 
-## Setup Instructions
+Copyright © 2025 **Barcenaga Holy Spirit Parish**. All rights reserved.
 
-### Prerequisites
-- WAMP/XAMPP server (Apache + PHP)
-- PHP 7.4 or higher
-- SQLite3 extension enabled in PHP (`php.ini`)
-
-### Installation
-
-1. **Clone or copy the project** to your WAMP `www` directory:
-   ```
-   c:\wamp64\www\peaceplot\
-   ```
-
-2. **Initialize the Database**:
-   - Open your browser and navigate to:
-     ```
-     http://localhost/peaceplot/database/init.php
-     ```
-   - This script will create the SQLite database and seed it with initial data.
-
-3. **Access the Application**:
-   - The main entry point is the dashboard:
-     ```
-     http://localhost/peaceplot/public/dashboard.php
-     ```
-
-### Default Login Credentials
-- **Username**: admin
-- **Password**: admin123
-- ⚠️ **Security**: Change the default password in a production environment.
-
-## Technology Stack
-
-- **Backend**: PHP 7.4+ (Core logic and API)
-- **Frontend**: HTML5, CSS3 (Modern Responsive UI), Vanilla JavaScript
-- **Database**: SQLite3 (Serverless data persistence)
-- **Map System**: Custom JavaScript-based canvas with multi-touch zoom and pan support.
-
-## Development Status
-
-- ✅ **Core Architecture**: Project structure and database schema finalized.
-- ✅ **Lot Management**: Full CRUD functionality implemented.
-- ✅ **Interactive Map**: High-precision pinning and world-space centering logic completed.
-- ✅ **Map Editor**: Visual drawing tools for coordinate assignment.
-- ✅ **Burial Records**: Deceased tracking with multi-layer support.
-- ✅ **Media Management**: Burial photo uploads and gallery viewer.
-- ✅ **Authentication**: Secure login system with role-based access.
-- ✅ **Audit Logs**: Activity tracking for system transparency.
-
-## Support
-
-For support or custom feature requests, contact: admin@peaceplot.com
+This software is proprietary. Unauthorized copying, distribution, or modification is strictly prohibited. See [LICENSE](LICENSE) for full terms.
