@@ -617,23 +617,22 @@ if ($conn) {
       window.location.href = '../api/export_csv.php?type=' + reportType;
     }
 
-    // Shared popover toggle
-    function togglePopover(popId, btnId) {
-      const pop = document.getElementById(popId);
-      const isOpen = pop.style.display !== 'none';
-      // Close all popovers first
-      ['blockFilterPopover','sectionFilterPopover','burialFilterPopover'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
-      });
-      if (!isOpen) pop.style.display = 'block';
+    // ── Popover toggle ─────────────────────────────────────────
+    const POPOVERS = ['blockFilterPopover','sectionFilterPopover','burialFilterPopover'];
+
+    function togglePopover(popId) {
+      const isOpen = document.getElementById(popId).style.display === 'block';
+      POPOVERS.forEach(id => document.getElementById(id).style.display = 'none');
+      if (!isOpen) document.getElementById(popId).style.display = 'block';
     }
 
-    // Close all popovers on outside click
     document.addEventListener('click', e => {
-      ['blockFilterPopover','sectionFilterPopover','burialFilterPopover'].forEach(popId => {
+      POPOVERS.forEach(popId => {
         const pop = document.getElementById(popId);
-        const btn = document.getElementById(popId.replace('Popover','Btn'));
-        if (pop && btn && !btn.contains(e.target) && !pop.contains(e.target)) {
+        if (!pop || pop.style.display !== 'block') return;
+        const btnId = popId.replace('FilterPopover','FilterBtn');
+        const btn   = document.getElementById(btnId);
+        if (!pop.contains(e.target) && (!btn || !btn.contains(e.target))) {
           pop.style.display = 'none';
         }
       });
@@ -641,12 +640,12 @@ if ($conn) {
 
     // ── Block filters ──────────────────────────────────────────
     function applyBlockFilters() {
-      const search      = document.getElementById('blockSearch').value.toLowerCase().trim();
+      const search      = (document.getElementById('blockSearch').value || '').toLowerCase().trim();
       const hasOccupied = document.getElementById('blockHasOccupied').checked;
       const hasVacant   = document.getElementById('blockHasVacant').checked;
       let visible = 0;
       document.querySelectorAll('#blockTable tbody tr').forEach(row => {
-        const name     = row.dataset.block || '';
+        const name     = (row.dataset.block || '').toLowerCase();
         const occupied = parseInt(row.dataset.occupied || 0);
         const vacant   = parseInt(row.dataset.vacant   || 0);
         let show = !search || name.includes(search);
@@ -667,18 +666,17 @@ if ($conn) {
       document.getElementById('blockSearch').value = '';
       applyBlockFilters();
     }
-    function filterBlockTable() { applyBlockFilters(); }
 
     // ── Section filters ────────────────────────────────────────
     function applySectionFilters() {
-      const search      = document.getElementById('sectionSearch').value.toLowerCase().trim();
+      const search      = (document.getElementById('sectionSearch').value || '').toLowerCase().trim();
       const blocks      = [...document.querySelectorAll('.sec-block-cb:checked')].map(c => c.value);
       const hasOccupied = document.getElementById('secHasOccupied').checked;
       const hasVacant   = document.getElementById('secHasVacant').checked;
       let visible = 0;
       document.querySelectorAll('#sectionTable tbody tr').forEach(row => {
-        const sec      = row.dataset.section || '';
-        const blk      = row.dataset.block   || '';
+        const sec      = (row.dataset.section || '').toLowerCase();
+        const blk      = (row.dataset.block   || '').toLowerCase();
         const occupied = parseInt(row.dataset.occupied || 0);
         const vacant   = parseInt(row.dataset.vacant   || 0);
         let show = !search || sec.includes(search) || blk.includes(search);
@@ -701,44 +699,34 @@ if ($conn) {
       document.getElementById('sectionSearch').value = '';
       applySectionFilters();
     }
-    function filterSections() { applySectionFilters(); }
 
-    function toggleBurialFilter() { togglePopover('burialFilterPopover','burialFilterBtn'); }
-
+    // ── Burial filters ─────────────────────────────────────────
     function applyBurialFilters() {
-      const search   = document.getElementById('burialSearch').value.toLowerCase().trim();
+      const search   = (document.getElementById('burialSearch').value || '').toLowerCase().trim();
       const dateFrom = document.getElementById('burialDateFrom').value;
       const dateTo   = document.getElementById('burialDateTo').value;
       const blocks   = [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value);
       const sections = [...document.querySelectorAll('.burial-section-cb:checked')].map(c => c.value);
-
       let visible = 0;
       document.querySelectorAll('#burialTable tbody tr').forEach(row => {
-        const name  = row.dataset.name    || '';
-        const sec   = row.dataset.section || '';
-        const blk   = row.dataset.block   || '';
-        const date  = row.dataset.date    || '';
-
+        const name = (row.dataset.name    || '').toLowerCase();
+        const sec  = (row.dataset.section || '').toLowerCase();
+        const blk  = (row.dataset.block   || '').toLowerCase();
+        const date =  row.dataset.date    || '';
         let show = !search || name.includes(search);
         if (blocks.length)   show = show && blocks.includes(blk);
         if (sections.length) show = show && sections.includes(sec);
         if (dateFrom)        show = show && date >= dateFrom;
         if (dateTo)          show = show && date <= dateTo;
-
         row.style.display = show ? '' : 'none';
         if (show) visible++;
       });
-
-      // Update count
       document.getElementById('burialCount').textContent = `Showing ${visible} record${visible !== 1 ? 's' : ''}`;
-
-      // Update badge
       const activeCount = blocks.length + sections.length + (dateFrom || dateTo ? 1 : 0);
       const badge = document.getElementById('burialFilterBadge');
       badge.style.display = activeCount > 0 ? 'inline' : 'none';
       badge.textContent = activeCount;
     }
-
     function clearBurialFilters() {
       document.querySelectorAll('.burial-block-cb, .burial-section-cb').forEach(cb => cb.checked = false);
       document.getElementById('burialDateFrom').value = '';
@@ -746,8 +734,6 @@ if ($conn) {
       document.getElementById('burialSearch').value   = '';
       applyBurialFilters();
     }
-
-    function filterBurials() { applyBurialFilters(); }
 
     // Report data from PHP
     const reportData = {
