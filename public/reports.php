@@ -18,42 +18,58 @@ $stats = [
     'occupied_lots' => 0,
     'total_burials' => 0,
     'sections' => [],
+    'blocks' => [],
     'recent_burials' => []
 ];
 
 if ($conn) {
     try {
-        // Get overall statistics
-        $stats['total_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
-        $stats['vacant_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Vacant'")->fetchColumn();
+        $stats['total_lots']    = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
+        $stats['vacant_lots']   = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Vacant'")->fetchColumn();
         $stats['occupied_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots WHERE status = 'Occupied'")->fetchColumn();
         $stats['total_burials'] = $conn->query("SELECT COUNT(*) FROM deceased_records")->fetchColumn();
-        
-        // Get section-wise summary
+
+        // Section-wise summary
         $stmt = $conn->query("
-            SELECT 
-                s.name as section,
+            SELECT s.name as section, b.name as block_name,
                 COUNT(cl.id) as total,
                 SUM(CASE WHEN cl.status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
                 SUM(CASE WHEN cl.status = 'Vacant' THEN 1 ELSE 0 END) as vacant
             FROM sections s
+            LEFT JOIN blocks b ON s.block_id = b.id
             LEFT JOIN cemetery_lots cl ON s.id = cl.section_id
             GROUP BY s.id
-            ORDER BY s.name
+            ORDER BY b.name, s.name
         ");
         $stats['sections'] = $stmt->fetchAll();
-        
-        // Get recent burials
+
+        // Block-wise summary (sections count + lots count)
         $stmt = $conn->query("
-            SELECT dr.*, cl.lot_number, s.name as section 
+            SELECT b.name as block,
+                COUNT(DISTINCT s.id) as section_count,
+                COUNT(cl.id) as total_lots,
+                SUM(CASE WHEN cl.status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
+                SUM(CASE WHEN cl.status = 'Vacant' THEN 1 ELSE 0 END) as vacant
+            FROM blocks b
+            LEFT JOIN sections s ON s.block_id = b.id
+            LEFT JOIN cemetery_lots cl ON cl.section_id = s.id
+            GROUP BY b.id
+            ORDER BY b.name
+        ");
+        $stats['blocks'] = $stmt->fetchAll();
+
+        // Recent burials
+        $stmt = $conn->query("
+            SELECT dr.*, cl.lot_number, s.name as section, b.name as block
             FROM deceased_records dr
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
             LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
             ORDER BY dr.date_of_burial DESC
             LIMIT 10
         ");
         $stats['recent_burials'] = $stmt->fetchAll();
-        
+
     } catch (PDOException $e) {
         $error = $e->getMessage();
     }
@@ -197,9 +213,9 @@ if ($conn) {
         </div>
 
         <div class="header-actions">
-          <button class="btn-outline" onclick="window.print()">
+          <button class="btn-outline" onclick="printReport('all')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v8H6z" /></svg>
-            Print
+            Print Full Report
           </button>
         </div>
       </header>
@@ -232,20 +248,12 @@ if ($conn) {
               </svg>
               <span>View Report</span>
             </a>
-            <button class="report-btn report-btn-print" onclick="window.print()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9V2h12v7" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <path d="M6 14h12v8H6z" />
-              </svg>
+            <button class="report-btn report-btn-print" onclick="printReport('all_lots')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               <span>Print</span>
             </button>
             <button class="report-btn report-btn-export" onclick="exportToCSV('all_lots')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Export CSV</span>
             </button>
           </div>
@@ -253,39 +261,22 @@ if ($conn) {
 
         <div class="report-card report-green">
           <div class="report-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6" />
-              <path d="M16 13H8" />
-              <path d="M16 17H8" />
-              <path d="M10 9H8" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
           </div>
           <div class="report-number"><?php echo $stats['vacant_lots']; ?></div>
           <div class="report-title">Vacant Lots Report</div>
           <div class="report-desc">Detailed list of all available cemetery lots for new burials</div>
           <div class="report-actions">
             <a href="lot-availability.php?status=Vacant" class="report-btn report-btn-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span>View Report</span>
             </a>
-            <button class="report-btn report-btn-print" onclick="window.print()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9V2h12v7" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <path d="M6 14h12v8H6z" />
-              </svg>
+            <button class="report-btn report-btn-print" onclick="printReport('vacant_lots')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               <span>Print</span>
             </button>
             <button class="report-btn report-btn-export" onclick="exportToCSV('vacant_lots')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Export CSV</span>
             </button>
           </div>
@@ -293,39 +284,22 @@ if ($conn) {
 
         <div class="report-card report-orange">
           <div class="report-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6" />
-              <path d="M16 13H8" />
-              <path d="M16 17H8" />
-              <path d="M10 9H8" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
           </div>
           <div class="report-number"><?php echo $stats['occupied_lots']; ?></div>
           <div class="report-title">Occupied Lots Report</div>
           <div class="report-desc">Comprehensive record of all occupied lots with burial information</div>
           <div class="report-actions">
             <a href="lot-availability.php?status=Occupied" class="report-btn report-btn-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span>View Report</span>
             </a>
-            <button class="report-btn report-btn-print" onclick="window.print()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9V2h12v7" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <path d="M6 14h12v8H6z" />
-              </svg>
+            <button class="report-btn report-btn-print" onclick="printReport('occupied_lots')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               <span>Print</span>
             </button>
             <button class="report-btn report-btn-export" onclick="exportToCSV('occupied_lots')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Export CSV</span>
             </button>
           </div>
@@ -333,45 +307,111 @@ if ($conn) {
 
         <div class="report-card" style="border-top-color: #f43f5e;">
           <div class="report-icon" style="color: #f43f5e; background: #fff1f2;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M8 6h8" /><path d="M8 10h8" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h8"/></svg>
           </div>
           <div class="report-number"><?php echo $stats['total_burials']; ?></div>
           <div class="report-title">Total Burial Records</div>
           <div class="report-desc">Complete database of all registered deceased individuals</div>
           <div class="report-actions">
             <a href="burial-records.php" class="report-btn report-btn-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span>View Report</span>
             </a>
-            <button class="report-btn report-btn-print" onclick="window.print()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9V2h12v7" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <path d="M6 14h12v8H6z" />
-              </svg>
+            <button class="report-btn report-btn-print" onclick="printReport('deceased_records')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               <span>Print</span>
             </button>
             <button class="report-btn report-btn-export" onclick="exportToCSV('deceased_records')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Export CSV</span>
             </button>
           </div>
         </div>
       </div>
 
+      <!-- Block Report Table -->
       <section class="card" style="margin-top:24px">
-        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border)">
-          <h2 class="card-title">Section-wise Summary Report</h2>
+        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h2 class="card-title">Block Summary Report</h2>
+            <p class="card-sub">Sections and lots per block</p>
+          </div>
+          <button class="report-btn report-btn-print" onclick="printReport('blocks')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+            <span>Print</span>
+          </button>
         </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th align="left">Block</th>
+                <th align="right">Sections</th>
+                <th align="right">Total Lots</th>
+                <th align="right">Occupied</th>
+                <th align="right">Vacant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if (empty($stats['blocks'])): ?>
+                <tr><td colspan="5" style="text-align:center; color:#6b7280;">No blocks found</td></tr>
+              <?php else: ?>
+                <?php foreach ($stats['blocks'] as $block): ?>
+                  <tr>
+                    <td><?php echo htmlspecialchars($block['block']); ?></td>
+                    <td align="right"><?php echo $block['section_count']; ?></td>
+                    <td align="right"><?php echo $block['total_lots']; ?></td>
+                    <td align="right"><span class="table-number occupied-color"><?php echo $block['occupied']; ?></span></td>
+                    <td align="right"><span class="table-number vacant-color"><?php echo $block['vacant']; ?></span></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section Report Table -->
+      <section class="card" style="margin-top:24px">
+        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h2 class="card-title">Section Summary Report</h2>
+            <p class="card-sub">Lots per section with block reference</p>
+          </div>
+          <button class="report-btn report-btn-print" onclick="printReport('sections')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+            <span>Print</span>
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th align="left">Section</th>
+                <th align="left">Block</th>
+                <th align="right">Total Lots</th>
+                <th align="right">Occupied</th>
+                <th align="right">Vacant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if (empty($stats['sections'])): ?>
+                <tr><td colspan="5" style="text-align:center; color:#6b7280;">No sections found</td></tr>
+              <?php else: ?>
+                <?php foreach ($stats['sections'] as $section): ?>
+                  <tr>
+                    <td><?php echo htmlspecialchars($section['section']); ?></td>
+                    <td><?php echo htmlspecialchars($section['block_name'] ?? '—'); ?></td>
+                    <td align="right"><?php echo $section['total']; ?></td>
+                    <td align="right"><span class="table-number occupied-color"><?php echo $section['occupied']; ?></span></td>
+                    <td align="right"><span class="table-number vacant-color"><?php echo $section['vacant']; ?></span></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
         <div class="table-wrap">
           <table class="table">
@@ -458,6 +498,146 @@ if ($conn) {
   <script>
     function exportToCSV(reportType) {
       window.location.href = '../api/export_csv.php?type=' + reportType;
+    }
+
+    // Report data from PHP
+    const reportData = {
+      stats: {
+        total_lots: <?php echo $stats['total_lots']; ?>,
+        vacant_lots: <?php echo $stats['vacant_lots']; ?>,
+        occupied_lots: <?php echo $stats['occupied_lots']; ?>,
+        total_burials: <?php echo $stats['total_burials']; ?>
+      },
+      sections: <?php echo json_encode($stats['sections']); ?>,
+      blocks: <?php echo json_encode($stats['blocks']); ?>,
+      recent_burials: <?php echo json_encode($stats['recent_burials']); ?>
+    };
+
+    const reportTitles = {
+      all_lots:         'Total Cemetery Lots Report',
+      vacant_lots:      'Vacant Lots Report',
+      occupied_lots:    'Occupied Lots Report',
+      deceased_records: 'Total Burial Records Report',
+      blocks:           'Block Summary Report',
+      sections:         'Section Summary Report',
+      all:              'Full Cemetery Report'
+    };
+
+    function printReport(type) {
+      const title = reportTitles[type] || 'Cemetery Report';
+      const now = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+      let bodyHtml = '';
+
+      // Summary stats block
+      if (type === 'all' || type === 'all_lots') {
+        bodyHtml += `
+          <div class="stat-row">
+            <div class="stat-box"><div class="stat-num">${reportData.stats.total_lots}</div><div class="stat-lbl">Total Lots</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:#22c55e">${reportData.stats.vacant_lots}</div><div class="stat-lbl">Vacant</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:#f97316">${reportData.stats.occupied_lots}</div><div class="stat-lbl">Occupied</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:#3b82f6">${reportData.stats.total_burials}</div><div class="stat-lbl">Burial Records</div></div>
+          </div>`;
+      }
+
+      // Section summary table
+      if (type === 'all' || type === 'all_lots' || type === 'vacant_lots' || type === 'occupied_lots') {
+        bodyHtml += `<h3>Section-wise Summary</h3>
+          <table>
+            <thead><tr><th>Section</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
+            <tbody>`;
+        reportData.sections.forEach(s => {
+          if (type === 'vacant_lots' && s.vacant == 0) return;
+          if (type === 'occupied_lots' && s.occupied == 0) return;
+          bodyHtml += `<tr><td>${s.section}</td><td>${s.total}</td><td>${s.occupied}</td><td>${s.vacant}</td></tr>`;
+        });
+        bodyHtml += `</tbody></table>`;
+      }
+
+      // Block summary table
+      if (type === 'blocks' || type === 'all') {
+        bodyHtml += `<h3>Block Summary</h3>
+          <table>
+            <thead><tr><th>Block</th><th>Sections</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
+            <tbody>`;
+        reportData.blocks.forEach(b => {
+          bodyHtml += `<tr><td>${b.block}</td><td>${b.section_count}</td><td>${b.total_lots}</td><td>${b.occupied}</td><td>${b.vacant}</td></tr>`;
+        });
+        bodyHtml += `</tbody></table>`;
+      }
+
+      // Sections with block reference
+      if (type === 'sections' || type === 'all') {
+        bodyHtml += `<h3>Section Summary</h3>
+          <table>
+            <thead><tr><th>Section</th><th>Block</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
+            <tbody>`;
+        reportData.sections.forEach(s => {
+          bodyHtml += `<tr><td>${s.section}</td><td>${s.block_name || '—'}</td><td>${s.total}</td><td>${s.occupied}</td><td>${s.vacant}</td></tr>`;
+        });
+        bodyHtml += `</tbody></table>`;
+      }
+
+      // Recent burials / deceased records table
+      if (type === 'all' || type === 'deceased_records') {
+        bodyHtml += `<h3>Burial Records</h3>
+          <table>
+            <thead><tr><th>Full Name</th><th>Lot</th><th>Section</th><th>Date of Burial</th><th>Age</th></tr></thead>
+            <tbody>`;
+        reportData.recent_burials.forEach(b => {
+          const burialDate = b.date_of_burial ? new Date(b.date_of_burial).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+          bodyHtml += `<tr>
+            <td>${b.full_name}</td>
+            <td>${b.lot_number || '—'}</td>
+            <td>${b.section || '—'}</td>
+            <td>${burialDate}</td>
+            <td>${b.age || '—'}</td>
+          </tr>`;
+        });
+        bodyHtml += `</tbody></table>`;
+      }
+
+      const win = window.open('', '_blank', 'width=900,height=700');
+      win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${title}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1e293b; padding: 40px; }
+    .header { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 16px; margin-bottom: 24px; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header .org { font-size: 15px; color: #475569; margin-top: 4px; }
+    .header .meta { font-size: 12px; color: #94a3b8; margin-top: 6px; }
+    .stat-row { display: flex; gap: 16px; margin-bottom: 28px; }
+    .stat-box { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; }
+    .stat-num { font-size: 28px; font-weight: 700; }
+    .stat-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 4px; }
+    h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin: 24px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f8fafc; text-align: left; padding: 9px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+    .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+    @media print {
+      body { padding: 20px; }
+      button { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="org">Barcenaga Holy Spirit Parish</div>
+    <h1>${title}</h1>
+    <div class="meta">Generated on ${now} &nbsp;|&nbsp; PeacePlot Cemetery Management System</div>
+  </div>
+  ${bodyHtml}
+  <div class="footer">© 2025 Barcenaga Holy Spirit Parish — PeacePlot Cemetery Management System</div>
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`);
+      win.document.close();
     }
   </script>
   <script src="../assets/js/app.js"></script>
