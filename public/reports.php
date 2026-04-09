@@ -58,15 +58,15 @@ if ($conn) {
         ");
         $stats['blocks'] = $stmt->fetchAll();
 
-        // Recent burials
+        // All burials (no limit)
         $stmt = $conn->query("
             SELECT dr.*, cl.lot_number, s.name as section, b.name as block
             FROM deceased_records dr
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
             LEFT JOIN sections s ON cl.section_id = s.id
             LEFT JOIN blocks b ON s.block_id = b.id
+            WHERE dr.is_archived = 0
             ORDER BY dr.date_of_burial DESC
-            LIMIT 10
         ");
         $stats['recent_burials'] = $stmt->fetchAll();
 
@@ -334,17 +334,38 @@ if ($conn) {
         <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h2 class="card-title">Block Summary Report</h2>
-            <p class="card-sub">Sections and lots per block</p>
+            <p class="card-sub" id="blockCount">All <?php echo count($stats['blocks']); ?> blocks</p>
           </div>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <input type="text" id="blockSearch" placeholder="Search block..." oninput="filterBlockTable()"
-              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
-            <select id="blockStatusFilter" onchange="filterBlockTable()"
-              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
-              <option value="">All Status</option>
-              <option value="has_occupied">Has Occupied</option>
-              <option value="has_vacant">Has Vacant</option>
-            </select>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="position:relative;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="blockSearch" placeholder="Search block..." oninput="applyBlockFilters()"
+                style="padding:8px 12px 8px 34px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
+            </div>
+            <div style="position:relative;">
+              <button id="blockFilterBtn" onclick="togglePopover('blockFilterPopover','blockFilterBtn')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Filters
+                <span id="blockFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
+              </button>
+              <div id="blockFilterPopover" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:280px; padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                  <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
+                  <button onclick="clearBlockFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
+                </div>
+                <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Occupancy Status</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                    <input type="checkbox" id="blockHasOccupied" onchange="applyBlockFilters()" style="width:16px;height:16px;cursor:pointer;">
+                    Has Occupied Lots
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                    <input type="checkbox" id="blockHasVacant" onchange="applyBlockFilters()" style="width:16px;height:16px;cursor:pointer;">
+                    Has Vacant Lots
+                  </label>
+                </div>
+              </div>
+            </div>
             <button class="report-btn report-btn-print" onclick="printReport('blocks')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               Print
@@ -388,24 +409,47 @@ if ($conn) {
         <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h2 class="card-title">Section Summary Report</h2>
-            <p class="card-sub">Lots per section with block reference</p>
+            <p class="card-sub" id="sectionCount">All <?php echo count($stats['sections']); ?> sections</p>
           </div>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <input type="text" id="sectionSearch" placeholder="Search section..." oninput="filterSections()"
-              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
-            <select id="sectionBlockFilter" onchange="filterSections()"
-              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
-              <option value="">All Blocks</option>
-              <?php foreach ($stats['blocks'] as $b): ?>
-                <option value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"><?php echo htmlspecialchars($b['block']); ?></option>
-              <?php endforeach; ?>
-            </select>
-            <select id="sectionStatusFilter" onchange="filterSections()"
-              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
-              <option value="">All Status</option>
-              <option value="has_occupied">Has Occupied</option>
-              <option value="has_vacant">Has Vacant</option>
-            </select>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="position:relative;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="sectionSearch" placeholder="Search section..." oninput="applySectionFilters()"
+                style="padding:8px 12px 8px 34px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
+            </div>
+            <div style="position:relative;">
+              <button id="sectionFilterBtn" onclick="togglePopover('sectionFilterPopover','sectionFilterBtn')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Filters
+                <span id="sectionFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
+              </button>
+              <div id="sectionFilterPopover" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:320px; padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                  <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
+                  <button onclick="clearSectionFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
+                </div>
+                <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Blocks</div>
+                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; max-height:140px; overflow-y:auto;">
+                  <?php foreach ($stats['blocks'] as $b): ?>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                      <input type="checkbox" class="sec-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
+                      <?php echo htmlspecialchars($b['block']); ?>
+                    </label>
+                  <?php endforeach; ?>
+                </div>
+                <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Occupancy Status</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                    <input type="checkbox" id="secHasOccupied" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
+                    Has Occupied Lots
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                    <input type="checkbox" id="secHasVacant" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
+                    Has Vacant Lots
+                  </label>
+                </div>
+              </div>
+            </div>
             <button class="report-btn report-btn-print" onclick="printReport('sections')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               Print
@@ -445,31 +489,85 @@ if ($conn) {
         </div>
       </section>
 
-      <!-- Recent Burials Table -->
+      <!-- Burial Records Table with Filter Panel -->
       <section class="card" style="margin-top:24px">
         <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
-            <h2 class="card-title">Recent Burials</h2>
-            <p class="card-sub">Last 10 burial records</p>
+            <h2 class="card-title">Burial Records</h2>
+            <p class="card-sub" id="burialCount">All <?php echo count($stats['recent_burials']); ?> records</p>
           </div>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <input type="text" id="burialSearch" placeholder="Search name..." oninput="filterBurials()"
-              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
-            <select id="burialBlockFilter" onchange="filterBurials()"
-              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
-              <option value="">All Blocks</option>
-              <?php foreach ($stats['blocks'] as $b): ?>
-                <option value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"><?php echo htmlspecialchars($b['block']); ?></option>
-              <?php endforeach; ?>
-            </select>
-            <select id="burialSectionFilter" onchange="filterBurials()"
-              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
-              <option value="">All Sections</option>
-              <?php foreach ($stats['sections'] as $s): ?>
-                <option value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"><?php echo htmlspecialchars($s['section']); ?></option>
-              <?php endforeach; ?>
-            </select>
-            <button class="report-btn report-btn-export" onclick="exportToCSV('recent_burials')">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="position:relative;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="burialSearch" placeholder="Search name..." oninput="applyBurialFilters()"
+                style="padding:8px 12px 8px 34px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:200px;">
+            </div>
+            <div style="position:relative;">
+              <button id="burialFilterBtn" onclick="togglePopover('burialFilterPopover','burialFilterBtn')" style="padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Filters
+                <span id="burialFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
+              </button>
+
+              <!-- Filter Popover -->
+              <div id="burialFilterPopover" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:520px; padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
+                  <div style="display:flex; gap:12px;">
+                    <button onclick="clearBurialFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                  <!-- Blocks -->
+                  <div>
+                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                      Blocks
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
+                      <?php foreach ($stats['blocks'] as $b): ?>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                          <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>" onchange="applyBurialFilters()" style="width:16px;height:16px;border-radius:4px;cursor:pointer;">
+                          <?php echo htmlspecialchars($b['block']); ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
+                  <!-- Sections -->
+                  <div>
+                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                      Sections
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
+                      <?php foreach ($stats['sections'] as $s): ?>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                          <input type="checkbox" class="burial-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>" onchange="applyBurialFilters()" style="width:16px;height:16px;border-radius:4px;cursor:pointer;">
+                          <?php echo htmlspecialchars($s['section']); ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
+                  <!-- Date Range -->
+                  <div style="grid-column:1/-1;">
+                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      Date of Burial Range
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                      <input type="date" id="burialDateFrom" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                      <span style="color:#94a3b8; font-size:13px;">to</span>
+                      <input type="date" id="burialDateTo" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button class="report-btn report-btn-print" onclick="printReport('deceased_records')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+              Print
+            </button>
+            <button class="report-btn report-btn-export" onclick="exportToCSV('deceased_records')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Export CSV
             </button>
@@ -494,7 +592,8 @@ if ($conn) {
                 <?php foreach ($stats['recent_burials'] as $burial): ?>
                   <tr data-name="<?php echo strtolower(htmlspecialchars($burial['full_name'])); ?>"
                       data-section="<?php echo strtolower(htmlspecialchars($burial['section'] ?? '')); ?>"
-                      data-block="<?php echo strtolower(htmlspecialchars($burial['block'] ?? '')); ?>">
+                      data-block="<?php echo strtolower(htmlspecialchars($burial['block'] ?? '')); ?>"
+                      data-date="<?php echo $burial['date_of_burial'] ?? ''; ?>">
                     <td><?php echo htmlspecialchars($burial['full_name']); ?></td>
                     <td><?php echo htmlspecialchars($burial['lot_number'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars($burial['section'] ?: '—'); ?></td>
@@ -518,52 +617,137 @@ if ($conn) {
       window.location.href = '../api/export_csv.php?type=' + reportType;
     }
 
-    // Block table filter
-    function filterBlockTable() {
-      const search = document.getElementById('blockSearch').value.toLowerCase().trim();
-      const status = document.getElementById('blockStatusFilter').value;
-      document.querySelectorAll('#blockTable tbody tr').forEach(row => {
-        const blockName = row.dataset.block || '';
-        const occupied  = parseInt(row.dataset.occupied || 0);
-        const vacant    = parseInt(row.dataset.vacant   || 0);
-        let show = blockName.includes(search);
-        if (status === 'has_occupied') show = show && occupied > 0;
-        if (status === 'has_vacant')   show = show && vacant   > 0;
-        row.style.display = show ? '' : 'none';
+    // Shared popover toggle
+    function togglePopover(popId, btnId) {
+      const pop = document.getElementById(popId);
+      const isOpen = pop.style.display !== 'none';
+      // Close all popovers first
+      ['blockFilterPopover','sectionFilterPopover','burialFilterPopover'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
       });
+      if (!isOpen) pop.style.display = 'block';
     }
 
-    function filterSections() {
-      const search  = document.getElementById('sectionSearch').value.toLowerCase().trim();
-      const block   = document.getElementById('sectionBlockFilter').value.toLowerCase();
-      const status  = document.getElementById('sectionStatusFilter').value;
-      document.querySelectorAll('#sectionTable tbody tr').forEach(row => {
-        const secName  = row.dataset.section || '';
-        const blkName  = row.dataset.block   || '';
+    // Close all popovers on outside click
+    document.addEventListener('click', e => {
+      ['blockFilterPopover','sectionFilterPopover','burialFilterPopover'].forEach(popId => {
+        const pop = document.getElementById(popId);
+        const btn = document.getElementById(popId.replace('Popover','Btn'));
+        if (pop && btn && !btn.contains(e.target) && !pop.contains(e.target)) {
+          pop.style.display = 'none';
+        }
+      });
+    });
+
+    // ── Block filters ──────────────────────────────────────────
+    function applyBlockFilters() {
+      const search      = document.getElementById('blockSearch').value.toLowerCase().trim();
+      const hasOccupied = document.getElementById('blockHasOccupied').checked;
+      const hasVacant   = document.getElementById('blockHasVacant').checked;
+      let visible = 0;
+      document.querySelectorAll('#blockTable tbody tr').forEach(row => {
+        const name     = row.dataset.block || '';
         const occupied = parseInt(row.dataset.occupied || 0);
         const vacant   = parseInt(row.dataset.vacant   || 0);
-        let show = secName.includes(search) || blkName.includes(search);
-        if (block)  show = show && blkName === block;
-        if (status === 'has_occupied') show = show && occupied > 0;
-        if (status === 'has_vacant')   show = show && vacant   > 0;
+        let show = !search || name.includes(search);
+        if (hasOccupied) show = show && occupied > 0;
+        if (hasVacant)   show = show && vacant   > 0;
         row.style.display = show ? '' : 'none';
+        if (show) visible++;
       });
+      document.getElementById('blockCount').textContent = `Showing ${visible} block${visible !== 1 ? 's' : ''}`;
+      const active = (hasOccupied ? 1 : 0) + (hasVacant ? 1 : 0);
+      const badge = document.getElementById('blockFilterBadge');
+      badge.style.display = active > 0 ? 'inline' : 'none';
+      badge.textContent = active;
+    }
+    function clearBlockFilters() {
+      document.getElementById('blockHasOccupied').checked = false;
+      document.getElementById('blockHasVacant').checked   = false;
+      document.getElementById('blockSearch').value = '';
+      applyBlockFilters();
+    }
+    function filterBlockTable() { applyBlockFilters(); }
+
+    // ── Section filters ────────────────────────────────────────
+    function applySectionFilters() {
+      const search      = document.getElementById('sectionSearch').value.toLowerCase().trim();
+      const blocks      = [...document.querySelectorAll('.sec-block-cb:checked')].map(c => c.value);
+      const hasOccupied = document.getElementById('secHasOccupied').checked;
+      const hasVacant   = document.getElementById('secHasVacant').checked;
+      let visible = 0;
+      document.querySelectorAll('#sectionTable tbody tr').forEach(row => {
+        const sec      = row.dataset.section || '';
+        const blk      = row.dataset.block   || '';
+        const occupied = parseInt(row.dataset.occupied || 0);
+        const vacant   = parseInt(row.dataset.vacant   || 0);
+        let show = !search || sec.includes(search) || blk.includes(search);
+        if (blocks.length)   show = show && blocks.includes(blk);
+        if (hasOccupied)     show = show && occupied > 0;
+        if (hasVacant)       show = show && vacant   > 0;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      document.getElementById('sectionCount').textContent = `Showing ${visible} section${visible !== 1 ? 's' : ''}`;
+      const active = blocks.length + (hasOccupied ? 1 : 0) + (hasVacant ? 1 : 0);
+      const badge = document.getElementById('sectionFilterBadge');
+      badge.style.display = active > 0 ? 'inline' : 'none';
+      badge.textContent = active;
+    }
+    function clearSectionFilters() {
+      document.querySelectorAll('.sec-block-cb').forEach(cb => cb.checked = false);
+      document.getElementById('secHasOccupied').checked = false;
+      document.getElementById('secHasVacant').checked   = false;
+      document.getElementById('sectionSearch').value = '';
+      applySectionFilters();
+    }
+    function filterSections() { applySectionFilters(); }
+
+    function toggleBurialFilter() { togglePopover('burialFilterPopover','burialFilterBtn'); }
+
+    function applyBurialFilters() {
+      const search   = document.getElementById('burialSearch').value.toLowerCase().trim();
+      const dateFrom = document.getElementById('burialDateFrom').value;
+      const dateTo   = document.getElementById('burialDateTo').value;
+      const blocks   = [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value);
+      const sections = [...document.querySelectorAll('.burial-section-cb:checked')].map(c => c.value);
+
+      let visible = 0;
+      document.querySelectorAll('#burialTable tbody tr').forEach(row => {
+        const name  = row.dataset.name    || '';
+        const sec   = row.dataset.section || '';
+        const blk   = row.dataset.block   || '';
+        const date  = row.dataset.date    || '';
+
+        let show = !search || name.includes(search);
+        if (blocks.length)   show = show && blocks.includes(blk);
+        if (sections.length) show = show && sections.includes(sec);
+        if (dateFrom)        show = show && date >= dateFrom;
+        if (dateTo)          show = show && date <= dateTo;
+
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+
+      // Update count
+      document.getElementById('burialCount').textContent = `Showing ${visible} record${visible !== 1 ? 's' : ''}`;
+
+      // Update badge
+      const activeCount = blocks.length + sections.length + (dateFrom || dateTo ? 1 : 0);
+      const badge = document.getElementById('burialFilterBadge');
+      badge.style.display = activeCount > 0 ? 'inline' : 'none';
+      badge.textContent = activeCount;
     }
 
-    function filterBurials() {
-      const search  = document.getElementById('burialSearch').value.toLowerCase().trim();
-      const section = document.getElementById('burialSectionFilter').value.toLowerCase();
-      const block   = document.getElementById('burialBlockFilter').value.toLowerCase();
-      document.querySelectorAll('#burialTable tbody tr').forEach(row => {
-        const name = row.dataset.name    || '';
-        const sec  = row.dataset.section || '';
-        const blk  = row.dataset.block   || '';
-        let show = !search || name.includes(search);
-        if (section) show = show && sec === section;
-        if (block)   show = show && blk === block;
-        row.style.display = show ? '' : 'none';
-      });
+    function clearBurialFilters() {
+      document.querySelectorAll('.burial-block-cb, .burial-section-cb').forEach(cb => cb.checked = false);
+      document.getElementById('burialDateFrom').value = '';
+      document.getElementById('burialDateTo').value   = '';
+      document.getElementById('burialSearch').value   = '';
+      applyBurialFilters();
     }
+
+    function filterBurials() { applyBurialFilters(); }
 
     // Report data from PHP
     const reportData = {
