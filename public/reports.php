@@ -331,18 +331,28 @@ if ($conn) {
 
       <!-- Block Report Table -->
       <section class="card" style="margin-top:24px">
-        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h2 class="card-title">Block Summary Report</h2>
             <p class="card-sub">Sections and lots per block</p>
           </div>
-          <button class="report-btn report-btn-print" onclick="printReport('blocks')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-            <span>Print</span>
-          </button>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="blockSearch" placeholder="Search block..." oninput="filterBlockTable()"
+              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
+            <select id="blockStatusFilter" onchange="filterBlockTable()"
+              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
+              <option value="">All Status</option>
+              <option value="has_occupied">Has Occupied</option>
+              <option value="has_vacant">Has Vacant</option>
+            </select>
+            <button class="report-btn report-btn-print" onclick="printReport('blocks')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+              Print
+            </button>
+          </div>
         </div>
         <div class="table-wrap">
-          <table class="table">
+          <table class="table" id="blockTable">
             <thead>
               <tr>
                 <th align="left">Block</th>
@@ -357,7 +367,9 @@ if ($conn) {
                 <tr><td colspan="5" style="text-align:center; color:#6b7280;">No blocks found</td></tr>
               <?php else: ?>
                 <?php foreach ($stats['blocks'] as $block): ?>
-                  <tr>
+                  <tr data-block="<?php echo strtolower(htmlspecialchars($block['block'])); ?>"
+                      data-occupied="<?php echo $block['occupied']; ?>"
+                      data-vacant="<?php echo $block['vacant']; ?>">
                     <td><?php echo htmlspecialchars($block['block']); ?></td>
                     <td align="right"><?php echo $block['section_count']; ?></td>
                     <td align="right"><?php echo $block['total_lots']; ?></td>
@@ -373,18 +385,35 @@ if ($conn) {
 
       <!-- Section Report Table -->
       <section class="card" style="margin-top:24px">
-        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h2 class="card-title">Section Summary Report</h2>
             <p class="card-sub">Lots per section with block reference</p>
           </div>
-          <button class="report-btn report-btn-print" onclick="printReport('sections')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-            <span>Print</span>
-          </button>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="sectionSearch" placeholder="Search section..." oninput="filterSections()"
+              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
+            <select id="sectionBlockFilter" onchange="filterSections()"
+              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
+              <option value="">All Blocks</option>
+              <?php foreach ($stats['blocks'] as $b): ?>
+                <option value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"><?php echo htmlspecialchars($b['block']); ?></option>
+              <?php endforeach; ?>
+            </select>
+            <select id="sectionStatusFilter" onchange="filterSections()"
+              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
+              <option value="">All Status</option>
+              <option value="has_occupied">Has Occupied</option>
+              <option value="has_vacant">Has Vacant</option>
+            </select>
+            <button class="report-btn report-btn-print" onclick="printReport('sections')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+              Print
+            </button>
+          </div>
         </div>
         <div class="table-wrap">
-          <table class="table">
+          <table class="table" id="sectionTable">
             <thead>
               <tr>
                 <th align="left">Section</th>
@@ -399,7 +428,10 @@ if ($conn) {
                 <tr><td colspan="5" style="text-align:center; color:#6b7280;">No sections found</td></tr>
               <?php else: ?>
                 <?php foreach ($stats['sections'] as $section): ?>
-                  <tr>
+                  <tr data-section="<?php echo strtolower(htmlspecialchars($section['section'])); ?>"
+                      data-block="<?php echo strtolower(htmlspecialchars($section['block_name'] ?? '')); ?>"
+                      data-occupied="<?php echo $section['occupied']; ?>"
+                      data-vacant="<?php echo $section['vacant']; ?>">
                     <td><?php echo htmlspecialchars($section['section']); ?></td>
                     <td><?php echo htmlspecialchars($section['block_name'] ?? '—'); ?></td>
                     <td align="right"><?php echo $section['total']; ?></td>
@@ -413,74 +445,60 @@ if ($conn) {
         </div>
       </section>
 
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th align="left">Section</th>
-                <th align="right">Total Lots</th>
-                <th align="right">Occupied</th>
-                <th align="right">Vacant</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if (empty($stats['sections'])): ?>
-                <tr>
-                  <td colspan="4" style="text-align:center; color:#6b7280;">No sections found</td>
-                </tr>
-              <?php else: ?>
-                <?php foreach ($stats['sections'] as $section): ?>
-                  <tr>
-                    <td><?php echo htmlspecialchars($section['section']); ?></td>
-                    <td align="right"><?php echo $section['total']; ?></td>
-                    <td align="right"><span class="table-number occupied-color"><?php echo $section['occupied']; ?></span></td>
-                    <td align="right"><span class="table-number vacant-color"><?php echo $section['vacant']; ?></span></td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
+      <!-- Recent Burials Table -->
       <section class="card" style="margin-top:24px">
-        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-head" style="padding:16px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h2 class="card-title">Recent Burials</h2>
             <p class="card-sub">Last 10 burial records</p>
           </div>
-          <button class="report-btn report-btn-export" onclick="exportToCSV('recent_burials')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <span>Export CSV</span>
-          </button>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="burialSearch" placeholder="Search name..." oninput="filterBurials()"
+              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; width:180px;">
+            <select id="burialBlockFilter" onchange="filterBurials()"
+              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
+              <option value="">All Blocks</option>
+              <?php foreach ($stats['blocks'] as $b): ?>
+                <option value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"><?php echo htmlspecialchars($b['block']); ?></option>
+              <?php endforeach; ?>
+            </select>
+            <select id="burialSectionFilter" onchange="filterBurials()"
+              style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none;">
+              <option value="">All Sections</option>
+              <?php foreach ($stats['sections'] as $s): ?>
+                <option value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"><?php echo htmlspecialchars($s['section']); ?></option>
+              <?php endforeach; ?>
+            </select>
+            <button class="report-btn report-btn-export" onclick="exportToCSV('recent_burials')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
         </div>
-
         <div class="table-wrap">
-          <table class="table">
+          <table class="table" id="burialTable">
             <thead>
               <tr>
                 <th align="left">Full Name</th>
-                <th align="left">Lot Number</th>
+                <th align="left">Lot</th>
                 <th align="left">Section</th>
+                <th align="left">Block</th>
                 <th align="left">Date of Burial</th>
                 <th align="left">Age</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($stats['recent_burials'])): ?>
-                <tr>
-                  <td colspan="5" style="text-align:center; color:#6b7280;">No burial records found</td>
-                </tr>
+                <tr><td colspan="6" style="text-align:center; color:#6b7280;">No burial records found</td></tr>
               <?php else: ?>
                 <?php foreach ($stats['recent_burials'] as $burial): ?>
-                  <tr>
+                  <tr data-name="<?php echo strtolower(htmlspecialchars($burial['full_name'])); ?>"
+                      data-section="<?php echo strtolower(htmlspecialchars($burial['section'] ?? '')); ?>"
+                      data-block="<?php echo strtolower(htmlspecialchars($burial['block'] ?? '')); ?>">
                     <td><?php echo htmlspecialchars($burial['full_name']); ?></td>
                     <td><?php echo htmlspecialchars($burial['lot_number'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars($burial['section'] ?: '—'); ?></td>
+                    <td><?php echo htmlspecialchars($burial['block'] ?? '—'); ?></td>
                     <td><?php echo $burial['date_of_burial'] ? date('M d, Y', strtotime($burial['date_of_burial'])) : '—'; ?></td>
                     <td><?php echo $burial['age'] ?: '—'; ?></td>
                   </tr>
@@ -498,6 +516,53 @@ if ($conn) {
   <script>
     function exportToCSV(reportType) {
       window.location.href = '../api/export_csv.php?type=' + reportType;
+    }
+
+    // Block table filter
+    function filterBlockTable() {
+      const search = document.getElementById('blockSearch').value.toLowerCase().trim();
+      const status = document.getElementById('blockStatusFilter').value;
+      document.querySelectorAll('#blockTable tbody tr').forEach(row => {
+        const blockName = row.dataset.block || '';
+        const occupied  = parseInt(row.dataset.occupied || 0);
+        const vacant    = parseInt(row.dataset.vacant   || 0);
+        let show = blockName.includes(search);
+        if (status === 'has_occupied') show = show && occupied > 0;
+        if (status === 'has_vacant')   show = show && vacant   > 0;
+        row.style.display = show ? '' : 'none';
+      });
+    }
+
+    function filterSections() {
+      const search  = document.getElementById('sectionSearch').value.toLowerCase().trim();
+      const block   = document.getElementById('sectionBlockFilter').value.toLowerCase();
+      const status  = document.getElementById('sectionStatusFilter').value;
+      document.querySelectorAll('#sectionTable tbody tr').forEach(row => {
+        const secName  = row.dataset.section || '';
+        const blkName  = row.dataset.block   || '';
+        const occupied = parseInt(row.dataset.occupied || 0);
+        const vacant   = parseInt(row.dataset.vacant   || 0);
+        let show = secName.includes(search) || blkName.includes(search);
+        if (block)  show = show && blkName === block;
+        if (status === 'has_occupied') show = show && occupied > 0;
+        if (status === 'has_vacant')   show = show && vacant   > 0;
+        row.style.display = show ? '' : 'none';
+      });
+    }
+
+    function filterBurials() {
+      const search  = document.getElementById('burialSearch').value.toLowerCase().trim();
+      const section = document.getElementById('burialSectionFilter').value.toLowerCase();
+      const block   = document.getElementById('burialBlockFilter').value.toLowerCase();
+      document.querySelectorAll('#burialTable tbody tr').forEach(row => {
+        const name = row.dataset.name    || '';
+        const sec  = row.dataset.section || '';
+        const blk  = row.dataset.block   || '';
+        let show = !search || name.includes(search);
+        if (section) show = show && sec === section;
+        if (block)   show = show && blk === block;
+        row.style.display = show ? '' : 'none';
+      });
     }
 
     // Report data from PHP
