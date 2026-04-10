@@ -943,22 +943,24 @@ if ($conn) {
             </div>
             
             <div class="form-group">
-              <label>Section (Block) *</label>
-              <select id="newSectionId" required>
-                <option value="">Select Section</option>
+              <label>Block *</label>
+              <select id="newBlockId" required onchange="filterSectionsByBlock()">
+                <option value="">Select Block</option>
+                <?php foreach ($blocks as $b): ?>
+                  <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['name']); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Section *</label>
+              <select id="newSectionId" required disabled>
+                <option value="">Select Block first</option>
                 <?php foreach ($sections as $section): ?>
-                  <?php 
-                    // Find the block name for this section
-                    $blockName = 'No Block';
-                    foreach ($blocks as $b) {
-                      if ($b['id'] == $section['block_id']) {
-                        $blockName = $b['name'];
-                        break;
-                      }
-                    }
-                  ?>
-                  <option value="<?php echo $section['id']; ?>" data-section-name="<?php echo htmlspecialchars($section['name']); ?>">
-                    <?php echo htmlspecialchars($section['name']); ?> (<?php echo htmlspecialchars($blockName); ?>)
+                  <option value="<?php echo $section['id']; ?>"
+                          data-block="<?php echo $section['block_id']; ?>"
+                          data-section-name="<?php echo htmlspecialchars($section['name']); ?>">
+                    <?php echo htmlspecialchars($section['name']); ?>
                   </option>
                 <?php endforeach; ?>
               </select>
@@ -1377,6 +1379,29 @@ if ($conn) {
       
       rectanglesContainer.appendChild(rect);
       rectangles.push({ rect, lotData, x, y, width, height });
+    }
+
+    function filterSectionsByBlock() {
+      const blockId = document.getElementById('newBlockId').value;
+      const sectionSelect = document.getElementById('newSectionId');
+      const options = sectionSelect.querySelectorAll('option[data-block]');
+
+      sectionSelect.innerHTML = '<option value="">Select Section</option>';
+      sectionSelect.disabled = !blockId;
+
+      options.forEach(opt => {
+        if (opt.dataset.block === blockId) {
+          sectionSelect.appendChild(opt.cloneNode(true));
+        }
+      });
+
+      // Auto-select if only one section
+      if (sectionSelect.options.length === 2) {
+        sectionSelect.selectedIndex = 1;
+      }
+
+      // Update lot number hint when section changes
+      sectionSelect.onchange = () => updateLotNumberHint();
     }
 
     function toggleAssignMode() {
