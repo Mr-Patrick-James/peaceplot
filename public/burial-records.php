@@ -70,8 +70,8 @@ if ($conn) {
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      position: relative; /* Added for absolute search positioning */
+      align-items: flex-start;
+      gap: 16px;
     }
     .header-left .title {
       font-size: 24px;
@@ -82,7 +82,10 @@ if ($conn) {
     .header-left .subtitle {
       font-size: 14px;
       color: #64748b;
-      margin: 0 0 16px 0;
+      margin: 0;
+    }
+    .header-search {
+      flex-shrink: 0;
     }
     .breadcrumbs {
       display: flex;

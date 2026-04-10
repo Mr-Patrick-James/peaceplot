@@ -66,8 +66,7 @@ if ($db) {
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      position: relative; /* Added for absolute search positioning */
+      align-items: flex-start;
     }
     .header-left .title {
       font-size: 24px;
