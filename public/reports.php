@@ -586,8 +586,7 @@ if ($conn) {
           </div>
         </div>
         <div class="table-wrap">
-          <table class="table" id="burialTable">
-            <thead>
+          <table class="table" id="burialTable">            <thead>
               <tr>
                 <th align="left">Full Name</th>
                 <th align="left">Lot</th>
@@ -618,6 +617,11 @@ if ($conn) {
               <?php endif; ?>
             </tbody>
           </table>
+        </div>
+        <!-- Burial Pagination -->
+        <div id="burialPagination" style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;">
+          <span id="burialPaginationInfo" style="font-size:13px; color:#64748b;"></span>
+          <div id="burialPaginationBtns" style="display:flex; gap:6px;"></div>
         </div>
       </section>
 
@@ -713,7 +717,11 @@ if ($conn) {
       applySectionFilters();
     }
 
-    // ── Burial filters ─────────────────────────────────────────
+    // ── Burial filters + pagination ────────────────────────────
+    const BURIAL_PER_PAGE = 20;
+    let burialCurrentPage = 1;
+    let burialFilteredRows = [];
+
     function applyBurialFilters() {
       const search   = (document.getElementById('burialSearch').value || '').toLowerCase().trim();
       const dateFrom = document.getElementById('burialDateFrom').value;
@@ -722,13 +730,14 @@ if ($conn) {
       const ageMax   = document.getElementById('burialAgeMax').value !== '' ? parseInt(document.getElementById('burialAgeMax').value) : null;
       const blocks   = [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value);
       const sections = [...document.querySelectorAll('.burial-section-cb:checked')].map(c => c.value);
-      let visible = 0;
-      document.querySelectorAll('#burialTable tbody tr').forEach(row => {
+
+      const allRows = [...document.querySelectorAll('#burialTable tbody tr')];
+      burialFilteredRows = allRows.filter(row => {
         const name = (row.dataset.name    || '').toLowerCase();
         const sec  = (row.dataset.section || '').toLowerCase();
         const blk  = (row.dataset.block   || '').toLowerCase();
         const date =  row.dataset.date    || '';
-        const age  = parseInt(row.dataset.age  || 0);
+        const age  = parseInt(row.dataset.age || 0);
         let show = !search || name.includes(search);
         if (blocks.length)   show = show && blocks.includes(blk);
         if (sections.length) show = show && sections.includes(sec);
@@ -736,15 +745,83 @@ if ($conn) {
         if (dateTo)          show = show && date <= dateTo;
         if (ageMin !== null) show = show && age >= ageMin;
         if (ageMax !== null) show = show && age <= ageMax;
-        row.style.display = show ? '' : 'none';
-        if (show) visible++;
+        return show;
       });
-      document.getElementById('burialCount').textContent = `Showing ${visible} record${visible !== 1 ? 's' : ''}`;
+
+      burialCurrentPage = 1;
+      renderBurialPage();
+
       const activeCount = blocks.length + sections.length + (dateFrom || dateTo ? 1 : 0) + (ageMin !== null || ageMax !== null ? 1 : 0);
       const badge = document.getElementById('burialFilterBadge');
       badge.style.display = activeCount > 0 ? 'inline' : 'none';
       badge.textContent = activeCount;
     }
+
+    function renderBurialPage() {
+      const total = burialFilteredRows.length;
+      const totalPages = Math.max(1, Math.ceil(total / BURIAL_PER_PAGE));
+      burialCurrentPage = Math.min(burialCurrentPage, totalPages);
+      const start = (burialCurrentPage - 1) * BURIAL_PER_PAGE;
+      const end   = start + BURIAL_PER_PAGE;
+
+      // Show/hide rows
+      const allRows = [...document.querySelectorAll('#burialTable tbody tr')];
+      allRows.forEach(row => row.style.display = 'none');
+      burialFilteredRows.forEach((row, i) => {
+        row.style.display = (i >= start && i < end) ? '' : 'none';
+      });
+
+      // Update count label
+      const from = total === 0 ? 0 : start + 1;
+      const to   = Math.min(end, total);
+      document.getElementById('burialCount').textContent = `Showing ${from}–${to} of ${total} record${total !== 1 ? 's' : ''}`;
+
+      // Pagination info
+      document.getElementById('burialPaginationInfo').textContent =
+        `Page ${burialCurrentPage} of ${totalPages}`;
+
+      // Pagination buttons
+      const btns = document.getElementById('burialPaginationBtns');
+      btns.innerHTML = '';
+      const btnStyle = (active) => `padding:6px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:13px; font-weight:600; cursor:pointer; background:${active ? '#2f6df6' : '#fff'}; color:${active ? '#fff' : '#475569'};`;
+
+      // Prev
+      const prev = document.createElement('button');
+      prev.textContent = '←';
+      prev.style.cssText = btnStyle(false);
+      prev.disabled = burialCurrentPage === 1;
+      prev.style.opacity = burialCurrentPage === 1 ? '0.4' : '1';
+      prev.onclick = () => { burialCurrentPage--; renderBurialPage(); };
+      btns.appendChild(prev);
+
+      // Page numbers
+      for (let p = 1; p <= totalPages; p++) {
+        if (totalPages > 7 && p > 2 && p < totalPages - 1 && Math.abs(p - burialCurrentPage) > 1) {
+          if (p === 3 || p === totalPages - 2) {
+            const dots = document.createElement('span');
+            dots.textContent = '…';
+            dots.style.cssText = 'padding:6px 8px; color:#94a3b8; font-size:13px;';
+            btns.appendChild(dots);
+          }
+          continue;
+        }
+        const btn = document.createElement('button');
+        btn.textContent = p;
+        btn.style.cssText = btnStyle(p === burialCurrentPage);
+        btn.onclick = ((page) => () => { burialCurrentPage = page; renderBurialPage(); })(p);
+        btns.appendChild(btn);
+      }
+
+      // Next
+      const next = document.createElement('button');
+      next.textContent = '→';
+      next.style.cssText = btnStyle(false);
+      next.disabled = burialCurrentPage === totalPages;
+      next.style.opacity = burialCurrentPage === totalPages ? '0.4' : '1';
+      next.onclick = () => { burialCurrentPage++; renderBurialPage(); };
+      btns.appendChild(next);
+    }
+
     function clearBurialFilters() {
       document.querySelectorAll('.burial-block-cb, .burial-section-cb').forEach(cb => cb.checked = false);
       document.getElementById('burialDateFrom').value = '';
@@ -754,6 +831,9 @@ if ($conn) {
       document.getElementById('burialSearch').value   = '';
       applyBurialFilters();
     }
+
+    // Init on load
+    document.addEventListener('DOMContentLoaded', () => applyBurialFilters());
 
     // Report data from PHP
     const reportData = {
