@@ -202,11 +202,11 @@ if ($conn) {
             <p class="card-sub"><?php echo $showArchived ? 'History logs that have been moved to archive.' : 'A comprehensive log of all changes made in the system, from newest to oldest.'; ?></p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
-            <div style="display:flex; align-items:center; gap:6px; background:#fff; padding:6px 14px; border:1.5px solid #e2e8f0; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <input type="text" id="startDate" placeholder="Start date" style="border:none; outline:none; font-size:13px; color:#1e293b; width:90px; background:transparent;">
-              <span style="color:#cbd5e1; font-size:13px;">—</span>
-              <input type="text" id="endDate" placeholder="End date" style="border:none; outline:none; font-size:13px; color:#1e293b; width:90px; background:transparent;">
+            <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:7px 14px; border-radius:10px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <input type="text" id="startDate" placeholder="Start date" style="border:none; outline:none; font-size:13px; color:#1e293b; width:85px; background:transparent; cursor:pointer;">
+              <span style="color:#cbd5e1;">—</span>
+              <input type="text" id="endDate" placeholder="End date" style="border:none; outline:none; font-size:13px; color:#1e293b; width:85px; background:transparent; cursor:pointer;">
             </div>
             <input 
               id="historySearch" 
@@ -311,6 +311,25 @@ if ($conn) {
     .badge-logout { background: #f1f5f9; color: #475569; }
     .badge-page { background: #f0fdf4; color: #15803d; }
     .badge-image { background: #fdf4ff; color: #7e22ce; }
+
+    /* Override flatpickr input styles */
+    .flatpickr-input {
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+    }
+    .flatpickr-input.active { border: none !important; box-shadow: none !important; }
+    input.flatpickr-input.flatpickr-mobile { border: none !important; }
+    .numInputWrapper input { border: none !important; }
+    /* Hide the original input, style only the alt input */
+    #startDate, #endDate {
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
   </style>
 
   <script src="../assets/js/app.js"></script>
@@ -326,16 +345,14 @@ if ($conn) {
       if (typeof flatpickr !== 'undefined') {
         flatpickr("#startDate", {
           dateFormat: "Y-m-d",
-          altInput: true,
-          altFormat: "M j, Y",
+          altInput: false,
           allowInput: true,
           monthSelectorType: 'static',
           onChange: filterTable
         });
         flatpickr("#endDate", {
           dateFormat: "Y-m-d",
-          altInput: true,
-          altFormat: "M j, Y",
+          altInput: false,
           allowInput: true,
           monthSelectorType: 'static',
           onChange: filterTable
