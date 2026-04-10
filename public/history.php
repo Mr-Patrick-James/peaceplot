@@ -202,20 +202,19 @@ if ($conn) {
             <p class="card-sub"><?php echo $showArchived ? 'History logs that have been moved to archive.' : 'A comprehensive log of all changes made in the system, from newest to oldest.'; ?></p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
-            <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:8px 15px; border:2px solid #e2e8f0; border-radius:12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-              <label for="startDate" style="font-size:13px; font-weight:600; color:#64748b;">From:</label>
-              <input type="text" id="startDate" placeholder="YYYY-MM-DD" style="border:none; outline:none; font-size:14px; color:#1e293b; width: 100px;">
-              <div style="width:1px; height:20px; background:#e2e8f0; margin:0 5px;"></div>
-              <label for="endDate" style="font-size:13px; font-weight:600; color:#64748b;">To:</label>
-              <input type="text" id="endDate" placeholder="YYYY-MM-DD" style="border:none; outline:none; font-size:14px; color:#1e293b; width: 100px;">
+            <div style="display:flex; align-items:center; gap:6px; background:#fff; padding:6px 14px; border:1.5px solid #e2e8f0; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <input type="text" id="startDate" placeholder="Start date" style="border:none; outline:none; font-size:13px; color:#1e293b; width:90px; background:transparent;">
+              <span style="color:#cbd5e1; font-size:13px;">—</span>
+              <input type="text" id="endDate" placeholder="End date" style="border:none; outline:none; font-size:13px; color:#1e293b; width:90px; background:transparent;">
             </div>
             <input 
               id="historySearch" 
               type="text" 
-              placeholder="🔍 Search activity…" 
-              style="padding:12px 20px; border:2px solid #e2e8f0; border-radius:12px; font-size:16px; width:300px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.2s ease; outline: none;"
-              onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 6px -1px rgba(0,0,0,0.1)';"
-              onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)';">
+              placeholder="Search activity…" 
+              style="padding:9px 14px 9px 36px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13px; width:260px; outline:none; transition:border-color 0.2s; background:#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E\") no-repeat 10px center;"
+              onfocus="this.style.borderColor='#3b82f6';"
+              onblur="this.style.borderColor='#e2e8f0';">>
           </div>
         </div>
 
