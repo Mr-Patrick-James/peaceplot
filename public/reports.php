@@ -422,19 +422,39 @@ if ($conn) {
                 Filters
                 <span id="sectionFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
               </button>
-              <div id="sectionFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:320px; padding:20px;">
+              <div id="sectionFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:420px; padding:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                   <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
                   <button onclick="clearSectionFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
                 </div>
-                <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Blocks</div>
-                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; max-height:140px; overflow-y:auto;">
-                  <?php foreach ($stats['blocks'] as $b): ?>
-                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                      <input type="checkbox" class="sec-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
-                      <?php echo htmlspecialchars($b['block']); ?>
-                    </label>
-                  <?php endforeach; ?>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                  <!-- Blocks -->
+                  <div>
+                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Blocks</div>
+                    <div style="display:flex; flex-direction:column; gap:8px; max-height:140px; overflow-y:auto;">
+                      <?php foreach ($stats['blocks'] as $b): ?>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                          <input type="checkbox" class="sec-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>" onchange="onSecBlockChange()" style="width:16px;height:16px;cursor:pointer;">
+                          <?php echo htmlspecialchars($b['block']); ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
+                  <!-- Sections cascaded -->
+                  <div>
+                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">
+                      Sections
+                      <span id="secSectionHint" style="font-size:11px; color:#94a3b8; font-weight:400;"> (select block first)</span>
+                    </div>
+                    <div id="secSectionList" style="display:flex; flex-direction:column; gap:8px; max-height:140px; overflow-y:auto;">
+                      <?php foreach ($stats['sections'] as $s): ?>
+                        <label class="sec-section-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                          <input type="checkbox" class="sec-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
+                          <?php echo htmlspecialchars($s['section']); ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
                 </div>
                 <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Occupancy Status</div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
@@ -459,8 +479,8 @@ if ($conn) {
           <table class="table" id="sectionTable">
             <thead>
               <tr>
-                <th align="left">Section</th>
                 <th align="left">Block</th>
+                <th align="left">Section</th>
                 <th align="right">Total Lots</th>
                 <th align="right">Occupied</th>
                 <th align="right">Vacant</th>
@@ -475,8 +495,8 @@ if ($conn) {
                       data-block="<?php echo strtolower(htmlspecialchars($section['block_name'] ?? '')); ?>"
                       data-occupied="<?php echo $section['occupied']; ?>"
                       data-vacant="<?php echo $section['vacant']; ?>">
-                    <td><?php echo htmlspecialchars($section['section']); ?></td>
                     <td><?php echo htmlspecialchars($section['block_name'] ?? '—'); ?></td>
+                    <td><?php echo htmlspecialchars($section['section']); ?></td>
                     <td align="right"><?php echo $section['total']; ?></td>
                     <td align="right"><span class="table-number occupied-color"><?php echo $section['occupied']; ?></span></td>
                     <td align="right"><span class="table-number vacant-color"><?php echo $section['vacant']; ?></span></td>
@@ -526,21 +546,22 @@ if ($conn) {
                     <div style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
                       <?php foreach ($stats['blocks'] as $b): ?>
                         <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                          <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>" onchange="applyBurialFilters()" style="width:16px;height:16px;border-radius:4px;cursor:pointer;">
+                          <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>" onchange="onBurialBlockChange()" style="width:16px;height:16px;border-radius:4px;cursor:pointer;">
                           <?php echo htmlspecialchars($b['block']); ?>
                         </label>
                       <?php endforeach; ?>
                     </div>
                   </div>
-                  <!-- Sections -->
+                  <!-- Sections — filtered by selected blocks -->
                   <div>
                     <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                       Sections
+                      <span id="burialSectionHint" style="font-size:11px; color:#94a3b8; font-weight:400;">(select block first)</span>
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
+                    <div id="burialSectionList" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
                       <?php foreach ($stats['sections'] as $s): ?>
-                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                        <label class="burial-sec-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
                           <input type="checkbox" class="burial-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>" onchange="applyBurialFilters()" style="width:16px;height:16px;border-radius:4px;cursor:pointer;">
                           <?php echo htmlspecialchars($s['section']); ?>
                         </label>
@@ -684,9 +705,29 @@ if ($conn) {
     }
 
     // ── Section filters ────────────────────────────────────────
+    function onSecBlockChange() {
+      const selectedBlocks = [...document.querySelectorAll('.sec-block-cb:checked')].map(c => c.value);
+      const hint = document.getElementById('secSectionHint');
+      document.querySelectorAll('.sec-section-label').forEach(label => {
+        const blockVal = (label.dataset.block || '').toLowerCase();
+        if (selectedBlocks.length === 0) {
+          label.style.display = 'flex';
+          label.querySelector('input').checked = false;
+          hint.style.display = 'inline';
+        } else {
+          const visible = selectedBlocks.includes(blockVal);
+          label.style.display = visible ? 'flex' : 'none';
+          if (!visible) label.querySelector('input').checked = false;
+          hint.style.display = 'none';
+        }
+      });
+      applySectionFilters();
+    }
+
     function applySectionFilters() {
       const search      = (document.getElementById('sectionSearch').value || '').toLowerCase().trim();
       const blocks      = [...document.querySelectorAll('.sec-block-cb:checked')].map(c => c.value);
+      const sections    = [...document.querySelectorAll('.sec-section-cb:checked')].map(c => c.value);
       const hasOccupied = document.getElementById('secHasOccupied').checked;
       const hasVacant   = document.getElementById('secHasVacant').checked;
       let visible = 0;
@@ -697,19 +738,22 @@ if ($conn) {
         const vacant   = parseInt(row.dataset.vacant   || 0);
         let show = !search || sec.includes(search) || blk.includes(search);
         if (blocks.length)   show = show && blocks.includes(blk);
+        if (sections.length) show = show && sections.includes(sec);
         if (hasOccupied)     show = show && occupied > 0;
         if (hasVacant)       show = show && vacant   > 0;
         row.style.display = show ? '' : 'none';
         if (show) visible++;
       });
       document.getElementById('sectionCount').textContent = `Showing ${visible} section${visible !== 1 ? 's' : ''}`;
-      const active = blocks.length + (hasOccupied ? 1 : 0) + (hasVacant ? 1 : 0);
+      const active = blocks.length + sections.length + (hasOccupied ? 1 : 0) + (hasVacant ? 1 : 0);
       const badge = document.getElementById('sectionFilterBadge');
       badge.style.display = active > 0 ? 'inline' : 'none';
       badge.textContent = active;
     }
     function clearSectionFilters() {
-      document.querySelectorAll('.sec-block-cb').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.sec-block-cb, .sec-section-cb').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.sec-section-label').forEach(l => l.style.display = 'flex');
+      document.getElementById('secSectionHint').style.display = 'inline';
       document.getElementById('secHasOccupied').checked = false;
       document.getElementById('secHasVacant').checked   = false;
       document.getElementById('sectionSearch').value = '';
@@ -717,6 +761,28 @@ if ($conn) {
     }
 
     // ── Burial filters + pagination ────────────────────────────
+    function onBurialBlockChange() {
+      const selectedBlocks = [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value);
+      const hint = document.getElementById('burialSectionHint');
+
+      // Show/hide section labels based on selected blocks
+      document.querySelectorAll('.burial-sec-label').forEach(label => {
+        const blockVal = (label.dataset.block || '').toLowerCase();
+        if (selectedBlocks.length === 0) {
+          // No block selected — show all, uncheck all sections
+          label.style.display = 'flex';
+          label.querySelector('input').checked = false;
+          hint.style.display = 'inline';
+        } else {
+          const visible = selectedBlocks.includes(blockVal);
+          label.style.display = visible ? 'flex' : 'none';
+          if (!visible) label.querySelector('input').checked = false;
+          hint.style.display = 'none';
+        }
+      });
+
+      applyBurialFilters();
+    }
     const BURIAL_PER_PAGE = 20;
     let burialCurrentPage = 1;
     let burialFilteredRows = [];
@@ -823,6 +889,8 @@ if ($conn) {
 
     function clearBurialFilters() {
       document.querySelectorAll('.burial-block-cb, .burial-section-cb').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.burial-sec-label').forEach(l => l.style.display = 'flex');
+      document.getElementById('burialSectionHint').style.display = 'inline';
       document.getElementById('burialDateFrom').value = '';
       document.getElementById('burialDateTo').value   = '';
       document.getElementById('burialAgeMin').value   = '';
