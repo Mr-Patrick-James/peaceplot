@@ -429,6 +429,11 @@ body{font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;background:#fff;over
 }
 .pw-wrap{position:relative}
 .pw-wrap input{padding-right:2.75rem}
+/* Hide browser native password reveal button */
+.pw-wrap input::-ms-reveal,
+.pw-wrap input::-ms-clear,
+.pw-wrap input::-webkit-credentials-auto-fill-button,
+.pw-wrap input::-webkit-textfield-decoration-container { display:none !important; }
 .eye-toggle{
   position:absolute;right:.8rem;top:50%;transform:translateY(-50%);
   background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.9rem;
