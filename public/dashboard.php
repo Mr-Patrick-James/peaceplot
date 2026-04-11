@@ -542,12 +542,12 @@ if ($conn) {
             </div>
             <div style="display:flex; gap:24px;">
               <div style="text-align:center;">
-                <div style="font-size:20px; font-weight:700; color:#22c55e;"><?php echo $stats['available_lots']; ?></div>
-                <div style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;background:#22c55e;border-radius:50%;display:inline-block;"></span>Vacant</div>
+                <div style="font-size:20px; font-weight:700; color:#3b82f6;"><?php echo $stats['available_lots']; ?></div>
+                <div style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;background:#3b82f6;border-radius:50%;display:inline-block;"></span>Vacant</div>
               </div>
               <div style="text-align:center;">
-                <div style="font-size:20px; font-weight:700; color:#f97316;"><?php echo $stats['occupied_lots']; ?></div>
-                <div style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;background:#f97316;border-radius:50%;display:inline-block;"></span>Occupied</div>
+                <div style="font-size:20px; font-weight:700; color:#93c5fd;"><?php echo $stats['occupied_lots']; ?></div>
+                <div style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;background:#93c5fd;border-radius:50%;display:inline-block;"></span>Occupied</div>
               </div>
             </div>
           </div>
@@ -582,7 +582,7 @@ if ($conn) {
         labels: ['Vacant', 'Occupied'],
         datasets: [{
           data: [<?php echo $stats['available_lots']; ?>, <?php echo $stats['occupied_lots']; ?>],
-          backgroundColor: ['#22c55e', '#f97316'],
+          backgroundColor: ['#3b82f6', '#93c5fd'],
           borderWidth: 0,
           hoverOffset: 6
         }]
@@ -615,8 +615,8 @@ if ($conn) {
       data: {
         labels: <?php echo $blockLabels; ?>,
         datasets: [
-          { label: 'Vacant',   data: <?php echo $blockVacant; ?>,   backgroundColor: '#22c55e', borderRadius: 6, barThickness: 18 },
-          { label: 'Occupied', data: <?php echo $blockOccupied; ?>, backgroundColor: '#f97316', borderRadius: 6, barThickness: 18 }
+          { label: 'Vacant',   data: <?php echo $blockVacant; ?>,   backgroundColor: '#3b82f6', borderRadius: 6, barThickness: 18 },
+          { label: 'Occupied', data: <?php echo $blockOccupied; ?>, backgroundColor: '#93c5fd', borderRadius: 6, barThickness: 18 }
         ]
       },
       options: {
