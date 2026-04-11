@@ -521,51 +521,118 @@ if ($conn) {
         </div>
       </div>
 
-      <!-- Chart Analytics -->
-      <div class="content-card">
-        <div class="content-card-header">
-          <div>
-            <h2 class="content-card-title">Inventory Analytics (by Block)</h2>
-            <p style="font-size:12px; color:#94a3b8; margin:4px 0 0 0;">Visual distribution of lot availability across all blocks</p>
+      <!-- Charts Row -->
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:24px; margin-bottom:24px;">
+
+        <!-- Donut Chart: Lot Occupancy -->
+        <div class="content-card" style="margin-bottom:0;">
+          <div class="content-card-header">
+            <div>
+              <h2 class="content-card-title">Lot Occupancy</h2>
+              <p style="font-size:12px; color:#94a3b8; margin:4px 0 0 0;">Overall vacant vs occupied</p>
+            </div>
           </div>
-        </div>
-        <div class="chart-section">
-          <div class="bar-container" style="gap:20px; overflow-x: auto; padding-bottom: 20px; justify-content: flex-start;">
-            <?php foreach ($stats['sections'] as $item): 
-              $total = max($item['total'], 1);
-              $vHeight = ($item['vacant'] / $total) * 180;
-              $oHeight = ($item['occupied'] / $total) * 180;
-            ?>
-              <div class="chart-bar-group" style="min-width: 100px;">
-                <div style="display:flex; gap:6px; align-items:flex-end; height:180px;">
-                  <div class="bar-segment" style="height:<?php echo $vHeight; ?>px; background:#22c55e;" title="Vacant: <?php echo $item['vacant']; ?>"></div>
-                  <div class="bar-segment" style="height:<?php echo $oHeight; ?>px; background:#f97316;" title="Occupied: <?php echo $item['occupied']; ?>"></div>
-                </div>
-                <span class="chart-label" style="margin-top:16px; color:#0f172a; font-weight:600; font-size: 11px;"><?php echo htmlspecialchars($item['block']); ?></span>
-                <span style="font-size:9px; color:#94a3b8;"><?php echo htmlspecialchars($item['section']); ?></span>
-                <div style="display:flex; gap:8px; margin-top:4px;">
-                  <span style="font-size:10px; font-weight:600; color:#22c55e;"><?php echo $item['vacant']; ?>V</span>
-                  <span style="font-size:10px; font-weight:600; color:#f97316;"><?php echo $item['occupied']; ?>O</span>
-                </div>
+          <div style="padding:28px; display:flex; flex-direction:column; align-items:center; gap:20px;">
+            <div style="position:relative; width:180px; height:180px;">
+              <canvas id="donutChart" width="180" height="180"></canvas>
+              <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center;">
+                <div style="font-size:28px; font-weight:700; color:#0f172a;"><?php echo $stats['total_lots']; ?></div>
+                <div style="font-size:11px; color:#94a3b8; font-weight:500;">TOTAL LOTS</div>
               </div>
-            <?php endforeach; ?>
-          </div>
-          
-          <div style="display:flex; justify-content:center; gap:32px; margin-top:48px; padding-top:24px; border-top:1px solid #f8fafc;">
-            <div style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:500; color:#475569;">
-              <div style="width:12px; height:12px; background:#22c55e; border-radius:4px;"></div> Vacant Lots
             </div>
-            <div style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:500; color:#475569;">
-              <div style="width:12px; height:12px; background:#f97316; border-radius:4px;"></div> Occupied Lots
+            <div style="display:flex; gap:24px;">
+              <div style="text-align:center;">
+                <div style="font-size:20px; font-weight:700; color:#22c55e;"><?php echo $stats['available_lots']; ?></div>
+                <div style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;background:#22c55e;border-radius:50%;display:inline-block;"></span>Vacant</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:20px; font-weight:700; color:#f97316;"><?php echo $stats['occupied_lots']; ?></div>
+                <div style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;background:#f97316;border-radius:50%;display:inline-block;"></span>Occupied</div>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- Horizontal Bar Chart: Lots per Block -->
+        <div class="content-card" style="margin-bottom:0;">
+          <div class="content-card-header">
+            <div>
+              <h2 class="content-card-title">Lots by Block</h2>
+              <p style="font-size:12px; color:#94a3b8; margin:4px 0 0 0;">Vacant vs occupied per block</p>
+            </div>
+          </div>
+          <div style="padding:24px 28px;">
+            <canvas id="blockBarChart" height="120"></canvas>
+          </div>
+        </div>
+
       </div>
 
       <?php endif; ?>
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="../assets/js/app.js"></script>
+  <script>
+    // ── Donut Chart: Lot Occupancy ─────────────────────────────
+    new Chart(document.getElementById('donutChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Vacant', 'Occupied'],
+        datasets: [{
+          data: [<?php echo $stats['available_lots']; ?>, <?php echo $stats['occupied_lots']; ?>],
+          backgroundColor: ['#22c55e', '#f97316'],
+          borderWidth: 0,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        cutout: '72%',
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} lots` }
+        }},
+        animation: { animateRotate: true, duration: 800 }
+      }
+    });
+
+    // ── Horizontal Bar Chart: Lots per Block ───────────────────
+    <?php
+      // Aggregate by block
+      $blockData = [];
+      foreach ($stats['sections'] as $s) {
+        $b = $s['block'] ?? 'Unknown';
+        if (!isset($blockData[$b])) $blockData[$b] = ['vacant'=>0,'occupied'=>0];
+        $blockData[$b]['vacant']   += intval($s['vacant']);
+        $blockData[$b]['occupied'] += intval($s['occupied']);
+      }
+      $blockLabels  = json_encode(array_keys($blockData));
+      $blockVacant  = json_encode(array_column(array_values($blockData), 'vacant'));
+      $blockOccupied= json_encode(array_column(array_values($blockData), 'occupied'));
+    ?>
+    new Chart(document.getElementById('blockBarChart'), {
+      type: 'bar',
+      data: {
+        labels: <?php echo $blockLabels; ?>,
+        datasets: [
+          { label: 'Vacant',   data: <?php echo $blockVacant; ?>,   backgroundColor: '#22c55e', borderRadius: 6, barThickness: 18 },
+          { label: 'Occupied', data: <?php echo $blockOccupied; ?>, backgroundColor: '#f97316', borderRadius: 6, barThickness: 18 }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, borderRadius: 4, font: { size: 12 } } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.x} lots` } }
+        },
+        scales: {
+          x: { stacked: false, grid: { color: '#f1f5f9' }, ticks: { font: { size: 12 }, color: '#94a3b8' } },
+          y: { grid: { display: false }, ticks: { font: { size: 13, weight: '600' }, color: '#334155' } }
+        },
+        animation: { duration: 700 }
+      }
+    });
+  </script>
 </body>
 </html>
