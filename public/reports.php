@@ -963,9 +963,16 @@ if ($conn) {
           </div>`;
       }
 
-      // Block table — reads filtered visible rows
+      // Block table — reads only main block rows (not expanded section sub-rows)
       if (type === 'blocks' || type === 'all') {
-        const rows = getVisibleRows('blockTable');
+        const rows = [...document.querySelectorAll('#blockTable tbody tr')]
+          .filter(r => r.style.display !== 'none' && !r.id.startsWith('sections-') && r.dataset.block)
+          .map(r => {
+            const cells = r.querySelectorAll(':scope > td');
+            // First cell has arrow icon — get only the block name text node
+            const blockName = cells[0].querySelector('div') ? cells[0].querySelector('div').innerText.trim() : cells[0].innerText.trim();
+            return [blockName, cells[1].innerText.trim(), cells[2].innerText.trim(), cells[3].innerText.trim(), cells[4].innerText.trim()];
+          });
         bodyHtml += `<h3>Block Summary</h3><table>
           <thead><tr><th>Block</th><th>Sections</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
           <tbody>${rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
