@@ -943,7 +943,7 @@ if ($conn) {
     // Helper: read visible rows from a table into an array of cell text arrays
     function getVisibleRows(tableId) {
       return [...document.querySelectorAll(`#${tableId} tbody tr`)]
-        .filter(r => r.style.display !== 'none')
+        .filter(r => r.style.display !== 'none' && !r.id.startsWith('sections-'))
         .map(r => [...r.querySelectorAll('td')].map(td => td.innerText.trim()));
     }
 
