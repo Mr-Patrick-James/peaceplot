@@ -634,9 +634,9 @@ if ($conn) {
                       data-date="<?php echo $burial['date_of_burial'] ?? ''; ?>"
                       data-age="<?php echo intval($burial['age'] ?? 0); ?>">
                     <td><?php echo htmlspecialchars($burial['full_name']); ?></td>
-                    <td><?php echo htmlspecialchars($burial['lot_number'] ?: '—'); ?></td>
-                    <td><?php echo htmlspecialchars($burial['section'] ?: '—'); ?></td>
-                    <td><?php echo htmlspecialchars($burial['block'] ?? '—'); ?></td>
+                    <td><?php echo htmlspecialchars($burial['lot_number'] ?: 'Unassigned'); ?></td>
+                    <td><?php echo htmlspecialchars($burial['section'] ?: 'Unassigned'); ?></td>
+                    <td><?php echo htmlspecialchars($burial['block'] ?? 'Unassigned'); ?></td>
                     <td><?php echo $burial['date_of_burial'] ? date('M d, Y', strtotime($burial['date_of_burial'])) : '—'; ?></td>
                     <td><?php echo $burial['age'] ?: '—'; ?></td>
                   </tr>
