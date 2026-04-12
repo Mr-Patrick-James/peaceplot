@@ -940,78 +940,54 @@ if ($conn) {
       all:              'Full Cemetery Report'
     };
 
+    // Helper: read visible rows from a table into an array of cell text arrays
+    function getVisibleRows(tableId) {
+      return [...document.querySelectorAll(`#${tableId} tbody tr`)]
+        .filter(r => r.style.display !== 'none')
+        .map(r => [...r.querySelectorAll('td')].map(td => td.innerText.trim()));
+    }
+
     function printReport(type) {
       const title = reportTitles[type] || 'Cemetery Report';
       const now = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
-
       let bodyHtml = '';
 
-      // Summary stats block
+      // Stats summary (always from live data)
       if (type === 'all' || type === 'all_lots') {
         bodyHtml += `
           <div class="stat-row">
             <div class="stat-box"><div class="stat-num">${reportData.stats.total_lots}</div><div class="stat-lbl">Total Lots</div></div>
-            <div class="stat-box"><div class="stat-num" style="color:#22c55e">${reportData.stats.vacant_lots}</div><div class="stat-lbl">Vacant</div></div>
-            <div class="stat-box"><div class="stat-num" style="color:#f97316">${reportData.stats.occupied_lots}</div><div class="stat-lbl">Occupied</div></div>
-            <div class="stat-box"><div class="stat-num" style="color:#3b82f6">${reportData.stats.total_burials}</div><div class="stat-lbl">Burial Records</div></div>
+            <div class="stat-box"><div class="stat-num">${reportData.stats.vacant_lots}</div><div class="stat-lbl">Vacant</div></div>
+            <div class="stat-box"><div class="stat-num">${reportData.stats.occupied_lots}</div><div class="stat-lbl">Occupied</div></div>
+            <div class="stat-box"><div class="stat-num">${reportData.stats.total_burials}</div><div class="stat-lbl">Burial Records</div></div>
           </div>`;
       }
 
-      // Section summary table
-      if (type === 'all' || type === 'all_lots' || type === 'vacant_lots' || type === 'occupied_lots') {
-        bodyHtml += `<h3>Section-wise Summary</h3>
-          <table>
-            <thead><tr><th>Section</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
-            <tbody>`;
-        reportData.sections.forEach(s => {
-          if (type === 'vacant_lots' && s.vacant == 0) return;
-          if (type === 'occupied_lots' && s.occupied == 0) return;
-          bodyHtml += `<tr><td>${s.section}</td><td>${s.total}</td><td>${s.occupied}</td><td>${s.vacant}</td></tr>`;
-        });
-        bodyHtml += `</tbody></table>`;
-      }
-
-      // Block summary table
+      // Block table — reads filtered visible rows
       if (type === 'blocks' || type === 'all') {
-        bodyHtml += `<h3>Block Summary</h3>
-          <table>
-            <thead><tr><th>Block</th><th>Sections</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
-            <tbody>`;
-        reportData.blocks.forEach(b => {
-          bodyHtml += `<tr><td>${b.block}</td><td>${b.section_count}</td><td>${b.total_lots}</td><td>${b.occupied}</td><td>${b.vacant}</td></tr>`;
-        });
-        bodyHtml += `</tbody></table>`;
+        const rows = getVisibleRows('blockTable');
+        bodyHtml += `<h3>Block Summary</h3><table>
+          <thead><tr><th>Block</th><th>Sections</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
+          <tbody>${rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>`;
       }
 
-      // Sections with block reference
+      // Section table — reads filtered visible rows
       if (type === 'sections' || type === 'all') {
-        bodyHtml += `<h3>Section Summary</h3>
-          <table>
-            <thead><tr><th>Section</th><th>Block</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
-            <tbody>`;
-        reportData.sections.forEach(s => {
-          bodyHtml += `<tr><td>${s.section}</td><td>${s.block_name || '—'}</td><td>${s.total}</td><td>${s.occupied}</td><td>${s.vacant}</td></tr>`;
-        });
-        bodyHtml += `</tbody></table>`;
+        const rows = getVisibleRows('sectionTable');
+        bodyHtml += `<h3>Section Summary</h3><table>
+          <thead><tr><th>Block</th><th>Section</th><th>Total Lots</th><th>Occupied</th><th>Vacant</th></tr></thead>
+          <tbody>${rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>`;
       }
 
-      // Recent burials / deceased records table
-      if (type === 'all' || type === 'deceased_records') {
-        bodyHtml += `<h3>Burial Records</h3>
-          <table>
-            <thead><tr><th>Full Name</th><th>Lot</th><th>Section</th><th>Date of Burial</th><th>Age</th></tr></thead>
-            <tbody>`;
-        reportData.recent_burials.forEach(b => {
-          const burialDate = b.date_of_burial ? new Date(b.date_of_burial).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
-          bodyHtml += `<tr>
-            <td>${b.full_name}</td>
-            <td>${b.lot_number || '—'}</td>
-            <td>${b.section || '—'}</td>
-            <td>${burialDate}</td>
-            <td>${b.age || '—'}</td>
-          </tr>`;
-        });
-        bodyHtml += `</tbody></table>`;
+      // Burial records — reads filtered visible rows
+      if (type === 'deceased_records' || type === 'all') {
+        const rows = getVisibleRows('burialTable');
+        bodyHtml += `<h3>Burial Records</h3><table>
+          <thead><tr><th>Full Name</th><th>Lot</th><th>Section</th><th>Block</th><th>Date of Burial</th><th>Age</th></tr></thead>
+          <tbody>${rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>`;
       }
 
       const win = window.open('', '_blank', 'width=900,height=700');
@@ -1037,10 +1013,7 @@ if ($conn) {
     td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     tr:last-child td { border-bottom: none; }
     .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; }
-    @media print {
-      body { padding: 20px; }
-      button { display: none; }
-    }
+    @media print { body { padding: 20px; } }
   </style>
 </head>
 <body>
