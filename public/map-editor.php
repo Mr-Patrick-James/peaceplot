@@ -1465,17 +1465,65 @@ if ($conn) {
       rectangles.push({ rect, lotData, x, y, width, height, rotation });
     }
 
-    // ── Edit Mode: Select, Move, Resize, Rotate ───────────────
+    // ── Edit Mode: Photoshop-style ─────────────────────────────
     let selectedRect = null;
 
+    // Floating properties panel
+    const propPanel = document.createElement('div');
+    propPanel.id = 'rectPropsPanel';
+    propPanel.style.cssText = `
+      display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      background:#1e293b; color:#fff; border-radius:14px; padding:12px 20px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.4); z-index:9999;
+      display:none; align-items:center; gap:16px; font-size:12px; font-weight:600;
+      white-space:nowrap; user-select:none;
+    `;
+    propPanel.innerHTML = `
+      <span style="color:#94a3b8; font-size:11px; letter-spacing:0.05em;">TRANSFORM</span>
+      <label style="display:flex;align-items:center;gap:5px;">X <input id="pp_x" type="number" step="0.1" style="width:60px;background:#334155;border:1px solid #475569;color:#fff;border-radius:6px;padding:4px 6px;font-size:12px;outline:none;"></label>
+      <label style="display:flex;align-items:center;gap:5px;">Y <input id="pp_y" type="number" step="0.1" style="width:60px;background:#334155;border:1px solid #475569;color:#fff;border-radius:6px;padding:4px 6px;font-size:12px;outline:none;"></label>
+      <label style="display:flex;align-items:center;gap:5px;">W <input id="pp_w" type="number" step="0.1" min="0.1" style="width:60px;background:#334155;border:1px solid #475569;color:#fff;border-radius:6px;padding:4px 6px;font-size:12px;outline:none;"></label>
+      <label style="display:flex;align-items:center;gap:5px;">H <input id="pp_h" type="number" step="0.1" min="0.1" style="width:60px;background:#334155;border:1px solid #475569;color:#fff;border-radius:6px;padding:4px 6px;font-size:12px;outline:none;"></label>
+      <label style="display:flex;align-items:center;gap:5px;">° <input id="pp_r" type="number" step="1" style="width:55px;background:#334155;border:1px solid #475569;color:#fff;border-radius:6px;padding:4px 6px;font-size:12px;outline:none;"></label>
+      <button onclick="deselectRectangle()" style="background:#475569;border:none;color:#fff;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;">Done</button>
+    `;
+    document.body.appendChild(propPanel);
+
+    function updatePropPanel(rect) {
+      if (!rect) return;
+      document.getElementById('pp_x').value = parseFloat(rect.style.left).toFixed(2);
+      document.getElementById('pp_y').value = parseFloat(rect.style.top).toFixed(2);
+      document.getElementById('pp_w').value = parseFloat(rect.style.width).toFixed(2);
+      document.getElementById('pp_h').value = parseFloat(rect.style.height).toFixed(2);
+      document.getElementById('pp_r').value = parseFloat(rect.getAttribute('data-rotation') || 0);
+    }
+
+    // Apply panel inputs to rect
+    ['pp_x','pp_y','pp_w','pp_h','pp_r'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        if (!selectedRect) return;
+        const x = parseFloat(document.getElementById('pp_x').value) || 0;
+        const y = parseFloat(document.getElementById('pp_y').value) || 0;
+        const w = Math.max(0.1, parseFloat(document.getElementById('pp_w').value) || 1);
+        const h = Math.max(0.1, parseFloat(document.getElementById('pp_h').value) || 1);
+        const r = parseFloat(document.getElementById('pp_r').value) || 0;
+        selectedRect.style.left      = x + '%';
+        selectedRect.style.top       = y + '%';
+        selectedRect.style.width     = w + '%';
+        selectedRect.style.height    = h + '%';
+        selectedRect.style.transform = `rotate(${r}deg)`;
+        selectedRect.setAttribute('data-rotation', r);
+        syncRectData(selectedRect);
+      });
+    });
+
     function selectRectangle(rectEl) {
-      // Deselect previous
       if (selectedRect && selectedRect !== rectEl) deselectRectangle();
       selectedRect = rectEl;
       rectEl.classList.add('selected');
       rectEl.style.cursor = 'move';
 
-      // Add resize handles if not already there
+      // Resize handles
       if (!rectEl.querySelector('.resize-handle')) {
         ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
           const h = document.createElement('div');
@@ -1485,7 +1533,7 @@ if ($conn) {
         });
       }
 
-      // Add top rotate handle if not already there
+      // Rotate handle (top-center)
       if (!rectEl.querySelector('.rotate-top-handle')) {
         const rh = document.createElement('div');
         rh.className = 'rotate-top-handle';
@@ -1495,8 +1543,9 @@ if ($conn) {
         rectEl.appendChild(rh);
       }
 
-      // Enable drag-to-move
       rectEl.addEventListener('mousedown', startMove);
+      propPanel.style.display = 'flex';
+      updatePropPanel(rectEl);
     }
 
     function deselectRectangle() {
@@ -1506,19 +1555,21 @@ if ($conn) {
       selectedRect.querySelectorAll('.resize-handle, .rotate-top-handle').forEach(h => h.remove());
       selectedRect.removeEventListener('mousedown', startMove);
       selectedRect = null;
+      propPanel.style.display = 'none';
     }
 
     // Click outside to deselect
     document.addEventListener('mousedown', e => {
-      if (selectedRect && !selectedRect.contains(e.target)) deselectRectangle();
+      if (selectedRect && !selectedRect.contains(e.target) && !propPanel.contains(e.target)) {
+        deselectRectangle();
+      }
     });
 
     // ── Move ──────────────────────────────────────────────────
     function startMove(e) {
       if (e.target.classList.contains('resize-handle') ||
           e.target.classList.contains('rotate-top-handle') ||
-          e.target.classList.contains('lot-remove-btn') ||
-          e.target.classList.contains('lot-rotate-handle')) return;
+          e.target.classList.contains('lot-remove-btn')) return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -1533,10 +1584,9 @@ if ($conn) {
       function onMove(ev) {
         const dx = (ev.clientX - startMouseX) / zoom / imgW * 100;
         const dy = (ev.clientY - startMouseY) / zoom / imgH * 100;
-        const newLeft = Math.max(0, Math.min(100 - parseFloat(rect.style.width), startLeft + dx));
-        const newTop  = Math.max(0, Math.min(100 - parseFloat(rect.style.height), startTop + dy));
-        rect.style.left = newLeft + '%';
-        rect.style.top  = newTop  + '%';
+        rect.style.left = (startLeft + dx) + '%';
+        rect.style.top  = (startTop  + dy) + '%';
+        updatePropPanel(rect);
       }
       function onUp() {
         document.removeEventListener('mousemove', onMove);
@@ -1547,13 +1597,17 @@ if ($conn) {
       document.addEventListener('mouseup', onUp);
     }
 
-    // ── Resize ────────────────────────────────────────────────
+    // ── Resize (rotation-aware) ───────────────────────────────
     function startResize(e, rect, dir) {
       e.preventDefault();
       e.stopPropagation();
 
       const imgW = mapImage.offsetWidth;
       const imgH = mapImage.offsetHeight;
+      const angle = (parseFloat(rect.getAttribute('data-rotation') || 0)) * Math.PI / 180;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+
       const startMouseX = e.clientX;
       const startMouseY = e.clientY;
       const startLeft   = parseFloat(rect.style.left);
@@ -1562,20 +1616,27 @@ if ($conn) {
       const startHeight = parseFloat(rect.style.height);
 
       function onMove(ev) {
-        const dx = (ev.clientX - startMouseX) / zoom / imgW * 100;
-        const dy = (ev.clientY - startMouseY) / zoom / imgH * 100;
-        let l = startLeft, t = startTop, w = startWidth, h = startHeight;
-        const minSize = 0.5;
+        // Raw mouse delta in image-percent space
+        const rawDx = (ev.clientX - startMouseX) / zoom / imgW * 100;
+        const rawDy = (ev.clientY - startMouseY) / zoom / imgH * 100;
 
-        if (dir.includes('e')) w = Math.max(minSize, startWidth + dx);
-        if (dir.includes('s')) h = Math.max(minSize, startHeight + dy);
-        if (dir.includes('w')) { w = Math.max(minSize, startWidth - dx); l = startLeft + startWidth - w; }
-        if (dir.includes('n')) { h = Math.max(minSize, startHeight - dy); t = startTop + startHeight - h; }
+        // Project delta onto the rotated axes
+        const localDx =  rawDx * cos + rawDy * sin;
+        const localDy = -rawDx * sin + rawDy * cos;
+
+        let l = startLeft, t = startTop, w = startWidth, h = startHeight;
+        const min = 0.3;
+
+        if (dir.includes('e')) w = Math.max(min, startWidth  + localDx);
+        if (dir.includes('s')) h = Math.max(min, startHeight + localDy);
+        if (dir.includes('w')) { w = Math.max(min, startWidth  - localDx); l = startLeft + startWidth  - w; }
+        if (dir.includes('n')) { h = Math.max(min, startHeight - localDy); t = startTop  + startHeight - h; }
 
         rect.style.left   = l + '%';
         rect.style.top    = t + '%';
         rect.style.width  = w + '%';
         rect.style.height = h + '%';
+        updatePropPanel(rect);
       }
       function onUp() {
         document.removeEventListener('mousemove', onMove);
@@ -1586,20 +1647,21 @@ if ($conn) {
       document.addEventListener('mouseup', onUp);
     }
 
-    // ── Rotate (top handle) ───────────────────────────────────
+    // ── Rotate ────────────────────────────────────────────────
     function startRotateHandle(e, rect) {
       e.preventDefault();
       e.stopPropagation();
 
-      const bounds = rect.getBoundingClientRect();
-      const cx = bounds.left + bounds.width / 2;
-      const cy = bounds.top  + bounds.height / 2;
-
       function onMove(ev) {
+        const bounds = rect.getBoundingClientRect();
+        const cx = bounds.left + bounds.width  / 2;
+        const cy = bounds.top  + bounds.height / 2;
         const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI) + 90;
-        const snapped = Math.round(angle / 5) * 5;
+        // Hold Shift to snap to 15°, otherwise free
+        const snapped = e.shiftKey ? Math.round(angle / 15) * 15 : Math.round(angle * 10) / 10;
         rect.style.transform = `rotate(${snapped}deg)`;
         rect.setAttribute('data-rotation', snapped);
+        updatePropPanel(rect);
       }
       function onUp() {
         document.removeEventListener('mousemove', onMove);
@@ -1610,7 +1672,7 @@ if ($conn) {
       document.addEventListener('mouseup', onUp);
     }
 
-    // Sync rect DOM state back to rectangles array
+    // Sync rect DOM state back to rectangles array and auto-save
     function syncRectData(rect) {
       const lotId = rect.getAttribute('data-lot-id');
       const entry = rectangles.find(r => r.lotData.id == lotId);
@@ -1621,6 +1683,7 @@ if ($conn) {
         entry.height   = parseFloat(rect.style.height);
         entry.rotation = parseFloat(rect.getAttribute('data-rotation') || 0);
       }
+      saveAllLots(true);
     }
     // ── End Edit Mode ─────────────────────────────────────────
     function filterSectionsByBlock() {
