@@ -238,7 +238,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;background:#fff;over
    STATS STRIP
 ══════════════════════════════════════ */
 .stats-strip{background:linear-gradient(135deg,#080c1c,#12103a);padding:3.5rem 2rem}
-.stats-inner{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem}
+.stats-inner{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
 .stat-item{
   text-align:center;padding:2rem 1.5rem;border-radius:18px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
@@ -502,7 +502,7 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
    RESPONSIVE
 ══════════════════════════════════════ */
 @media(max-width:1024px){
-  .stats-inner{grid-template-columns:repeat(3,1fr)}
+  .stats-inner{grid-template-columns:repeat(2,1fr)}
   .about-grid{grid-template-columns:1fr;gap:2.5rem}
   .features-grid{grid-template-columns:repeat(2,1fr)}
   .footer-top{grid-template-columns:1fr 1fr}
@@ -842,11 +842,6 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
       <div class="stat-icon-wrap" style="background:rgba(236,72,153,.15)"><i class="fas fa-th-large" style="color:#f472b6"></i></div>
       <div class="stat-num"><?php echo number_format($stats['total_blocks']); ?></div>
       <div class="stat-lbl">Blocks</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-icon-wrap" style="background:rgba(245,158,11,.15)"><i class="fas fa-images" style="color:#fbbf24"></i></div>
-      <div class="stat-num"><?php echo number_format($stats['total_images']); ?></div>
-      <div class="stat-lbl">Memorial Images</div>
     </div>
   </div>
 </section>
