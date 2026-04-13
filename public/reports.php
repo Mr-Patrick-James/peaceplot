@@ -435,30 +435,33 @@ if ($conn) {
                   <button onclick="clearSectionFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-                  <!-- Blocks -->
-                  <div>
-                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Blocks</div>
-                    <div style="display:flex; flex-direction:column; gap:8px; max-height:140px; overflow-y:auto;">
-                      <?php foreach ($stats['blocks'] as $b): ?>
-                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                          <input type="checkbox" class="sec-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>" onchange="onSecBlockChange()" style="width:16px;height:16px;cursor:pointer;">
+                  <!-- Blocks with cascading sections -->
+                  <div style="grid-column:1/-1;">
+                    <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Blocks &amp; Sections</div>
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                      <?php foreach ($stats['blocks'] as $b):
+                        $bSections = array_filter($stats['sections'], fn($s) => strtolower($s['block_name'] ?? '') === strtolower($b['block']));
+                      ?>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
+                          <input type="checkbox" class="sec-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
+                            onchange="onSecBlockChange('<?php echo addslashes($b['block']); ?>')"
+                            style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                           <?php echo htmlspecialchars($b['block']); ?>
                         </label>
-                      <?php endforeach; ?>
-                    </div>
-                  </div>
-                  <!-- Sections cascaded -->
-                  <div>
-                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">
-                      Sections
-                      <span id="secSectionHint" style="font-size:11px; color:#94a3b8; font-weight:400;"> (select block first)</span>
-                    </div>
-                    <div id="secSectionList" style="display:flex; flex-direction:column; gap:8px; max-height:140px; overflow-y:auto;">
-                      <?php foreach ($stats['sections'] as $s): ?>
-                        <label class="sec-section-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                          <input type="checkbox" class="sec-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
-                          <span><?php echo htmlspecialchars($s['section']); ?> <span style="color:#94a3b8; font-size:11px;">(<?php echo htmlspecialchars($s['block_name'] ?? 'No Block'); ?>)</span></span>
-                        </label>
+                        <?php if (!empty($bSections)): ?>
+                          <div id="sec-secs-<?php echo htmlspecialchars($b['block']); ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:4px;">
+                            <?php foreach ($bSections as $s): ?>
+                              <label class="sec-section-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
+                                <input type="checkbox" class="sec-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"
+                                  onchange="applySectionFilters()"
+                                  style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                                <?php echo htmlspecialchars($s['section']); ?>
+                              </label>
+                            <?php endforeach; ?>
+                          </div>
+                        <?php endif; ?>
                       <?php endforeach; ?>
                     </div>
                   </div>
@@ -544,34 +547,33 @@ if ($conn) {
                   </div>
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                  <!-- Blocks -->
-                  <div>
-                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                      Blocks
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
-                      <?php foreach ($stats['blocks'] as $b): ?>
-                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                          <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>" onchange="onBurialBlockChange()" style="width:16px;height:16px;border-radius:4px;cursor:pointer;">
+                  <!-- Blocks + Sections cascading -->
+                  <div style="grid-column:1/-1;">
+                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px;">Blocks &amp; Sections</div>
+                    <div style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto;">
+                      <?php foreach ($stats['blocks'] as $b):
+                        $bSections = array_filter($stats['sections'], fn($s) => strtolower($s['block_name'] ?? '') === strtolower($b['block']));
+                      ?>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
+                          <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
+                            onchange="onBurialBlockChange('<?php echo addslashes($b['block']); ?>')"
+                            style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                           <?php echo htmlspecialchars($b['block']); ?>
                         </label>
-                      <?php endforeach; ?>
-                    </div>
-                  </div>
-                  <!-- Sections — filtered by selected blocks -->
-                  <div>
-                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-                      Sections
-                      <span id="burialSectionHint" style="font-size:11px; color:#94a3b8; font-weight:400;">(select block first)</span>
-                    </div>
-                    <div id="burialSectionList" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
-                      <?php foreach ($stats['sections'] as $s): ?>
-                        <label class="burial-sec-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                          <input type="checkbox" class="burial-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>" onchange="applyBurialFilters()" style="width:16px;height:16px;border-radius:4px;cursor:pointer;">
-                          <span><?php echo htmlspecialchars($s['section']); ?> <span style="color:#94a3b8; font-size:11px;">(<?php echo htmlspecialchars($s['block_name'] ?? 'No Block'); ?>)</span></span>
-                        </label>
+                        <?php if (!empty($bSections)): ?>
+                          <div id="burial-secs-<?php echo htmlspecialchars($b['block']); ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:4px;">
+                            <?php foreach ($bSections as $s): ?>
+                              <label class="burial-sec-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
+                                <input type="checkbox" class="burial-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"
+                                  onchange="applyBurialFilters()"
+                                  style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                                <?php echo htmlspecialchars($s['section']); ?>
+                              </label>
+                            <?php endforeach; ?>
+                          </div>
+                        <?php endif; ?>
                       <?php endforeach; ?>
                     </div>
                   </div>
@@ -722,22 +724,13 @@ if ($conn) {
     }
 
     // ── Section filters ────────────────────────────────────────
-    function onSecBlockChange() {
-      const selectedBlocks = [...document.querySelectorAll('.sec-block-cb:checked')].map(c => c.value);
-      const hint = document.getElementById('secSectionHint');
-      document.querySelectorAll('.sec-section-label').forEach(label => {
-        const blockVal = (label.dataset.block || '').toLowerCase();
-        if (selectedBlocks.length === 0) {
-          label.style.display = 'flex';
-          label.querySelector('input').checked = false;
-          if (hint) hint.style.display = 'inline';
-        } else {
-          const visible = selectedBlocks.some(b => b === blockVal);
-          label.style.display = visible ? 'flex' : 'none';
-          if (!visible) label.querySelector('input').checked = false;
-          if (hint) hint.style.display = 'none';
-        }
-      });
+    function onSecBlockChange(blockName) {
+      const cb = document.querySelector(`.sec-block-cb[value="${blockName.toLowerCase()}"]`);
+      const secDiv = document.getElementById(`sec-secs-${blockName}`);
+      if (secDiv) {
+        secDiv.style.display = cb && cb.checked ? 'flex' : 'none';
+        if (!cb || !cb.checked) secDiv.querySelectorAll('.sec-section-cb').forEach(s => s.checked = false);
+      }
       applySectionFilters();
     }
 
@@ -769,8 +762,7 @@ if ($conn) {
     }
     function clearSectionFilters() {
       document.querySelectorAll('.sec-block-cb, .sec-section-cb').forEach(cb => cb.checked = false);
-      document.querySelectorAll('.sec-section-label').forEach(l => l.style.display = 'flex');
-      document.getElementById('secSectionHint').style.display = 'inline';
+      document.querySelectorAll('[id^="sec-secs-"]').forEach(d => d.style.display = 'none');
       document.getElementById('secHasOccupied').checked = false;
       document.getElementById('secHasVacant').checked   = false;
       document.getElementById('sectionSearch').value = '';
@@ -778,24 +770,13 @@ if ($conn) {
     }
 
     // ── Burial filters + pagination ────────────────────────────
-    function onBurialBlockChange() {
-      const selectedBlocks = [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value);
-      const hint = document.getElementById('burialSectionHint');
-
-      document.querySelectorAll('.burial-sec-label').forEach(label => {
-        const blockVal = (label.dataset.block || '').toLowerCase();
-        if (selectedBlocks.length === 0) {
-          label.style.display = 'flex';
-          label.querySelector('input').checked = false;
-          if (hint) hint.style.display = 'inline';
-        } else {
-          const visible = selectedBlocks.some(b => b === blockVal);
-          label.style.display = visible ? 'flex' : 'none';
-          if (!visible) label.querySelector('input').checked = false;
-          if (hint) hint.style.display = 'none';
-        }
-      });
-
+    function onBurialBlockChange(blockName) {
+      const cb = document.querySelector(`.burial-block-cb[value="${blockName.toLowerCase()}"]`);
+      const secDiv = document.getElementById(`burial-secs-${blockName}`);
+      if (secDiv) {
+        secDiv.style.display = cb && cb.checked ? 'flex' : 'none';
+        if (!cb || !cb.checked) secDiv.querySelectorAll('.burial-section-cb').forEach(s => s.checked = false);
+      }
       applyBurialFilters();
     }
     const BURIAL_PER_PAGE = 20;
@@ -904,8 +885,7 @@ if ($conn) {
 
     function clearBurialFilters() {
       document.querySelectorAll('.burial-block-cb, .burial-section-cb').forEach(cb => cb.checked = false);
-      document.querySelectorAll('.burial-sec-label').forEach(l => l.style.display = 'flex');
-      document.getElementById('burialSectionHint').style.display = 'inline';
+      document.querySelectorAll('[id^="burial-secs-"]').forEach(d => d.style.display = 'none');
       document.getElementById('burialDateFrom').value = '';
       document.getElementById('burialDateTo').value   = '';
       document.getElementById('burialAgeMin').value   = '';
