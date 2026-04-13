@@ -1387,36 +1387,38 @@ if ($conn) {
             </button>
 
             <div id="highlightPanel" onclick="event.stopPropagation()"
-              style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:340px; padding:20px;">
+              style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:280px; padding:20px; max-height:420px; overflow-y:auto;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <span style="font-size:15px; font-weight:700; color:#1e293b;">Highlight on Map</span>
                 <button onclick="clearHighlights()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
               </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <!-- Blocks -->
-                <div>
-                  <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px;">Blocks</div>
-                  <div style="display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto;">
-                    <?php foreach ($map_blocks as $b): ?>
-                      <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                        <input type="checkbox" class="hl-block-cb" value="<?php echo $b['id']; ?>" onchange="applyHighlights()" style="width:15px;height:15px;cursor:pointer; accent-color:#2f6df6;">
-                        <?php echo htmlspecialchars($b['name']); ?>
-                      </label>
-                    <?php endforeach; ?>
-                  </div>
-                </div>
-                <!-- Sections -->
-                <div>
-                  <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px;">Sections</div>
-                  <div style="display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto;">
-                    <?php foreach ($map_sections as $s): ?>
-                      <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                        <input type="checkbox" class="hl-section-cb" value="<?php echo $s['id']; ?>" onchange="applyHighlights()" style="width:15px;height:15px;cursor:pointer; accent-color:#2f6df6;">
-                        <?php echo htmlspecialchars($s['name']); ?>
-                      </label>
-                    <?php endforeach; ?>
-                  </div>
-                </div>
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <?php foreach ($map_blocks as $b):
+                  $bSections = array_filter($map_sections, fn($s) => $s['block_id'] == $b['id']);
+                ?>
+                  <!-- Block row -->
+                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:7px 8px; border-radius:8px; background:#f8fafc;">
+                    <input type="checkbox" class="hl-block-cb" value="<?php echo $b['id']; ?>"
+                      onchange="onHlBlockChange(<?php echo $b['id']; ?>)"
+                      style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <?php echo htmlspecialchars($b['name']); ?>
+                  </label>
+                  <!-- Sections of this block -->
+                  <?php if (!empty($bSections)): ?>
+                    <div id="hl-secs-<?php echo $b['id']; ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:6px;">
+                      <?php foreach ($bSections as $s): ?>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
+                          <input type="checkbox" class="hl-section-cb" value="<?php echo $s['id']; ?>"
+                            onchange="applyHighlights()"
+                            style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                          <?php echo htmlspecialchars($s['name']); ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
+                  <?php endif; ?>
+                <?php endforeach; ?>
               </div>
             </div>
           </div>
@@ -2815,6 +2817,21 @@ if ($conn) {
       if (panel) panel.style.display = 'none';
     });
 
+    function onHlBlockChange(blockId) {
+      const cb = document.querySelector(`.hl-block-cb[value="${blockId}"]`);
+      const secDiv = document.getElementById(`hl-secs-${blockId}`);
+      if (secDiv) {
+        if (cb.checked) {
+          secDiv.style.display = 'flex';
+        } else {
+          secDiv.style.display = 'none';
+          // uncheck all sections of this block
+          secDiv.querySelectorAll('.hl-section-cb').forEach(s => s.checked = false);
+        }
+      }
+      applyHighlights();
+    }
+
     function applyHighlights() {
       const selBlocks   = [...document.querySelectorAll('.hl-block-cb:checked')].map(c => parseInt(c.value));
       const selSections = [...document.querySelectorAll('.hl-section-cb:checked')].map(c => parseInt(c.value));
@@ -2825,15 +2842,13 @@ if ($conn) {
       badge.style.display = total > 0 ? 'inline' : 'none';
       badge.textContent = total;
 
-      // Section rectangles — use existing pulse-border animation via .active class
+      // Section rectangles — only highlight if explicitly selected in sections filter
       document.querySelectorAll('.section-rectangle').forEach(rect => {
         const secId = parseInt(rect.dataset.sectionId);
-        const blkId = parseInt(rect.dataset.blockId);
-        const match = selSections.includes(secId) || selBlocks.includes(blkId);
-        rect.classList.toggle('active', match);
+        rect.classList.toggle('active', selSections.includes(secId));
       });
 
-      // Block rectangles — use existing pulse-border-green animation via .active class
+      // Block rectangles — highlight if block is selected
       document.querySelectorAll('.block-rectangle').forEach(rect => {
         const blkId = parseInt(rect.dataset.blockId);
         rect.classList.toggle('active', selBlocks.includes(blkId));
@@ -2842,6 +2857,7 @@ if ($conn) {
 
     function clearHighlights() {
       document.querySelectorAll('.hl-block-cb, .hl-section-cb').forEach(cb => cb.checked = false);
+      document.querySelectorAll('[id^="hl-secs-"]').forEach(d => d.style.display = 'none');
       applyHighlights();
     }
     // ── End Highlight Filter ───────────────────────────────────
