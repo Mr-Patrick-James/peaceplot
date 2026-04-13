@@ -639,12 +639,12 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
       <div class="about-text">
         <span class="section-tag">Our Story</span>
         <h2 class="section-title">Sacred Grounds in the Heart of Naujan</h2>
-        <p>Holy Spirit Parish is a Roman Catholic parish located in Barangay Barcenaga, Naujan, Oriental Mindoro — a municipality in the MIMAROPA region of the Philippines. The parish is under the pastoral care of the <strong style="color:#0f172a;font-weight:600">Apostolic Vicariate of Calapan</strong>, which oversees Catholic communities across Oriental Mindoro.</p>
+        <p>Holy Spirit Parish is a Roman Catholic parish located in Barangay Barcenaga, Naujan, Oriental Mindoro — a municipality in the MIMAROPA region of the Philippines. The parish is under the pastoral care of the <strong style="color:#0f172a;font-weight:600">Diocese of Calapan</strong>, which oversees Catholic communities across Oriental Mindoro.</p>
         <p>The parish cemetery serves as a sacred resting place for generations of families from Barcenaga and surrounding barangays. Maintained and administered by the parish, it stands as a testament to the community's deep faith and reverence for the departed.</p>
         <p>To honor this legacy, PeacePlot was developed as a dedicated digital management system — ensuring every burial record, every plot, and every family history is preserved with the accuracy, care, and respect it deserves.</p>
         <div class="about-highlights">
           <div class="highlight-item"><i class="fas fa-church"></i><h4>Holy Spirit Parish</h4><p>Barcenaga, Naujan, Oriental Mindoro 5204</p></div>
-          <div class="highlight-item"><i class="fas fa-cross"></i><h4>Apostolic Vicariate of Calapan</h4><p>Diocese overseeing the parish and its ministries</p></div>
+          <div class="highlight-item"><i class="fas fa-cross"></i><h4>Diocese of Calapan</h4><p>Diocese overseeing the parish and its ministries</p></div>
           <div class="highlight-item"><i class="fas fa-users"></i><h4>Community Focused</h4><p>Serving families of Barcenaga and Naujan across generations</p></div>
           <div class="highlight-item"><i class="fas fa-shield-alt"></i><h4>Preserved Records</h4><p>Every burial digitally archived and secured</p></div>
         </div>
@@ -710,7 +710,7 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
           <div class="tl-content">
             <div class="tl-year">Apostolic Vicariate</div>
             <h4>Under the Vicariate of Calapan</h4>
-            <p>Holy Spirit Parish continues its ministry under the Apostolic Vicariate of Calapan, strengthening its pastoral programs and community outreach across Oriental Mindoro.</p>
+            <p>Holy Spirit Parish continues its ministry under the Diocese of Calapan, strengthening its pastoral programs and community outreach across Oriental Mindoro.</p>
           </div>
           <div class="tl-dot"></div>
         </div>
@@ -871,10 +871,10 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
           </div>
           <span>PeacePlot</span>
         </div>
-        <p>The official cemetery management system of Holy Spirit Parish, Barcenaga, Naujan — under the Apostolic Vicariate of Calapan.</p>
+        <p>The official cemetery management system of Holy Spirit Parish, Barcenaga, Naujan — under the Diocese of Calapan.</p>
         <div class="footer-contact">
           <p><i class="fas fa-map-marker-alt"></i> Barcenaga, Naujan, Oriental Mindoro 5204</p>
-          <p><i class="fas fa-church"></i> Apostolic Vicariate of Calapan</p>
+          <p><i class="fas fa-church"></i> Diocese of Calapan</p>
           <p><i class="fas fa-globe"></i> Region IV-B (MIMAROPA)</p>
           <p><i class="fas fa-clock"></i> Mon–Sat: 8:00 AM – 5:00 PM</p>
         </div>
