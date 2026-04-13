@@ -319,6 +319,14 @@ if ($conn) {
       background: rgba(239, 68, 68, 0.2) !important;
       box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 20px rgba(239, 68, 68, 0.6) !important;
     }
+
+    /* Highlight filter states */
+    .lot-marker.hl-dimmed {
+      opacity: 0.18 !important;
+      filter: grayscale(1);
+    }
+    .section-rectangle.hl-active { display: block !important; animation: pulse-border 2s infinite; }
+    .block-rectangle.hl-active   { display: block !important; animation: pulse-border-green 2s infinite; }
     
     .highlighted-marker::after {
       content: '📍';
@@ -1357,16 +1365,61 @@ if ($conn) {
       <?php else: ?>
 
       <div class="map-container">
-        <div class="map-legend">
-          <div class="legend-item">
-            <div class="legend-box vacant"></div>
-            <span>Vacant</span>
+        <div class="map-legend" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+            <div class="legend-item">
+              <div class="legend-box vacant"></div>
+              <span>Vacant</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-box occupied"></div>
+              <span>Occupied</span>
+            </div>
           </div>
-          <div class="legend-item">
-            <div class="legend-box occupied"></div>
-            <span>Occupied</span>
+
+          <!-- Highlight Filter -->
+          <div style="position:relative;">
+            <button id="highlightFilterBtn" onclick="event.stopPropagation(); toggleHighlightPanel()"
+              style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              Highlight
+              <span id="highlightBadge" style="display:none; background:rgba(255,255,255,0.3); border-radius:8px; padding:1px 7px; font-size:11px;"></span>
+            </button>
+
+            <div id="highlightPanel" onclick="event.stopPropagation()"
+              style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:340px; padding:20px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <span style="font-size:15px; font-weight:700; color:#1e293b;">Highlight on Map</span>
+                <button onclick="clearHighlights()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <!-- Blocks -->
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px;">Blocks</div>
+                  <div style="display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto;">
+                    <?php foreach ($map_blocks as $b): ?>
+                      <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                        <input type="checkbox" class="hl-block-cb" value="<?php echo $b['id']; ?>" onchange="applyHighlights()" style="width:15px;height:15px;cursor:pointer; accent-color:#2f6df6;">
+                        <?php echo htmlspecialchars($b['name']); ?>
+                      </label>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+                <!-- Sections -->
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px;">Sections</div>
+                  <div style="display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto;">
+                    <?php foreach ($map_sections as $s): ?>
+                      <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                        <input type="checkbox" class="hl-section-cb" value="<?php echo $s['id']; ?>" onchange="applyHighlights()" style="width:15px;height:15px;cursor:pointer; accent-color:#2f6df6;">
+                        <?php echo htmlspecialchars($s['name']); ?>
+                      </label>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-         
         </div>
 
         <?php if ($mapImage): ?>
@@ -2744,6 +2797,54 @@ if ($conn) {
       }
     };
 
+    // ── Highlight Filter Panel ─────────────────────────────────
+    // Build a lookup: lot marker -> section_id and block_id from PHP data
+    // section_id -> block_id lookup
+    const sectionBlockMap = {};
+    <?php foreach ($map_sections as $s): ?>
+      sectionBlockMap[<?php echo $s['id']; ?>] = <?php echo intval($s['block_id'] ?? 0); ?>;
+    <?php endforeach; ?>
+
+    function toggleHighlightPanel() {
+      const panel = document.getElementById('highlightPanel');
+      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.addEventListener('click', () => {
+      const panel = document.getElementById('highlightPanel');
+      if (panel) panel.style.display = 'none';
+    });
+
+    function applyHighlights() {
+      const selBlocks   = [...document.querySelectorAll('.hl-block-cb:checked')].map(c => parseInt(c.value));
+      const selSections = [...document.querySelectorAll('.hl-section-cb:checked')].map(c => parseInt(c.value));
+      const total = selBlocks.length + selSections.length;
+
+      // Update badge
+      const badge = document.getElementById('highlightBadge');
+      badge.style.display = total > 0 ? 'inline' : 'none';
+      badge.textContent = total;
+
+      // Section rectangles — use existing pulse-border animation via .active class
+      document.querySelectorAll('.section-rectangle').forEach(rect => {
+        const secId = parseInt(rect.dataset.sectionId);
+        const blkId = parseInt(rect.dataset.blockId);
+        const match = selSections.includes(secId) || selBlocks.includes(blkId);
+        rect.classList.toggle('active', match);
+      });
+
+      // Block rectangles — use existing pulse-border-green animation via .active class
+      document.querySelectorAll('.block-rectangle').forEach(rect => {
+        const blkId = parseInt(rect.dataset.blockId);
+        rect.classList.toggle('active', selBlocks.includes(blkId));
+      });
+    }
+
+    function clearHighlights() {
+      document.querySelectorAll('.hl-block-cb, .hl-section-cb').forEach(cb => cb.checked = false);
+      applyHighlights();
+    }
+    // ── End Highlight Filter ───────────────────────────────────
 
     
     function highlightLotOnMap() {
