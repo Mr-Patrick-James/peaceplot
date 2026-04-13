@@ -18,9 +18,9 @@ $blocks = [];
 
 if ($conn) {
     try {
-        // Fetch sections with their block names for filtering
+        // Fetch sections with their block id and name for filtering
         $sectionStmt = $conn->query("
-            SELECT s.id, s.name, b.name as block_name 
+            SELECT s.id, s.name, s.block_id, b.name as block_name 
             FROM sections s 
             LEFT JOIN blocks b ON s.block_id = b.id 
             ORDER BY b.name, s.name
@@ -721,34 +721,38 @@ if ($conn) {
                 </div>
                 <div class="popover-body">
                   <div class="popover-column">
-                    <!-- Blocks Category -->
+                    <!-- Blocks + Sections Cascading Category -->
                     <div class="filter-category active">
                       <button class="category-toggle" onclick="toggleCategory(this)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        Blocks
+                        Blocks &amp; Sections
                       </button>
                       <div class="category-content">
-                        <?php foreach ($blocks as $block): ?>
-                          <label class="filter-option">
-                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block['name']); ?>" onchange="updateFilters()">
+                        <?php foreach ($blocks as $block):
+                          $bSections = array_filter($sections, fn($s) => $s['block_id'] == $block['id']);
+                        ?>
+                          <!-- Block row -->
+                          <label class="filter-option" style="font-weight:600; color:#1e293b; background:#f8fafc; border-radius:8px; padding:6px 8px; margin-bottom:2px;">
+                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block['name']); ?>"
+                              onchange="onBlockFilterChange()"
+                              style="accent-color:#10b981;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                             <?php echo htmlspecialchars($block['name']); ?>
                           </label>
-                        <?php endforeach; ?>
-                      </div>
-                    </div>
-
-                    <!-- Sections Category -->
-                    <div class="filter-category">
-                      <button class="category-toggle" onclick="toggleCategory(this)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        Sections
-                      </button>
-                      <div class="category-content">
-                        <?php foreach ($sections as $section): ?>
-                          <label class="filter-option">
-                            <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section['name']); ?>" onchange="updateFilters()">
-                            <?php echo htmlspecialchars($section['name']); ?> (<?php echo htmlspecialchars($section['block_name'] ?: 'No Block'); ?>)
-                          </label>
+                          <!-- Sections of this block -->
+                          <?php if (!empty($bSections)): ?>
+                            <div id="br-secs-<?php echo $block['id']; ?>" style="display:none; flex-direction:column; gap:1px; padding-left:18px; margin-bottom:4px;">
+                              <?php foreach ($bSections as $s): ?>
+                                <label class="filter-option br-sec-label" data-block="<?php echo htmlspecialchars($block['name']); ?>" style="font-size:12px; color:#475569; padding:5px 8px; border-radius:8px;">
+                                  <input type="checkbox" name="section" value="<?php echo htmlspecialchars($s['name']); ?>"
+                                    onchange="updateFilters()"
+                                    style="accent-color:#3b82f6;">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="width:11px;height:11px;flex-shrink:0;"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                                  <?php echo htmlspecialchars($s['name']); ?>
+                                </label>
+                              <?php endforeach; ?>
+                            </div>
+                          <?php endif; ?>
                         <?php endforeach; ?>
                       </div>
                     </div>

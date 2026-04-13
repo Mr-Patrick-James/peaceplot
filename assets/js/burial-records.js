@@ -241,6 +241,20 @@ function toggleCategory(btn) {
     btn.parentElement.classList.toggle('active');
 }
 
+function onBlockFilterChange() {
+    const selectedBlocks = Array.from(document.querySelectorAll('input[name="block"]:checked')).map(cb => cb.value);
+
+    document.querySelectorAll('[id^="br-secs-"]').forEach(div => {
+        const firstSec = div.querySelector('.br-sec-label');
+        const blockName = firstSec ? firstSec.dataset.block : '';
+        const show = selectedBlocks.includes(blockName);
+        div.style.display = show ? 'flex' : 'none';
+        if (!show) div.querySelectorAll('input[name="section"]').forEach(cb => cb.checked = false);
+    });
+
+    updateFilters();
+}
+
 function updateFilters() {
     const activeBlocks = Array.from(document.querySelectorAll('input[name="block"]:checked')).map(cb => cb.value);
     const activeSections = Array.from(document.querySelectorAll('input[name="section"]:checked')).map(cb => cb.value);
@@ -321,6 +335,7 @@ function removeFilter(name, value) {
 
 function clearAllFilters() {
     document.querySelectorAll('.filter-popover input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('[id^="br-secs-"]').forEach(d => d.style.display = 'none');
     
     // Reset age inputs
     const minInput = document.getElementById('ageMin');
