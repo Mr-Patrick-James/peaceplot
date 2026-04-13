@@ -104,6 +104,15 @@ if ($method === 'GET') {
     }
 
     try {
+        // Per-block uniqueness check (same name allowed in different blocks)
+        $dupCheck = $db->prepare("SELECT id FROM sections WHERE name = ? AND block_id = ?");
+        $dupCheck->execute([$data['name'], $data['block_id']]);
+        if ($dupCheck->fetch()) {
+            http_response_code(400);
+            echo json_encode(['error' => "Section '" . $data['name'] . "' already exists in this block."]);
+            exit;
+        }
+
         $stmt = $db->prepare("INSERT INTO sections (name, description, block_id, map_x, map_y, map_width, map_height) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['name'], 
@@ -119,11 +128,7 @@ if ($method === 'GET') {
         echo json_encode(['id' => $newId, 'message' => 'Section created successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
-        $error = $e->getMessage();
-        if (strpos($error, 'UNIQUE constraint failed: sections.name') !== false) {
-            $error = "Section '" . $data['name'] . "' already exists.";
-        }
-        echo json_encode(['error' => $error]);
+        echo json_encode(['error' => $e->getMessage()]);
     }
 } elseif ($method === 'PUT') {
     $data = json_decode(file_get_contents('php://input'), true);
@@ -141,6 +146,15 @@ if ($method === 'GET') {
     }
 
     try {
+        // Per-block uniqueness check on update
+        $dupCheck = $db->prepare("SELECT id FROM sections WHERE name = ? AND block_id = ? AND id != ?");
+        $dupCheck->execute([$data['name'], $data['block_id'], $data['id']]);
+        if ($dupCheck->fetch()) {
+            http_response_code(400);
+            echo json_encode(['error' => "Section '" . $data['name'] . "' already exists in this block."]);
+            exit;
+        }
+
         $stmt = $db->prepare("UPDATE sections SET name = ?, description = ?, block_id = ?, map_x = ?, map_y = ?, map_width = ?, map_height = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->execute([
             $data['name'], 
@@ -156,11 +170,7 @@ if ($method === 'GET') {
         echo json_encode(['message' => 'Section updated successfully']);
     } catch (PDOException $e) {
         http_response_code(500);
-        $error = $e->getMessage();
-        if (strpos($error, 'UNIQUE constraint failed: sections.name') !== false) {
-            $error = "Section '" . $data['name'] . "' already exists.";
-        }
-        echo json_encode(['error' => $error]);
+        echo json_encode(['error' => $e->getMessage()]);
     }
 } elseif ($method === 'DELETE') {
     $id = $_GET['id'] ?? null;
