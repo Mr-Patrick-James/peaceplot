@@ -26,12 +26,16 @@ try {
     $conn->beginTransaction();
     
     foreach ($input['lots'] as $lot) {
+        // Ensure map_rotation column exists
+        try { $conn->exec("ALTER TABLE cemetery_lots ADD COLUMN map_rotation DECIMAL(6,2) DEFAULT 0"); } catch (PDOException $e) {}
+
         $stmt = $conn->prepare("
             UPDATE cemetery_lots 
             SET map_x = :map_x, 
                 map_y = :map_y,
                 map_width = :map_width,
                 map_height = :map_height,
+                map_rotation = :map_rotation,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id
         ");
@@ -61,6 +65,8 @@ try {
         } else {
             $stmt->bindValue(':map_height', (float)$lot['map_height']);
         }
+
+        $stmt->bindValue(':map_rotation', isset($lot['map_rotation']) ? (float)$lot['map_rotation'] : 0);
         
         $stmt->execute();
     }

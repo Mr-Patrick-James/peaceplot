@@ -294,6 +294,61 @@ if ($conn) {
       transition: background-color 0.2s;
     }
 
+    /* Selected/edit state */
+    .lot-rectangle.selected {
+      outline: 2px solid #2f6df6;
+      outline-offset: 2px;
+      cursor: move;
+      z-index: 150 !important;
+    }
+
+    /* Resize handles — 8 directions */
+    .resize-handle {
+      position: absolute;
+      width: calc(8px + 4px / var(--current-zoom, 1));
+      height: calc(8px + 4px / var(--current-zoom, 1));
+      background: #fff;
+      border: 2px solid #2f6df6;
+      border-radius: 2px;
+      z-index: 300;
+      box-sizing: border-box;
+    }
+    .resize-handle.nw { top:-5px; left:-5px; cursor:nw-resize; }
+    .resize-handle.n  { top:-5px; left:50%; transform:translateX(-50%); cursor:n-resize; }
+    .resize-handle.ne { top:-5px; right:-5px; cursor:ne-resize; }
+    .resize-handle.e  { top:50%; right:-5px; transform:translateY(-50%); cursor:e-resize; }
+    .resize-handle.se { bottom:-5px; right:-5px; cursor:se-resize; }
+    .resize-handle.s  { bottom:-5px; left:50%; transform:translateX(-50%); cursor:s-resize; }
+    .resize-handle.sw { bottom:-5px; left:-5px; cursor:sw-resize; }
+    .resize-handle.w  { top:50%; left:-5px; transform:translateY(-50%); cursor:w-resize; }
+
+    /* Rotation handle on top-center */
+    .rotate-top-handle {
+      position: absolute;
+      top: calc(-22px - 4px / var(--current-zoom, 1));
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(10px + 4px / var(--current-zoom, 1));
+      height: calc(10px + 4px / var(--current-zoom, 1));
+      background: #2f6df6;
+      border-radius: 50%;
+      cursor: grab;
+      z-index: 300;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+    }
+    .rotate-top-handle::before {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1px;
+      height: calc(10px + 2px / var(--current-zoom, 1));
+      background: #2f6df6;
+    }
+    .rotate-top-handle:active { cursor: grabbing; }
+
     .lot-remove-btn {
       position: absolute;
       top: calc(-5px - 5px / var(--current-zoom, 1));
@@ -319,6 +374,25 @@ if ($conn) {
       color: white;
       border-color: rgba(239,68,68,0.6);
     }
+
+    .lot-rotate-handle {
+      position: absolute;
+      top: calc(-5px - 5px / var(--current-zoom, 1));
+      left: calc(-5px - 5px / var(--current-zoom, 1));
+      width: calc(11px + 11px / var(--current-zoom, 1));
+      height: calc(11px + 11px / var(--current-zoom, 1));
+      border-radius: 999px;
+      border: calc(1px + 1px / var(--current-zoom, 1)) solid rgba(0,0,0,0.2);
+      background: rgba(255,255,255,0.95);
+      color: #3b82f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      z-index: 200;
+    }
+    .lot-rotate-handle:hover { background: #eff6ff; border-color: #3b82f6; }
+    .lot-rotate-handle:active { cursor: grabbing; }
     
     .lot-rectangle:hover {
       border-width: calc(2px + 2px / var(--current-zoom, 1));
@@ -1041,7 +1115,7 @@ if ($conn) {
     // Load existing rectangles from lots
     lotsData.forEach(lot => {
       if (lot.map_x !== null && lot.map_y !== null && lot.map_width !== null && lot.map_height !== null) {
-        addRectangle(lot.map_x, lot.map_y, lot.map_width, lot.map_height, lot);
+        addRectangle(lot.map_x, lot.map_y, lot.map_width, lot.map_height, lot, lot.map_rotation || 0);
       }
     });
 
@@ -1320,16 +1394,20 @@ if ($conn) {
       }
     });
 
-    function addRectangle(x, y, width, height, lotData) {
+    function addRectangle(x, y, width, height, lotData, rotation) {
+      rotation = parseFloat(rotation) || 0;
       const rect = document.createElement('div');
       const statusClass = (lotData.actual_status || lotData.status || 'vacant').toLowerCase();
       const isVertical = parseFloat(height) > parseFloat(width);
       rect.className = 'lot-rectangle ' + statusClass + (isVertical ? ' vertical' : '');
       rect.setAttribute('data-lot-id', lotData.id);
+      rect.setAttribute('data-rotation', rotation);
       rect.style.left = x + '%';
       rect.style.top = y + '%';
       rect.style.width = width + '%';
       rect.style.height = height + '%';
+      rect.style.transform = `rotate(${rotation}deg)`;
+      rect.style.transformOrigin = 'center center';
       
       const label = document.createElement('div');
       label.className = 'lot-label';
@@ -1343,7 +1421,6 @@ if ($conn) {
         rect.appendChild(sectionTag);
       }
 
-      // Add layer indicator if multiple layers exist
       const totalLayers = parseInt(lotData.total_layers) || 1;
       const occupiedLayers = parseInt(lotData.occupied_layers) || 0;
       if (totalLayers > 1) {
@@ -1370,6 +1447,13 @@ if ($conn) {
           removeMarkForLot(lotData.id);
           return;
         }
+        e.stopPropagation();
+        selectRectangle(rect);
+      };
+
+      rect.ondblclick = (e) => {
+        e.stopPropagation();
+        deselectRectangle();
         showLotDetails(lotData);
       };
       rect.addEventListener('contextmenu', (e) => {
@@ -1378,9 +1462,167 @@ if ($conn) {
       });
       
       rectanglesContainer.appendChild(rect);
-      rectangles.push({ rect, lotData, x, y, width, height });
+      rectangles.push({ rect, lotData, x, y, width, height, rotation });
     }
 
+    // ── Edit Mode: Select, Move, Resize, Rotate ───────────────
+    let selectedRect = null;
+
+    function selectRectangle(rectEl) {
+      // Deselect previous
+      if (selectedRect && selectedRect !== rectEl) deselectRectangle();
+      selectedRect = rectEl;
+      rectEl.classList.add('selected');
+      rectEl.style.cursor = 'move';
+
+      // Add resize handles if not already there
+      if (!rectEl.querySelector('.resize-handle')) {
+        ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
+          const h = document.createElement('div');
+          h.className = `resize-handle ${dir}`;
+          h.addEventListener('mousedown', e => startResize(e, rectEl, dir));
+          rectEl.appendChild(h);
+        });
+      }
+
+      // Add top rotate handle if not already there
+      if (!rectEl.querySelector('.rotate-top-handle')) {
+        const rh = document.createElement('div');
+        rh.className = 'rotate-top-handle';
+        rh.title = 'Drag to rotate';
+        rh.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`;
+        rh.addEventListener('mousedown', e => startRotateHandle(e, rectEl));
+        rectEl.appendChild(rh);
+      }
+
+      // Enable drag-to-move
+      rectEl.addEventListener('mousedown', startMove);
+    }
+
+    function deselectRectangle() {
+      if (!selectedRect) return;
+      selectedRect.classList.remove('selected');
+      selectedRect.style.cursor = 'pointer';
+      selectedRect.querySelectorAll('.resize-handle, .rotate-top-handle').forEach(h => h.remove());
+      selectedRect.removeEventListener('mousedown', startMove);
+      selectedRect = null;
+    }
+
+    // Click outside to deselect
+    document.addEventListener('mousedown', e => {
+      if (selectedRect && !selectedRect.contains(e.target)) deselectRectangle();
+    });
+
+    // ── Move ──────────────────────────────────────────────────
+    function startMove(e) {
+      if (e.target.classList.contains('resize-handle') ||
+          e.target.classList.contains('rotate-top-handle') ||
+          e.target.classList.contains('lot-remove-btn') ||
+          e.target.classList.contains('lot-rotate-handle')) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rect = e.currentTarget;
+      const imgW = mapImage.offsetWidth;
+      const imgH = mapImage.offsetHeight;
+      const startMouseX = e.clientX;
+      const startMouseY = e.clientY;
+      const startLeft = parseFloat(rect.style.left);
+      const startTop  = parseFloat(rect.style.top);
+
+      function onMove(ev) {
+        const dx = (ev.clientX - startMouseX) / zoom / imgW * 100;
+        const dy = (ev.clientY - startMouseY) / zoom / imgH * 100;
+        const newLeft = Math.max(0, Math.min(100 - parseFloat(rect.style.width), startLeft + dx));
+        const newTop  = Math.max(0, Math.min(100 - parseFloat(rect.style.height), startTop + dy));
+        rect.style.left = newLeft + '%';
+        rect.style.top  = newTop  + '%';
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        syncRectData(rect);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    // ── Resize ────────────────────────────────────────────────
+    function startResize(e, rect, dir) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const imgW = mapImage.offsetWidth;
+      const imgH = mapImage.offsetHeight;
+      const startMouseX = e.clientX;
+      const startMouseY = e.clientY;
+      const startLeft   = parseFloat(rect.style.left);
+      const startTop    = parseFloat(rect.style.top);
+      const startWidth  = parseFloat(rect.style.width);
+      const startHeight = parseFloat(rect.style.height);
+
+      function onMove(ev) {
+        const dx = (ev.clientX - startMouseX) / zoom / imgW * 100;
+        const dy = (ev.clientY - startMouseY) / zoom / imgH * 100;
+        let l = startLeft, t = startTop, w = startWidth, h = startHeight;
+        const minSize = 0.5;
+
+        if (dir.includes('e')) w = Math.max(minSize, startWidth + dx);
+        if (dir.includes('s')) h = Math.max(minSize, startHeight + dy);
+        if (dir.includes('w')) { w = Math.max(minSize, startWidth - dx); l = startLeft + startWidth - w; }
+        if (dir.includes('n')) { h = Math.max(minSize, startHeight - dy); t = startTop + startHeight - h; }
+
+        rect.style.left   = l + '%';
+        rect.style.top    = t + '%';
+        rect.style.width  = w + '%';
+        rect.style.height = h + '%';
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        syncRectData(rect);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    // ── Rotate (top handle) ───────────────────────────────────
+    function startRotateHandle(e, rect) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const bounds = rect.getBoundingClientRect();
+      const cx = bounds.left + bounds.width / 2;
+      const cy = bounds.top  + bounds.height / 2;
+
+      function onMove(ev) {
+        const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI) + 90;
+        const snapped = Math.round(angle / 5) * 5;
+        rect.style.transform = `rotate(${snapped}deg)`;
+        rect.setAttribute('data-rotation', snapped);
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        syncRectData(rect);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    // Sync rect DOM state back to rectangles array
+    function syncRectData(rect) {
+      const lotId = rect.getAttribute('data-lot-id');
+      const entry = rectangles.find(r => r.lotData.id == lotId);
+      if (entry) {
+        entry.x        = parseFloat(rect.style.left);
+        entry.y        = parseFloat(rect.style.top);
+        entry.width    = parseFloat(rect.style.width);
+        entry.height   = parseFloat(rect.style.height);
+        entry.rotation = parseFloat(rect.getAttribute('data-rotation') || 0);
+      }
+    }
+    // ── End Edit Mode ─────────────────────────────────────────
     function filterSectionsByBlock() {
       const blockId = document.getElementById('newBlockId').value;
       const sectionSelect = document.getElementById('newSectionId');
@@ -1763,7 +2005,8 @@ if ($conn) {
         map_x: r.x,
         map_y: r.y,
         map_width: r.width,
-        map_height: r.height
+        map_height: r.height,
+        map_rotation: r.rotation || 0
       }));
       
       try {

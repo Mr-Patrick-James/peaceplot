@@ -1491,7 +1491,8 @@ if ($conn) {
                      style="left: <?php echo $lot['map_x']; ?>%; 
                             top: <?php echo $lot['map_y']; ?>%;
                             width: <?php echo $lot['map_width']; ?>%;
-                            height: <?php echo $lot['map_height']; ?>%;"
+                            height: <?php echo $lot['map_height']; ?>%;
+                            <?php if (!empty($lot['map_rotation'])): ?>transform: rotate(<?php echo $lot['map_rotation']; ?>deg); transform-origin: center center;<?php endif; ?>"
                      onclick="showLotDetails(<?php echo htmlspecialchars(json_encode($lot)); ?>)"
                      title="<?php echo htmlspecialchars($lot['lot_number']); ?> - <?php echo $actualStatus; ?>">
                   <div class="lot-label">
