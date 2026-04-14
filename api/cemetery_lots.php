@@ -469,22 +469,23 @@ function handleDelete($conn, $input) {
             return;
         }
         
-        // Get lot number before deletion
+        // Get lot info before deletion
         $lotStmt = $conn->prepare("SELECT lot_number FROM cemetery_lots WHERE id = :id");
         $lotStmt->bindParam(':id', $id);
         $lotStmt->execute();
-        $lotNum = $lotStmt->fetchColumn() ?: 'ID ' . $id;
-        
-        $stmt = $conn->prepare("DELETE FROM cemetery_lots WHERE id = :id");
-        $stmt->bindParam(':id', $id);
-        
-        if ($stmt->execute()) {
-            logActivity($conn, 'DELETE_LOT', 'cemetery_lots', $id, "Lot $lotNum is removed from the system");
-            echo json_encode(['success' => true, 'message' => 'Lot deleted successfully']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to delete lot']);
+        $lotNum = $lotStmt->fetchColumn();
+        if (!$lotNum) {
+            echo json_encode(['success' => false, 'message' => 'Lot not found']);
+            return;
         }
+
+        // Delete the lot
+        $conn->prepare("DELETE FROM cemetery_lots WHERE id = :id")->execute([':id' => $id]);
+        logActivity($conn, 'DELETE_LOT', 'cemetery_lots', $id, "Lot $lotNum is removed from the system");
+
+        echo json_encode(['success' => true, 'message' => 'Lot deleted successfully']);
     } catch (PDOException $e) {
+        if ($conn->inTransaction()) $conn->rollBack();
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
