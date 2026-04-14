@@ -4,22 +4,25 @@ $db = new Database();
 $conn = $db->getConnection();
 if (!$conn) die("No connection");
 
-// Find global max using lowercase l- pattern
+// Find Block 5 Section 1 id
+$sec = $conn->query("SELECT s.id, s.name, b.name as block FROM sections s LEFT JOIN blocks b ON s.block_id = b.id WHERE b.name = 'Block 5' AND s.name = 'Section 1'")->fetch(PDO::FETCH_ASSOC);
+if (!$sec) die("<p style='font-family:sans-serif;color:red;padding:20px;'>Block 5 / Section 1 not found. Please create it first.</p>");
+
+// Find global max
 $rows = $conn->query("SELECT lot_number FROM cemetery_lots WHERE lot_number LIKE 'l-%'")->fetchAll(PDO::FETCH_COLUMN);
 $max = 0;
 foreach ($rows as $l) {
-    if (preg_match('/^l-(\d+)$/', $l, $m)) {
-        if (intval($m[1]) > $max) $max = intval($m[1]);
-    }
+    if (preg_match('/^l-(\d+)$/', $l, $m) && intval($m[1]) > $max) $max = intval($m[1]);
 }
 
 $start = $max + 1;
-$end   = $max + 200;
-$secId = 2; // Section 1, Block 2
+$end   = $max + 300;
+$secId = $sec['id'];
 
 echo "<pre style='font-family:monospace;padding:20px;'>";
-echo "Current global max: l-$max\n";
-echo "Will create: l-$start to l-$end in Section 1, Block 2\n";
+echo "Section: {$sec['name']} | {$sec['block']} (id:$secId)\n";
+echo "Global max: l-$max\n";
+echo "Will create: l-$start to l-$end\n";
 echo "</pre>";
 
 if (isset($_POST['go'])) {
@@ -31,7 +34,7 @@ if (isset($_POST['go'])) {
         $conn->prepare("INSERT INTO lot_layers (lot_id, layer_number, is_occupied) VALUES (?, 1, 0)")->execute([$lotId]);
     }
     $conn->commit();
-    echo "<p style='color:green;font-family:sans-serif;padding:20px;font-size:16px;'>✓ Created 200 lots (l-$start to l-$end) in Section 1, Block 2.</p>";
+    echo "<p style='color:green;font-family:sans-serif;padding:20px;font-size:16px;'>✓ Created 300 lots (l-$start to l-$end) in Block 5, Section 1.</p>";
     echo "<a href='public/index.php' style='font-family:sans-serif;'>Go to Lot Management</a>";
 } else {
     echo "<form method='POST' style='font-family:sans-serif;padding:0 20px;'>
