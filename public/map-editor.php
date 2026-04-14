@@ -1816,6 +1816,10 @@ if ($conn) {
       if (e.key === 'Escape') {
         closeAssignModal();
       }
+      if (e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        assignLot();
+      }
     }
 
     async function createNewLot(lotData) {
