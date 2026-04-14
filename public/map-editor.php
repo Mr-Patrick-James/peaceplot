@@ -1738,7 +1738,45 @@ if ($conn) {
       // Reset to existing lot mode by default
       document.querySelector('input[name="assignMode"][value="existing"]').checked = true;
       toggleAssignMode();
-      
+
+      // Auto-select the next unassigned lot after the last one on the map
+      const select = document.getElementById('lotSelect');
+      if (select && select.options.length > 1) {
+        // Get all lot numbers currently on the map
+        const assignedNumbers = rectangles.map(r => r.lotData.lot_number);
+
+        // Find the highest numeric suffix among assigned lots
+        let maxNum = -1;
+        let prefix = '';
+        assignedNumbers.forEach(num => {
+          const m = num.match(/^([A-Za-z\-]*)(\d+)$/);
+          if (m) {
+            const n = parseInt(m[2]);
+            if (n > maxNum) { maxNum = n; prefix = m[1]; }
+          }
+        });
+
+        // Find the option in the dropdown with the next number
+        let bestOption = null;
+        let bestDiff = Infinity;
+        for (const opt of select.options) {
+          if (!opt.value) continue;
+          const m = opt.text.match(/^([A-Za-z\-]*)(\d+)/);
+          if (m && m[1] === prefix) {
+            const n = parseInt(m[2]);
+            const diff = n - maxNum;
+            if (diff > 0 && diff < bestDiff) { bestDiff = diff; bestOption = opt; }
+          }
+        }
+
+        if (bestOption) {
+          select.value = bestOption.value;
+        } else {
+          // Fallback: select first available
+          select.selectedIndex = 1;
+        }
+      }
+
       // Add event listeners for closing modal
       modal.addEventListener('click', handleModalClick);
       document.addEventListener('keydown', handleModalKeydown);
