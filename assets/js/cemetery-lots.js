@@ -1098,6 +1098,54 @@ function showMapAssignModal(lotNumber) {
     });
 }
 
+// Update a single lot row in the table without reloading the whole page
+async function updateLotRow(lotId) {
+    try {
+        const result = await API.fetchLot(lotId);
+        if (!result.success) return;
+        const lot = result.data;
+
+        // Update in currentLots array
+        const idx = currentLots.findIndex(l => l.id == lotId);
+        if (idx !== -1) currentLots[idx] = lot;
+
+        const row = document.querySelector(`tr[data-lot-id="${lotId}"]`);
+        if (!row) return;
+
+        const cells = row.querySelectorAll('td');
+
+        // Cell 3: deceased name
+        if (cells[3]) {
+            cells[3].style.color = lot.deceased_name ? '' : '#94a3b8';
+            cells[3].style.fontStyle = lot.deceased_name ? '' : 'italic';
+            cells[3].textContent = lot.deceased_name || 'Unassigned';
+        }
+
+        // Cell 4: status badge
+        if (cells[4]) {
+            const badgeClass = lot.status === 'Vacant' ? 'vacant' : lot.status === 'Occupied' ? 'occupied' : 'maintenance';
+            cells[4].innerHTML = `<span class="status-badge ${badgeClass}">${lot.status}</span>`;
+        }
+
+        // Cell 5: layers
+        if (cells[5]) {
+            const total    = parseInt(lot.total_layers_count) || 1;
+            const occupied = parseInt(lot.occupied_layers_count) || 0;
+            cells[5].innerHTML = `
+                <div style="font-size:13px;font-weight:600;color:#475569;">${occupied} / ${total} layers</div>
+                <div style="font-size:11px;color:#94a3b8;">${occupied === 0 ? 'Vacant' : (occupied < total ? 'Partially Occupied' : 'Occupied')}</div>`;
+        }
+
+        // Flash row blue briefly
+        row.style.transition = 'background 0.4s';
+        row.style.background = '#eff6ff';
+        setTimeout(() => { row.style.background = ''; }, 800);
+
+    } catch (e) {
+        loadCemeteryLots(currentPage);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     // Check for index.php, index.html, or root path
@@ -1327,7 +1375,8 @@ async function showAssignBurialModal(lotId) {
             if (updateResult.success) {
                 closeModal(modal);
                 showNotification('Burial assigned successfully', 'success');
-                loadCemeteryLots(currentPage);
+                // Update only the affected row without reloading the whole table
+                updateLotRow(lotId);
             } else {
                 showNotification('Error assigning burial: ' + updateResult.message, 'error');
                 confirmBtn.disabled = false;
