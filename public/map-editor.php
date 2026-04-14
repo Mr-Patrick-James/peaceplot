@@ -1174,7 +1174,7 @@ if ($conn) {
       currentTool = tool;
       document.getElementById('drawBtn').classList.toggle('active', tool === 'draw');
       document.getElementById('panBtn').classList.toggle('active', tool === 'pan');
-      
+
       if (tool === 'draw') {
         mapWrapper.classList.add('crosshair');
         mapWrapper.classList.remove('grabbing');
@@ -1182,6 +1182,15 @@ if ($conn) {
         mapWrapper.classList.remove('crosshair');
       }
     }
+
+    // Q key — toggle between draw and pan
+    document.addEventListener('keydown', e => {
+      if (e.key === 'q' || e.key === 'Q') {
+        // Don't trigger if typing in an input
+        if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+        setTool(currentTool === 'draw' ? 'pan' : 'draw');
+      }
+    });
 
     function zoomIn() {
       zoom = Math.min(zoom + 0.25, 3);
