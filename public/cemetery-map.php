@@ -277,34 +277,30 @@ if ($conn) {
     
     .lot-label {
       position: absolute;
-      top: 0.2px;
-      left: 0.2px;
-      background: rgba(0,0,0,0.9);
+      top: 0.5px;
+      left: 0.5px;
+      background: rgba(0,0,0,0.8);
       color: white;
-      padding: 0.3px 0.6px;
-      border-radius: 0.2px;
-      font-size: 3.2px; /* Lot name a bit bigger */
-      font-weight: 900;
+      padding: 0.3px 0.8px;
+      border-radius: 0.4px;
+      font-size: 3px;
+      font-weight: 700;
       pointer-events: none;
       display: flex;
       flex-direction: column;
-      line-height: 1.2; /* Increased line-height for better vertical spacing */
+      line-height: 1.1;
       z-index: 2;
       box-sizing: border-box;
-      max-width: calc(100% - 0.4px);
+      white-space: nowrap;
     }
 
     .lot-label .kin-tag {
-      font-size: 2.2px; /* Increased font-size for readability */
-      opacity: 1; /* Full opacity for better readability */
-      font-weight: 700;
-      margin-top: 0.4px; /* More vertical separation */
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      font-size: 0.7em;
+      opacity: 0.9;
+      font-weight: 500;
+      margin-top: 0.2px;
       text-transform: uppercase;
       display: block;
-      width: 100%;
       letter-spacing: 0.1px;
     }
 
@@ -1499,12 +1495,6 @@ if ($conn) {
                     <span><?php echo htmlspecialchars($lot['lot_number']); ?></span>
                     <?php if (!empty($lot['section_name'])): ?>
                       <span class="kin-tag"><?php echo htmlspecialchars($lot['section_name']); ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($lot['block_name'])): ?>
-                      <span class="kin-tag"><?php echo htmlspecialchars($lot['block_name']); ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($lot['deceased_names'])): ?>
-                      <span class="deceased-tag">Deceased: <?php echo htmlspecialchars($lot['deceased_names']); ?></span>
                     <?php endif; ?>
                   </div>
                   <?php if ($totalLayers > 1): ?>
@@ -2740,12 +2730,6 @@ if ($conn) {
                 let labelHtml = `<span>${lot.lot_number}</span>`;
                 if (lot.section_name) {
                     labelHtml += `<span class="kin-tag">${lot.section_name}</span>`;
-                }
-                if (lot.block_name) {
-                    labelHtml += `<span class="kin-tag">${lot.block_name}</span>`;
-                }
-                if (lot.deceased_names) {
-                    labelHtml += `<span class="deceased-tag">Deceased: ${lot.deceased_names}</span>`;
                 }
                 label.innerHTML = labelHtml;
             }

@@ -12,7 +12,7 @@ foreach ($rows as $l) {
 }
 
 $start = $max + 1;
-$end   = $max + 134;
+$end   = $max + 139;
 
 $sec = $conn->query("SELECT s.id FROM sections s LEFT JOIN blocks b ON s.block_id = b.id WHERE b.name = 'Block 3' AND s.name = 'Section 1'")->fetch();
 if (!$sec) die("<p style='font-family:sans-serif;color:red;padding:20px;'>Block 3 / Section 1 not found. Please create it first.</p>");
@@ -27,5 +27,5 @@ for ($i = $start; $i <= $end; $i++) {
 }
 $conn->commit();
 
-echo "<p style='color:green;font-family:sans-serif;padding:20px;font-size:16px;'>✓ Created 134 lots (l-$start to l-$end) in Block 3, Section 1.</p>";
+echo "<p style='color:green;font-family:sans-serif;padding:20px;font-size:16px;'>✓ Created 139 lots (l-$start to l-$end) in Block 3, Section 1.</p>";
 echo "<a href='public/index.php' style='font-family:sans-serif;'>Go to Lot Management</a>";
