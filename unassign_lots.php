@@ -6,7 +6,7 @@ if (!$conn) die("No connection");
 
 // Get lot IDs for l-307 to l-347 (any section)
 $lotIds = [];
-for ($i = 561; $i <= 565; $i++) {
+for ($i = 1426; $i <= 1428; $i++) {
     $stmt = $conn->prepare("SELECT id FROM cemetery_lots WHERE lot_number = ?");
     $stmt->execute(["l-$i"]);
     $lot = $stmt->fetchColumn();

@@ -6,7 +6,7 @@ if (!$conn) die("No connection");
 
 $conn->beginTransaction();
 $deleted = 0;
-for ($i = 902; $i <= 980; $i++) {
+for ($i = 1429; $i <= 1474; $i++) {
     $stmt = $conn->prepare("SELECT id FROM cemetery_lots WHERE lot_number = ?");
     $stmt->execute(["l-$i"]);
     $id = $stmt->fetchColumn();
