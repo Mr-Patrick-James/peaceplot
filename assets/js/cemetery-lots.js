@@ -181,8 +181,28 @@ function renderLots(lots) {
                 </div>
             </td>
             <td>${lot.position || '—'}</td>
-            <td class="${lot.deceased_name ? '' : 'muted'}" style="${!lot.deceased_name ? 'color: #94a3b8; font-style: italic;' : ''}">
-                ${lot.deceased_name || 'Unassigned'}
+            <td>
+                ${(() => {
+                    const byLayer = (lot.deceased_by_layer && !Array.isArray(lot.deceased_by_layer)) ? lot.deceased_by_layer : {};
+                    const layerKeys = Object.keys(byLayer).map(Number).sort((a, b) => a - b);
+                    if (layerKeys.length === 0) {
+                        return '<span style="color:#94a3b8; font-style:italic;">Unassigned</span>';
+                    }
+                    return layerKeys.map(layer => {
+                        const names = byLayer[layer];
+                        const isAsh = names.length > 1;
+                        const layerColor = layer == 1 ? '#3b82f6' : '#8b5cf6';
+                        const layerBg   = layer == 1 ? '#eff6ff'  : '#f5f3ff';
+                        return names.map((name, idx) => `
+                            <div style="display:flex; align-items:center; gap:6px; ${idx > 0 ? 'margin-top:4px;' : ''}">
+                                <span style="flex-shrink:0; background:${layerBg}; color:${layerColor}; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px; white-space:nowrap;">
+                                    L${layer}${isAsh ? ' · Ash' : ''}
+                                </span>
+                                <span style="font-size:13px; color:#1e293b; font-weight:500;">${name}</span>
+                            </div>
+                        `).join('');
+                    }).join('');
+                })()}
             </td>
             <td><span class="status-badge ${badgeClass}">${lot.status}</span></td>
             <td>
@@ -1114,11 +1134,28 @@ async function updateLotRow(lotId) {
 
         const cells = row.querySelectorAll('td');
 
-        // Cell 3: deceased name
+        // Cell 3: deceased name with per-layer indicators
         if (cells[3]) {
-            cells[3].style.color = lot.deceased_name ? '' : '#94a3b8';
-            cells[3].style.fontStyle = lot.deceased_name ? '' : 'italic';
-            cells[3].textContent = lot.deceased_name || 'Unassigned';
+            const byLayer = (lot.deceased_by_layer && !Array.isArray(lot.deceased_by_layer)) ? lot.deceased_by_layer : {};
+            const layerKeys = Object.keys(byLayer).map(Number).sort((a, b) => a - b);
+            if (layerKeys.length === 0) {
+                cells[3].innerHTML = '<span style="color:#94a3b8; font-style:italic;">Unassigned</span>';
+            } else {
+                cells[3].innerHTML = layerKeys.map(layer => {
+                    const names = byLayer[layer];
+                    const isAsh = names.length > 1;
+                    const layerColor = layer == 1 ? '#3b82f6' : '#8b5cf6';
+                    const layerBg   = layer == 1 ? '#eff6ff'  : '#f5f3ff';
+                    return names.map((name, idx) => `
+                        <div style="display:flex; align-items:center; gap:6px; ${idx > 0 ? 'margin-top:4px;' : ''}">
+                            <span style="flex-shrink:0; background:${layerBg}; color:${layerColor}; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px; white-space:nowrap;">
+                                L${layer}${isAsh ? ' · Ash' : ''}
+                            </span>
+                            <span style="font-size:13px; color:#1e293b; font-weight:500;">${name}</span>
+                        </div>
+                    `).join('');
+                }).join('');
+            }
         }
 
         // Cell 4: status badge

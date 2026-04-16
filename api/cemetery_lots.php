@@ -154,7 +154,7 @@ function handleGet($conn) {
                 $stmt = $conn->prepare("
                     SELECT cl.*, s.name as section_name, b.name as block_name,
                            (SELECT GROUP_CONCAT(full_name, ', ') 
-                            FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
+                            FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY layer ASC, created_at DESC, id DESC)
                            ) as deceased_name,
                            COALESCE(NULLIF((SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id), 0), cl.layers, 1) as total_layers_count,
                            (SELECT COUNT(DISTINCT layer) FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0) as occupied_layers_count
@@ -168,6 +168,22 @@ function handleGet($conn) {
                 $result = $stmt->fetch();
                 
                 if ($result) {
+                    // Add per-layer occupant data
+                    $layerStmt = $conn->prepare("
+                        SELECT layer, full_name FROM deceased_records
+                        WHERE lot_id = :lot_id AND is_archived = 0
+                        ORDER BY layer ASC, created_at DESC
+                    ");
+                    $layerStmt->bindParam(':lot_id', $id);
+                    $layerStmt->execute();
+                    $layerRows = $layerStmt->fetchAll(PDO::FETCH_ASSOC);
+                    $byLayer = [];
+                    foreach ($layerRows as $row) {
+                        $lyr = $row['layer'] ?? 1;
+                        if (!isset($byLayer[$lyr])) $byLayer[$lyr] = [];
+                        $byLayer[$lyr][] = $row['full_name'];
+                    }
+                    $result['deceased_by_layer'] = $byLayer;
                     echo json_encode(['success' => true, 'data' => $result]);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'Lot not found']);
@@ -291,7 +307,7 @@ function handleGet($conn) {
                 $query = "
                     SELECT cl.*, s.name as section_name, b.name as block_name,
                            (SELECT GROUP_CONCAT(full_name, ', ') 
-                            FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY created_at DESC, id DESC)
+                            FROM (SELECT full_name FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0 ORDER BY layer ASC, created_at DESC, id DESC)
                            ) as deceased_name,
                            COALESCE(NULLIF((SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id), 0), cl.layers, 1) as total_layers_count,
                            (SELECT COUNT(DISTINCT layer) FROM deceased_records WHERE lot_id = cl.id AND is_archived = 0) as occupied_layers_count
@@ -328,6 +344,35 @@ function handleGet($conn) {
                 
                 $stmt->execute();
                 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Enrich each lot with per-layer occupant data
+                if (!empty($results)) {
+                    $lotIds = array_column($results, 'id');
+                    $placeholders = implode(',', array_fill(0, count($lotIds), '?'));
+                    $layerStmt = $conn->prepare("
+                        SELECT lot_id, layer, full_name
+                        FROM deceased_records
+                        WHERE lot_id IN ($placeholders) AND is_archived = 0
+                        ORDER BY lot_id, layer ASC, created_at DESC
+                    ");
+                    $layerStmt->execute($lotIds);
+                    $layerRows = $layerStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    // Build map: lot_id => [ layer => [names] ]
+                    $layerMap = [];
+                    foreach ($layerRows as $row) {
+                        $lid = $row['lot_id'];
+                        $lyr = $row['layer'] ?? 1;
+                        if (!isset($layerMap[$lid])) $layerMap[$lid] = [];
+                        if (!isset($layerMap[$lid][$lyr])) $layerMap[$lid][$lyr] = [];
+                        $layerMap[$lid][$lyr][] = $row['full_name'];
+                    }
+
+                    foreach ($results as &$lot) {
+                        $lot['deceased_by_layer'] = isset($layerMap[$lot['id']]) ? $layerMap[$lot['id']] : [];
+                    }
+                    unset($lot);
+                }
 
                 echo json_encode([
                     'success' => true, 
