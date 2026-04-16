@@ -296,13 +296,12 @@ if ($conn) {
 
     /* Selected/edit state */
     .lot-rectangle.selected {
-      outline: 2px solid #2f6df6;
-      outline-offset: 2px;
+      box-shadow: 0 0 0 2px #2f6df6;
       cursor: move;
       z-index: 150 !important;
     }
 
-    /* Resize handles — 8 directions */
+    /* Resize handles — 8 directions, centered on the element edge */
     .resize-handle {
       position: absolute;
       width: calc(8px + 4px / var(--current-zoom, 1));
@@ -313,14 +312,14 @@ if ($conn) {
       z-index: 300;
       box-sizing: border-box;
     }
-    .resize-handle.nw { top:-5px; left:-5px; cursor:nw-resize; z-index:301; }
-    .resize-handle.n  { top:-5px; left:50%; transform:translateX(-50%); cursor:n-resize; z-index:302; }
-    .resize-handle.ne { top:-5px; right:-5px; cursor:ne-resize; z-index:301; }
-    .resize-handle.e  { top:50%; right:-5px; transform:translateY(-50%); cursor:e-resize; }
-    .resize-handle.se { bottom:-5px; right:-5px; cursor:se-resize; }
-    .resize-handle.s  { bottom:-5px; left:50%; transform:translateX(-50%); cursor:s-resize; }
-    .resize-handle.sw { bottom:-5px; left:-5px; cursor:sw-resize; }
-    .resize-handle.w  { top:50%; left:-5px; transform:translateY(-50%); cursor:w-resize; z-index:302; }
+    .resize-handle.nw { top:0; left:0; transform:translate(-50%,-50%); cursor:nw-resize; z-index:301; }
+    .resize-handle.n  { top:0; left:50%; transform:translate(-50%,-50%); cursor:n-resize; z-index:302; }
+    .resize-handle.ne { top:0; right:0; transform:translate(50%,-50%); cursor:ne-resize; z-index:301; }
+    .resize-handle.e  { top:50%; right:0; transform:translate(50%,-50%); cursor:e-resize; }
+    .resize-handle.se { bottom:0; right:0; transform:translate(50%,50%); cursor:se-resize; }
+    .resize-handle.s  { bottom:0; left:50%; transform:translate(-50%,50%); cursor:s-resize; }
+    .resize-handle.sw { bottom:0; left:0; transform:translate(-50%,50%); cursor:sw-resize; }
+    .resize-handle.w  { top:50%; left:0; transform:translate(-50%,-50%); cursor:w-resize; z-index:302; }
 
     /* Rotation handle on top-center */
     .rotate-top-handle {
