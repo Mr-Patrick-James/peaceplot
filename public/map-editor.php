@@ -313,14 +313,14 @@ if ($conn) {
       z-index: 300;
       box-sizing: border-box;
     }
-    .resize-handle.nw { top:-5px; left:-5px; cursor:nw-resize; }
-    .resize-handle.n  { top:-5px; left:50%; transform:translateX(-50%); cursor:n-resize; }
-    .resize-handle.ne { top:-5px; right:-5px; cursor:ne-resize; }
+    .resize-handle.nw { top:-5px; left:-5px; cursor:nw-resize; z-index:301; }
+    .resize-handle.n  { top:-5px; left:50%; transform:translateX(-50%); cursor:n-resize; z-index:302; }
+    .resize-handle.ne { top:-5px; right:-5px; cursor:ne-resize; z-index:301; }
     .resize-handle.e  { top:50%; right:-5px; transform:translateY(-50%); cursor:e-resize; }
     .resize-handle.se { bottom:-5px; right:-5px; cursor:se-resize; }
     .resize-handle.s  { bottom:-5px; left:50%; transform:translateX(-50%); cursor:s-resize; }
     .resize-handle.sw { bottom:-5px; left:-5px; cursor:sw-resize; }
-    .resize-handle.w  { top:50%; left:-5px; transform:translateY(-50%); cursor:w-resize; }
+    .resize-handle.w  { top:50%; left:-5px; transform:translateY(-50%); cursor:w-resize; z-index:302; }
 
     /* Rotation handle on top-center */
     .rotate-top-handle {
@@ -1634,12 +1634,20 @@ if ($conn) {
         const localDy = -rawDx * sin + rawDy * cos;
 
         let l = startLeft, t = startTop, w = startWidth, h = startHeight;
-        const min = 0.3;
+        const min = 0.05; // very small min so handles never get stuck
 
         if (dir.includes('e')) w = Math.max(min, startWidth  + localDx);
         if (dir.includes('s')) h = Math.max(min, startHeight + localDy);
-        if (dir.includes('w')) { w = Math.max(min, startWidth  - localDx); l = startLeft + startWidth  - w; }
-        if (dir.includes('n')) { h = Math.max(min, startHeight - localDy); t = startTop  + startHeight - h; }
+        if (dir.includes('w')) {
+          const rawW = startWidth - localDx;
+          if (rawW >= min) { w = rawW; l = startLeft + startWidth - w; }
+          else { w = min; l = startLeft + startWidth - min; }
+        }
+        if (dir.includes('n')) {
+          const rawH = startHeight - localDy;
+          if (rawH >= min) { h = rawH; t = startTop + startHeight - h; }
+          else { h = min; t = startTop + startHeight - min; }
+        }
 
         rect.style.left   = l + '%';
         rect.style.top    = t + '%';
