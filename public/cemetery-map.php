@@ -247,32 +247,33 @@ if ($conn) {
     
     .lot-marker {
       position: absolute;
-      border: 1px solid;
+      border: none;
+      outline: 1px solid;
+      outline-offset: -1px;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: outline-color 0.2s, background 0.2s;
+      box-shadow: none;
       box-sizing: border-box;
     }
     
     .lot-marker:hover {
-      border-width: 2px;
+      outline-width: 2px;
       z-index: 100;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
     
     .lot-marker.vacant {
-      border-color: #22c55e;
-      background: rgba(34, 197, 94, 0.4);
+      outline-color: #22c55e;
+      background: rgba(34, 197, 94, 0.25);
     }
     
     .lot-marker.occupied {
-      border-color: #f97316;
-      background: rgba(249, 115, 22, 0.4);
+      outline-color: #f97316;
+      background: rgba(249, 115, 22, 0.25);
     }
     
     .lot-marker.maintenance {
-      border-color: #64748b;
-      background: rgba(100, 116, 139, 0.4);
+      outline-color: #64748b;
+      background: rgba(100, 116, 139, 0.25);
     }
     
     .lot-label {
@@ -283,7 +284,7 @@ if ($conn) {
       color: white;
       padding: 0.3px 0.8px;
       border-radius: 0.4px;
-      font-size: 2.2px;
+      font-size: 2px;
       font-weight: 700;
       pointer-events: none;
       display: flex;
@@ -295,7 +296,7 @@ if ($conn) {
     }
 
     .lot-label .kin-tag {
-      font-size: 0.75em;
+      font-size: 1.6px;
       opacity: 0.9;
       font-weight: 500;
       margin-top: 0.2px;
@@ -310,10 +311,10 @@ if ($conn) {
     
     .highlighted-marker {
       z-index: 105 !important;
-      border-width: 3px !important;
-      border-color: #ef4444 !important;
+      outline: 2px solid #ef4444 !important;
       background: rgba(239, 68, 68, 0.2) !important;
-      box-shadow: 0 0 0 2px white, 0 0 20px rgba(239, 68, 68, 0.6) !important;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
+    } box-shadow: 0 0 0 1px white, 0 0 8px rgba(239, 68, 68, 0.6) !important;
     }
 
     /* Highlight filter states */
