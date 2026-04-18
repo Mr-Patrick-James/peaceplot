@@ -287,7 +287,7 @@ if ($conn) {
     
     .lot-rectangle {
       position: absolute;
-      border: calc(1.5px + 1.5px / var(--current-zoom, 1)) solid;
+      border: 1.5px solid;
       box-sizing: border-box;
       pointer-events: all;
       cursor: pointer;
@@ -304,8 +304,8 @@ if ($conn) {
     /* Resize handles — 8 directions, centered on the element edge */
     .resize-handle {
       position: absolute;
-      width: calc(8px + 4px / var(--current-zoom, 1));
-      height: calc(8px + 4px / var(--current-zoom, 1));
+      width: 10px;
+      height: 10px;
       background: #fff;
       border: 2px solid #2f6df6;
       border-radius: 2px;
@@ -324,11 +324,11 @@ if ($conn) {
     /* Rotation handle on top-center */
     .rotate-top-handle {
       position: absolute;
-      top: calc(-22px - 4px / var(--current-zoom, 1));
+      top: -26px;
       left: 50%;
       transform: translateX(-50%);
-      width: calc(10px + 4px / var(--current-zoom, 1));
-      height: calc(10px + 4px / var(--current-zoom, 1));
+      width: 14px;
+      height: 14px;
       background: #2f6df6;
       border-radius: 50%;
       cursor: grab;
@@ -343,45 +343,19 @@ if ($conn) {
       left: 50%;
       transform: translateX(-50%);
       width: 1px;
-      height: calc(10px + 2px / var(--current-zoom, 1));
+      height: 12px;
       background: #2f6df6;
     }
     .rotate-top-handle:active { cursor: grabbing; }
 
-    .lot-remove-btn {
-      position: absolute;
-      top: calc(-5px - 5px / var(--current-zoom, 1));
-      right: calc(-5px - 5px / var(--current-zoom, 1));
-      width: calc(11px + 11px / var(--current-zoom, 1));
-      height: calc(11px + 11px / var(--current-zoom, 1));
-      border-radius: 999px;
-      border: calc(1px + 1px / var(--current-zoom, 1)) solid rgba(0,0,0,0.2);
-      background: rgba(255,255,255,0.95);
-      color: #111827;
-      font-weight: 900;
-      font-size: calc(7px + 7px / var(--current-zoom, 1));
-      line-height: calc(8px + 8px / var(--current-zoom, 1));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 200;
-    }
-
-    .lot-remove-btn:hover {
-      background: #ef4444;
-      color: white;
-      border-color: rgba(239,68,68,0.6);
-    }
-
     .lot-rotate-handle {
       position: absolute;
-      top: calc(-5px - 5px / var(--current-zoom, 1));
-      left: calc(-5px - 5px / var(--current-zoom, 1));
-      width: calc(11px + 11px / var(--current-zoom, 1));
-      height: calc(11px + 11px / var(--current-zoom, 1));
+      top: -10px;
+      left: -10px;
+      width: 20px;
+      height: 20px;
       border-radius: 999px;
-      border: calc(1px + 1px / var(--current-zoom, 1)) solid rgba(0,0,0,0.2);
+      border: 1px solid rgba(0,0,0,0.2);
       background: rgba(255,255,255,0.95);
       color: #3b82f6;
       display: flex;
@@ -394,8 +368,8 @@ if ($conn) {
     .lot-rotate-handle:active { cursor: grabbing; }
     
     .lot-rectangle:hover {
-      border-width: calc(2px + 2px / var(--current-zoom, 1));
-      box-shadow: 0 0 calc(6px + 6px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
+      border-width: 2px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.3);
       z-index: 100;
     }
     
@@ -420,10 +394,10 @@ if ($conn) {
     
     .highlighted-marker {
       z-index: 1000 !important;
-      border-width: calc(3px + 3px / var(--current-zoom, 1)) !important;
+      border-width: 3px !important;
       border-color: #ef4444 !important;
       background: rgba(239, 68, 68, 0.3) !important;
-      box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 20px rgba(239, 68, 68, 0.8) !important;
+      box-shadow: 0 0 0 2px white, 0 0 20px rgba(239, 68, 68, 0.8) !important;
     }
     
     .highlighted-marker::after {
@@ -432,7 +406,7 @@ if ($conn) {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -100%);
-      font-size: calc(14px + 14px / var(--current-zoom, 1));
+      font-size: 14px;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
       animation: pinBounce 2s infinite;
       pointer-events: none;
@@ -450,9 +424,9 @@ if ($conn) {
       left: 0.5px;
       background: rgba(0,0,0,0.8);
       color: white;
-      padding: calc(0.2px + 0.3px / var(--current-zoom, 1)) calc(1px + 1px / var(--current-zoom, 1));
-      border-radius: calc(0.5px + 0.5px / var(--current-zoom, 1));
-      font-size: calc(3.5px + 3.5px / var(--current-zoom, 1));
+      padding: 0.3px 1px;
+      border-radius: 0.5px;
+      font-size: 7px;
       font-weight: 700;
       pointer-events: none;
       display: flex;
@@ -478,10 +452,10 @@ if ($conn) {
       left: 0;
       width: 100%;
       background: rgba(0,0,0,0.85);
-      padding: calc(0.2px + 0.3px / var(--current-zoom, 1)) 0;
-      border-radius: 0 0 calc(0.5px + 0.5px / var(--current-zoom, 1)) calc(0.5px + 0.5px / var(--current-zoom, 1));
+      padding: 0.3px 0;
+      border-radius: 0 0 0.5px 0.5px;
       text-align: center;
-      font-size: calc(2.5px + 2.5px / var(--current-zoom, 1));
+      font-size: 5.5px;
       opacity: 1;
       font-weight: 600;
       line-height: 1;
@@ -496,14 +470,14 @@ if ($conn) {
 
     .lot-layer-indicator {
       position: absolute;
-      top: calc(0.5px + 0.5px / var(--current-zoom, 1));
-      right: calc(0.5px + 0.5px / var(--current-zoom, 1));
+      top: 0.5px;
+      right: 0.5px;
       background: rgba(0,0,0,0.8);
       color: white;
       border-radius: 50%;
-      width: calc(5px + 3px / var(--current-zoom, 1));
-      height: calc(5px + 3px / var(--current-zoom, 1));
-      font-size: calc(2.5px + 2.5px / var(--current-zoom, 1));
+      width: 8px;
+      height: 8px;
+      font-size: 2.5px;
       font-weight: 700;
       display: flex;
       align-items: center;
@@ -513,7 +487,7 @@ if ($conn) {
     
     .drawing-rect {
       position: absolute;
-      border: calc(1.5px + 1.5px / var(--current-zoom, 1)) dashed var(--primary);
+      border: 1.5px dashed var(--primary);
       background: rgba(47, 109, 246, 0.1);
       pointer-events: none;
     }
@@ -1234,7 +1208,10 @@ if ($conn) {
       zoom = newZoom;
       panX = mouseX - worldX * zoom;
       panY = mouseY - worldY * zoom;
-      updateTransform();
+      updateTransform(true); // skip save during scroll
+
+      clearTimeout(mapWrapper._saveDebounce);
+      mapWrapper._saveDebounce = setTimeout(() => saveMapState(), 300);
     }
 
     /**
@@ -1305,17 +1282,16 @@ if ($conn) {
       }
     }
 
-    function updateTransform() {
+    function updateTransform(skipSave = false) {
       mapCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
       document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
-      mapWrapper.style.setProperty('--current-zoom', zoom);
-      saveMapState();
+      if (!skipSave) saveMapState();
     }
 
     mapWrapper.addEventListener('wheel', (e) => {
       e.preventDefault();
 
-      const step = 0.15;
+      const step = e.deltaMode === 1 ? 0.15 : Math.min(Math.abs(e.deltaY) * 0.002, 0.3);
       const direction = e.deltaY > 0 ? -1 : 1;
       const newZoom = Math.min(3, Math.max(0.05, zoom + direction * step));
 
@@ -1354,7 +1330,7 @@ if ($conn) {
       if (isPanning) {
         panX = e.clientX - startPanX;
         panY = e.clientY - startPanY;
-        updateTransform();
+        updateTransform(true); // skip save during pan
       } else if (isDrawing && currentRect) {
         const rect = mapWrapper.getBoundingClientRect();
         const x = (e.clientX - rect.left - panX) / zoom;
@@ -1376,6 +1352,7 @@ if ($conn) {
       if (isPanning) {
         isPanning = false;
         mapWrapper.classList.remove('grabbing');
+        saveMapState(); // save once pan ends
       } else if (isDrawing && currentRect) {
         isDrawing = false;
         
@@ -1439,16 +1416,7 @@ if ($conn) {
         rect.appendChild(layerIndicator);
       }
 
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'lot-remove-btn';
-      removeBtn.textContent = '×';
-      removeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        removeMarkForLot(lotData.id);
-      });
-      rect.appendChild(removeBtn);
+
       
       rect.onclick = (e) => {
         if (e && e.shiftKey) {
@@ -1576,8 +1544,7 @@ if ($conn) {
     // ── Move ──────────────────────────────────────────────────
     function startMove(e) {
       if (e.target.classList.contains('resize-handle') ||
-          e.target.classList.contains('rotate-top-handle') ||
-          e.target.classList.contains('lot-remove-btn')) return;
+          e.target.classList.contains('rotate-top-handle')) return;
       e.preventDefault();
       e.stopPropagation();
 

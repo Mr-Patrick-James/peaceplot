@@ -283,7 +283,7 @@ if ($conn) {
       color: white;
       padding: 0.3px 0.8px;
       border-radius: 0.4px;
-      font-size: 3px;
+      font-size: 2.2px;
       font-weight: 700;
       pointer-events: none;
       display: flex;
