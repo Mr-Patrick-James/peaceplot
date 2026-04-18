@@ -247,17 +247,17 @@ if ($conn) {
     
     .lot-marker {
       position: absolute;
-      border: calc(1px + 1px / var(--current-zoom, 1)) solid;
+      border: 1px solid;
       cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 calc(0.5px + 0.5px / var(--current-zoom, 1)) calc(2px + 2px / var(--current-zoom, 1)) rgba(0,0,0,0.3);
-      box-sizing: border-box; /* Ensures border is inside dimensions */
+      transition: border-color 0.2s, background 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      box-sizing: border-box;
     }
     
     .lot-marker:hover {
-      border-width: calc(1.5px + 1.5px / var(--current-zoom, 1));
+      border-width: 2px;
       z-index: 100;
-      box-shadow: 0 calc(1px + 1px / var(--current-zoom, 1)) calc(4px + 4px / var(--current-zoom, 1)) rgba(0,0,0,0.5);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
     
     .lot-marker.vacant {
@@ -279,7 +279,7 @@ if ($conn) {
       position: absolute;
       top: 0.5px;
       left: 0.5px;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.75);
       color: white;
       padding: 0.3px 0.8px;
       border-radius: 0.4px;
@@ -295,7 +295,7 @@ if ($conn) {
     }
 
     .lot-label .kin-tag {
-      font-size: 0.7em;
+      font-size: 0.75em;
       opacity: 0.9;
       font-weight: 500;
       margin-top: 0.2px;
@@ -310,10 +310,10 @@ if ($conn) {
     
     .highlighted-marker {
       z-index: 105 !important;
-      border-width: calc(2px + 2px / var(--current-zoom, 1)) !important;
+      border-width: 3px !important;
       border-color: #ef4444 !important;
       background: rgba(239, 68, 68, 0.2) !important;
-      box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 20px rgba(239, 68, 68, 0.6) !important;
+      box-shadow: 0 0 0 2px white, 0 0 20px rgba(239, 68, 68, 0.6) !important;
     }
 
     /* Highlight filter states */
@@ -330,7 +330,7 @@ if ($conn) {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -100%);
-      font-size: calc(10px + 12px / var(--current-zoom, 1));
+      font-size: 14px;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
       animation: pinBounce 2s infinite;
       pointer-events: none;
@@ -339,7 +339,7 @@ if ($conn) {
     
     @media (max-width: 768px) {
       .highlighted-marker::after {
-        font-size: calc(8px + 10px / var(--current-zoom, 1));
+        font-size: 12px;
       }
     }
     
@@ -354,9 +354,9 @@ if ($conn) {
     }
     
     @keyframes pulse-ring {
-      0% { box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 0 calc(4px + 4px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.8); }
-      50% { box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 0 calc(6px + 6px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.4); }
-      100% { box-shadow: 0 0 0 calc(2px + 2px / var(--current-zoom, 1)) white, 0 0 0 calc(4px + 4px / var(--current-zoom, 1)) rgba(239, 68, 68, 0.8); }
+      0%   { box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(239, 68, 68, 0.8); }
+      50%  { box-shadow: 0 0 0 2px white, 0 0 0 6px rgba(239, 68, 68, 0.4); }
+      100% { box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(239, 68, 68, 0.8); }
     }
     
     .no-map-message {
@@ -1080,7 +1080,7 @@ if ($conn) {
       transform: translateX(-50%);
       background: rgba(0,0,0,0.9);
       color: white;
-      font-size: 2.2px; /* Increased a tiny bit (from 1.5px to 2.2px) */
+      font-size: 2.2px;
       font-weight: 900;
       padding: 0.1px 0.4px;
       border-radius: 0.2px;
@@ -1713,9 +1713,6 @@ if ($conn) {
       }
 
       mapCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-      if (mapWrapper) {
-        mapWrapper.style.setProperty('--current-zoom', zoom);
-      }
       
       // Save state for persistence
       saveMapState();
@@ -1736,8 +1733,17 @@ if ($conn) {
       // New pan to keep the same image point under the mouse
       panX = mouseX - worldX * zoom;
       panY = mouseY - worldY * zoom;
-      
-      updateTransform();
+
+      // Apply transform without saving state (debounced below)
+      const clamped = clampPan(panX, panY, zoom);
+      panX = clamped.x;
+      panY = clamped.y;
+      mapCanvas.style.transition = '';
+      mapCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+
+      // Debounce saveMapState — only save after 300ms of no scrolling
+      clearTimeout(mapWrapper._saveDebounce);
+      mapWrapper._saveDebounce = setTimeout(() => saveMapState(), 300);
     }
 
     /**
@@ -1778,11 +1784,16 @@ if ($conn) {
         e.preventDefault();
         if (isAnimating) return;
 
-        const step = 0.2;
+        const step = e.deltaMode === 1 ? 0.15 : Math.min(Math.abs(e.deltaY) * 0.002, 0.3);
         const direction = e.deltaY > 0 ? -1 : 1;
         const newZoom = Math.min(5, Math.max(0.1, zoom + direction * step));
 
         if (newZoom !== zoom) {
+          if (!mapWrapper._wheelRaf) {
+            mapWrapper._wheelRaf = requestAnimationFrame(() => {
+              mapWrapper._wheelRaf = null;
+            });
+          }
           setZoomAt(newZoom, e.clientX, e.clientY);
         }
       }, { passive: false });
