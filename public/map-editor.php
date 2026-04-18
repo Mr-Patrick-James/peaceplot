@@ -260,6 +260,7 @@ if ($conn) {
     .map-canvas {
       position: absolute;
       transform-origin: 0 0;
+      -webkit-font-smoothing: subpixel-antialiased;
     }
     
     .btn-reset {
@@ -1489,7 +1490,9 @@ if ($conn) {
         selectedRect.style.height    = h + '%';
         selectedRect.style.transform = `rotate(${r}deg)`;
         selectedRect.setAttribute('data-rotation', r);
-        syncRectData(selectedRect);
+        // Debounce save — only sync after 400ms of no typing
+        clearTimeout(window._ppSaveDebounce);
+        window._ppSaveDebounce = setTimeout(() => syncRectData(selectedRect), 400);
       });
     });
 
