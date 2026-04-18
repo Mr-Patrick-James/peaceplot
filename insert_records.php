@@ -4,168 +4,120 @@ $db = new Database();
 $conn = $db->getConnection();
 if (!$conn) die("No connection");
 
+$stmt = $conn->prepare(
+    "INSERT INTO deceased_records (full_name, date_of_birth, date_of_death, age, is_archived) VALUES (?,?,?,?,0)"
+);
+
+function calcAge($dob, $dod) {
+    if (!$dob || !$dod) return null;
+    return (int)(new DateTime($dob))->diff(new DateTime($dod))->y;
+}
+
 $records = [
-    ['Gabriel B. Magtibay',          '1952-02-29', '2024-10-24', 72],
-    ['Venise Joy D. Hidalgo',        '2018-02-03', '2024-05-23',  6],
-    ['Eleazar C. Marcelo',           '1999-04-11', '2023-06-09', 24],
-    ['Melinda E. Ines',              '1981-06-06', '2023-06-05', 41],
-    ['Cathlyn Wein M. Marasigan',    '2000-11-23', '2023-05-03', 22],
-    ['Romeo R. Ulip',                '1960-02-19', '2023-02-15', 62],
-    ['Renato Mordido Carpio',        '1991-01-18', '2022-11-06', 31],
-    ['Carlo H. Lato',                '1982-01-30', '2021-05-18', 39],
-    ['Unknown',                      null,          null,         null],
-    ['Jasmin Melgar Ebora',          '1947-03-10', '2021-03-02', 73],
-    ['Julmar Almanon',               '1992-09-05', '2020-09-06', 28],
-    ['Norma M. Caringal',            '1942-05-22', '2020-07-22', 78],
-    ['Agaton E. Asi',                '1938-01-10', '2020-07-09', 82],
-    ['Mely G. Reyes',                '1969-05-09', '2020-05-27', 51],
-    ['Lucia P. Alipante',            '1950-12-15', '2020-05-29', 69],
-    ['Rogelia Panganiban',           null,          null,         null],
-    ['Alvin G. Adeva',               '1994-01-22', '2019-05-18', 25],
-    ['Orlando M. Mordido',           '1972-12-10', '2019-01-08', 46],
-    ['Maxima J. Jambor',             '1950-11-18', '2018-12-01', 68],
-    ['Mailyn J. Jambor',             '1982-07-15', '2018-09-06', 36],
-    ['Dorlagie Bueno',               '1968-10-07', '2018-07-30', 49],
-    ['Unknown',                      null,          null,         null],
-    ['Corazon G. Escalante',         null,          null,         null],
-    ['Leopoldo F. Fernandez',        '1964-05-07', '2012-04-16', 47],
-    ['Unknown',                      null,          null,         null],
-    ['Gina H. Madrigal',             '1971-11-15', '2018-03-14', 46],
-    ['Bartolome Florencio',          '1954-09-25', '2018-03-03', 63],
-    ['Elsa M. Medallon',             '1970-01-29', '2018-01-13', 47],
-    ['Petra Melo Maria C. Ligo',     '1943-01-08', '2017-11-06', 74],
-    ['Nelson L. Ramirez',            '1970-05-08', '2017-06-10', 47],
-    ['Sonny Carpio Sr.',             '1963-05-05', '2017-05-12', 54],
-    ['Balbino M. Emperial',          null,          '2005-09-24', null],
-    ['Mario M. Reyes',               '1951-10-22', '2005-10-21', 53],
-    ['Teofilo C. Laygo',             '1939-03-03', '2020-12-31', 81],
-    ['Mateo C. Laygo',               '1945-08-15', '2005-01-01', 59],
-    ['Teresita S. Quizon',           '1954-09-08', '2005-08-05', 50],
-    ['Portacio Gatapang',            '1930-08-01', '2005-07-30', 74],
-    ['Julio Manumbale',              '1958-07-21', '2006-03-25', 47],
-    ['Lolita Z. Gatipon',            '1964-05-28', '2003-04-08', 38],
-    ['Dennise Leen F. Manasan',      '2017-03-13', '2021-05-10',  4],
-    ['Clemente Celis',               '1914-11-14', '2006-05-06', 91],
-    ['Estanislao Benite',            null,          '2000-05-15', null],
-    ['Wilson R. Espiritu',           '1972-06-21', '2006-06-02', 33],
-    ['Florentino Javier Sr.',        '1938-10-16', '2006-06-19', 67],
-    ['Leonora P. Sumandi',           '1933-02-28', '2017-04-18', 84],
-    ['Jaime P. Sumandi Jr.',         '1967-01-11', '2006-07-10', 39],
-    ['Liberato Enriquez',            '1924-04-04', null,         null],
-    ['Pedro H. Ilao',                '1929-02-28', '2006-11-14', 77],
-    ['Catalino O. Delen',            '1975-05-01', '2018-03-09', 42],
-    ['Benjo Asi Anadia',             '2022-08-21', '2024-12-29',  2],
-    ['Erma M. Pedigan',              '1966-07-23', '2007-02-25', 40],
-    ['Quintin T. Aday',              '1933-10-31', '1981-06-20', 47],
-    ['Mariquita A. Aday',            '1936-11-28', '2007-04-17', 70],
-    ['Natalio Labiaga',              '1967-12-01', '2007-05-05', 39],
-    ['Ramil D. Orbino',              '1966-05-16', '2021-09-08', 55],
-    ['Binay V. Abes',                '1963-06-30', '2003-06-17', 39],
-    ['Randy Hayag Garcia',           '1983-12-21', '2007-07-04', 23],
-    ['Tomas Ravarra',                '1940-12-21', '2007-07-07', 66],
-    ['Segunda A. Ravarra',           '1940-07-10', '2021-10-06', 81],
-    ['Marcial Benitez',              '1985-03-06', '2007-07-12', 22],
-    ['Jerome Melgar',                '1990-12-10', '2007-07-23', 16],
-    ['Joge Mendoza',                 '1937-05-08', '2007-11-13', 70],
-    ['Mary Joy D. Miala',            '2004-09-04', '2007-12-17',  3],
-    ['Vernel B. Mañibo',             '1999-07-21', '2008-01-08',  8],
-    ['Consorcio Saron',              null,          null,         null],
-    ['Erlinda Saron Gacilo',         null,          null,         null],
-    ['Lida R. Cadiz',                null,          '2008-01-01', null],
-    ['Justine Mark Mendosa',         null,          '2021-04-15', null],
-    ['Jovelyn P. Calalo',            '1995-04-22', '2008-02-20', 12],
-    ['Veronica V. Petiza',           '1994-02-03', '2008-04-27', 14],
-    ['Mary Aizle C. Gutierrez',      '1994-01-10', '2008-05-15', 14],
-    ['Anna G. Hernandez',            '1927-01-25', '2008-11-29', 81],
-    ['Conrado G. Placido',           '1967-08-05', '2008-12-04', 41],
-    ['Randy Ada',                    '1982-10-18', '2008-12-18', 26],
-    ['Angelito G. Manalo',           '1960-11-22', '2009-01-10', 48],
-    ['Dalmacio S. Quintonez',        '1946-03-15', '2009-03-20', 63],
-    ['Severino M. Gatdula',          '1956-10-21', '2009-05-06', 52],
-    ['Dionisio F. Magtibay',         '1950-04-24', '2009-05-31', 59],
-    ['Osmundo H. Macatangay',        '1961-12-12', '2009-06-22', 47],
-    ['Nicanor G. Magboo',            '1945-01-10', '2005-06-30', 60],
-    ['Thelma Almirante',             '1944-05-21', '2009-07-25', 65],
-    ['Pedro Matibag Sr.',            '1950-01-31', '2009-11-25', 59],
-    ['Randy C. Guhi',                '1980-07-29', '2010-01-01', 29],
-    ['Iluminada R. More',            '1930-12-25', '2010-01-06', 79],
-    ['Romnick J. Mercene',           '1993-05-27', '2010-01-07', 16],
-    ['Agaton Balmes',                '1953-12-07', '2010-01-18', 56],
-    ['Margarita M. Ardeña',          '1964-03-03', '2010-01-16', 45],
-    ['Ruben F. Galvero',             '1958-11-09', '2010-08-15', 51],
-    ['Ceriaca A. Manarpaac',         '1948-08-21', '2010-09-24', 62],
-    ['Maribel M. Alulod',            '1973-05-13', '2010-10-24', 37],
-    ['Winalyn S. Lopez',             '1976-08-06', '2010-10-26', 34],
-    ['Mercy Grace Payoyo',           '2021-08-02', '2021-08-06',  0],
-    ['Jesiel M. Lambot',             '1992-02-21', '2011-01-19', 18],
-    ['Helen C. Boquio',              '1969-11-08', '2011-04-16', 41],
-    ['Eufemia A. Roallos',           '1917-09-15', '2011-04-13', 93],
-    ['Aurora R. Lanip',              '1937-06-19', '2023-07-13', 86],
-    ['Merlyn Calanao Gutierrez',     '1956-09-11', '2024-06-23', 67],
-    ['Arnan M. Manal',               '2006-09-30', '2011-05-21',  4],
-    ['Junelle J. Gutierrez',         '1979-04-27', '2011-07-15', 32],
-    ['Isabelita Atienza',            '1954-03-03', '2011-08-08', 57],
-    ['Rudy Z. Motin',                '1970-08-29', '2012-02-29', 41],
-    ['Leonida F. Visto',             '1944-03-28', '2012-03-08', 67],
-    ['Leonardo D. Agustin',          '1941-04-19', '2012-03-15', 70],
-    ['Paula D. Panganiban',          '1938-05-15', '2012-04-12', 73],
-    ['Cherry Jane O. Enriquez',      '1933-09-09', '2012-04-13', 78],
-    ['Genoveva Salazar',             '1937-01-03', '2012-04-22', 75],
-    ['Endera Carpio',                '1982-05-18', '2012-10-14', 30],
-    ['Sofio D. Herrera Sr.',         '1930-09-30', '2012-11-26', 82],
-    ['Honorio Carandang Calalo',     '1961-08-23', '2012-12-02', 51],
-    ['Cynthia F. Ganaban',           '1967-06-23', '2013-02-24', 45],
-    ['Aurelia R. Lajara',            '1933-11-14', '2013-04-17', 79],
-    ['Emilio J. Lajara',             '1922-02-07', '1995-04-15', 73],
-    ['Narciso R. Royo',              '1938-11-14', '2013-05-17', 74],
-    ['Luciana A. Austria',           '1953-01-07', '2013-06-05', 60],
-    ['Salud L. Dela Cruz',           '1950-05-02', '2013-06-19', 63],
-    ['Elesia V. Formon',             '1932-06-07', '2013-07-04', 81],
-    ['Alijandro M. Calaton',         '1972-05-03', '2023-03-21', 50],
-    ['Francisca Macawili',           '1934-12-10', '2013-07-28', 78],
-    ['Gabriela Bacal Trubi',         '1930-03-15', '2013-10-09', 83],
-    ['Marcelino Pomentil',           '1941-03-08', '2012-11-02', 71],
-    ['Anthony Stephen B. Kionisala', '1967-06-07', '2013-11-10', 46],
-    ['Crispin A. Sapaden',           '1969-02-14', '2014-01-01', 44],
-    ['Fernando R. Anadia',           '1957-05-24', '2014-01-10', 56],
-    ['Apollonio Ramos',              '1961-03-08', '2014-04-28', 53],
-    ['Alfredo Talamo',               null,          '2014-08-03', null],
-    ['Ruel M. Anog',                 '1994-01-09', '2014-08-10', 20],
-    ['Reynaldo A. Petallo',          '1946-12-25', '2014-10-04', 67],
-    ['Marry Jane M. Lajara',         '2003-07-06', '2014-10-03', 11],
-    ['Dante Dimaala',                '1958-04-05', '2015-03-03', 56],
-    ['Cristina Anil Bayonito',       '1952-03-14', '2015-03-06', 62],
-    ['Nelia T. Bonifacio',           '1979-06-28', '2015-05-03', 35],
-    ['Marcelina Baculo',             '1933-02-15', '2015-05-24', 82],
-    ['Roberto Bautista',             '1957-05-20', '2015-10-12', 58],
-    ['Danilo Sumandi',               null,          null,         null],
-    ['Elsie R. Abordo',              '1957-09-12', '2015-10-14', 58],
-    ['Jesus Bolaños',                '1944-10-24', '2015-10-18', 70],
-    ['Armando A. Quirol',            '1924-03-07', '2015-10-01', 91],
-    ['Amado D. Hermosa',             '1941-01-01', '2015-11-13', 74],
-    ['Ruben B. Gamboa',              '1981-09-18', '2015-11-19', 34],
-    ['Leopoldo C. Penalosa',         '1929-06-10', '2016-01-11', 86],
-    ['Eugenia D. Ramos',             '1929-09-05', '2016-05-29', 86],
-    ['Zenaida P. Platino',           '1962-09-20', '2016-07-14', 53],
-    ['Unknown',                      null,          null,         null],
-    ['Ernesto Dela Cruz',            '1954-01-12', '2016-11-03', 62],
-    ['Lolita C. Mendoza',            '1945-03-25', '2006-11-13', 61],
-    ['Leon A. Cabase',               '1927-12-25', '2017-02-07', 89],
-    ['Maria Nerie D. Cabase',        '1914-04-20', '2007-02-09', 92],
-    ['Armando Tolentino',            '1970-05-05', '2017-02-17', 46],
-    ['John Vjay Garan Dinglasan',    '1993-05-24', null,         null],
+    ['Quilao',                          null,         null],
+    ['Mauricia R. Camacho',             '1910-09-10', '2007-07-29'],
+
+    ['Doroteo S. Camacho',              '1909-12-02', '2005-11-21'],
+    ['Renato R. Camacho',               '1952-02-05', '2021-10-06'],
+    ['Rogelio D. De Guzman',            '1961-12-01', '2022-05-11'],
+
+    ['Concordia M. De Guzman',          '1950-05-12', '2005-11-29'],
+    ['Randy M. De Guzman',              '1989-03-18', '2023-04-06'],
+    ['Benedicto T. Magnaye',            '1934-02-19', '2009-04-07'],
+
+    ['Aquilina M. Magnaye',             '1985-06-20', '2005-12-01'],
+    ['Lucia M. Magnaye',                '1961-03-04', '1995-09-26'],
+    ['Harrold D. Garcia',               '1979-06-16', '2005-12-16'],
+    ['Barbara R. Bueno',                '1932-12-04', '2007-01-27'],
+    ['Leonardo D. Bueno',               '1929-10-24', '1999-09-03'],
+    ['Remegio P. Datinguinoo',          '1942-10-01', '2005-12-29'],
+    ['Helaria P. Datinguinoo',          '1944-01-14', '2025-03-25'],
+    ['Cristina Flores Agleron',         '1928-12-15', '2006-01-13'],
+
+    ['Roy F. Agleron Sr.',              '1953-09-23', '2006-05-17'],
+    ['Roy B. Agleron Jr.',              '1981-10-16', '2019-10-23'],
+
+    ['Servando C. Tomas',               '1936-10-23', '2006-01-17'],
+    ['Pedro A. Tomas',                  '1911-05-06', '1999-11-13'],
+    ['Enriqueta C. Tomas',              '1935-06-15', '2014-01-31'],
+
+    ['Cerilo M. Revadavia',             '1922-08-27', '2006-02-16'],
+    ['Resurreccion P. Revadavia',       '1932-03-27', '1921-10-07'], // dates as written; likely source error
+    ['Pamfilo G. De Chavez',            '1919-09-06', '2006-04-16'],
+    ['Dionisia R. De Chavez',           '1926-12-06', '2012-03-29'],
+    ['Gregorio Amboy Castillo',         '1939-03-12', '2006-04-24'],
+    ['Norma Albo Castillo',             '1942-04-16', '2024-11-20'],
+    ['Cesar J. Perucho',                '1932-02-24', '2003-09-15'],
+    ['Ursula H. Matibag',               '1940-01-20', null],        // "200." — year unreadable
+    ['Teofilo B. Matibag',              '1939-01-08', '2009-04-27'],
+    ['Leodegario O. Garis Sr.',         '1952-10-02', '2007-01-06'],
+    ['Petronilo D. Aguba',              '1978-05-31', '2021-03-24'],
+
+    ['Marieta D. Aguba',                '1945-01-14', '2006-11-25'],
+    ['Timoteo A. Aguba',                '1940-08-22', '2008-03-02'],
+
+    ['Rosita D. Casapao',               '1929-08-16', '1983-09-29'],
+    ['Albina C. Barte',                 '1966-02-05', '2013-05-12'],
+    ['Severo D. Casapao',               '1934-11-08', '2007-03-30'],
+    ['Victor D. Casapao',               '1922-09-10', '2006-10-17'],
+    ['Felicisima M. Casapao',           '1927-08-12', '2016-12-03'],
+    ['Lynel C. Magnaye',                '1988-02-04', '2007-02-19'],
+    ['Nemisio G. Magnaye',              '1957-10-31', '1995-08-31'],
+
+    ['Simeon M. Casapao',               '1942-10-28', '2021-07-31'],
+    ['Maria H. Casapao',                '1939-02-16', '2008-09-13'],
+    ['Marcel M. Atienza',               '1973-01-15', '2024-06-12'],
+    ['Crispulo A. De Castro',           '1966-06-10', '2009-05-04'],
+    ['Rosalina B. Sobremontes',         '1945-07-21', '2009-03-30'],
+
+    ['Crisipin C. Sobremontes',         '1968-12-05', '2025-12-25'],
+    ['Juan R. Sobremontes',             '1942-07-11', '2003-09-28'],
+    ['John Patrick C. Sobremontes',     '1987-10-22', '1989-02-27'],
+    ['Maximo S. Magnaye',               '1972-04-14', '2009-03-20'],
+    ['Cristina M. Magnaye',             '1965-02-14', '2018-05-28'],
+    ['Gina M. Delen',                   '1969-01-06', '2017-09-17'],
+
+    ['Paulino Marquez',                 '1899-10-03', '1970-04-22'],
+    ['Ana Marquez',                     '1901-07-20', '2004-11-27'],
+    ['Regina Marquez',                  '1929-09-14', '1980-11-14'],
+    ['Francisco Marquez',               '1931-06-22', '2012-02-14'],
+    ['Boy A. Marquez',                  '1955-04-02', '2025-12-02'],
+
+    ['Lanie M. Delen',                  '1956-04-20', '2024-03-22'],
+    ['Lance Raven A. Delen',            '2011-09-29', '2012-04-08'],
+    ['Katrina G. Marquez',              '1994-10-03', '1995-11-14'],
+    ['Loreto M. Delen Jr.',             '1973-04-21', '2021-07-17'],
+
+    ['Loreto Delen Sr.',                '1923-01-01', '1996-03-23'],
+    ['Romeo M. Delen',                  '1954-01-07', '2009-10-18'],
+    ['Joseph Pepe Delen',               '1962-01-09', '2018-12-06'],
+
+    ['Dante Delen',                     '1960-07-07', '2012-05-18'],
+    ['Efren Delen',                     '1967-10-10', '2025-10-04'],
+    ['Rosalinda A. Delen',              '1978-07-06', '2015-07-03'],
+    ['Antonio P. Dudas',                '1988-07-18', '2009-06-12'],
+    ['Venancio C. Dudas',               '1948-05-18', '2011-06-18'],
+
+    ['Monica M. Magboo',                '1946-05-04', '2022-02-07'],
+    ['Josefa Hernandez',                null,         '2010-06-26'],
+    ['Jacinto Matibag',                 null,         '1969-08-20'],
+    ['Martina M. Castillo',             '1950-01-30', '2025-11-28'],
+    ['Gregoria R. Escalona',            '1973-05-08', '2012-08-18'],
 ];
 
-$conn->beginTransaction();
 $inserted = 0;
-foreach ($records as $r) {
-    $burial = $r[2] ? date('Y-m-d', strtotime($r[2] . ' +8 days')) : null;
-    $conn->prepare("INSERT INTO deceased_records (full_name, date_of_birth, date_of_death, date_of_burial, age, is_archived) VALUES (?,?,?,?,?,0)")
-         ->execute([$r[0], $r[1], $r[2], $burial, $r[3]]);
-    echo "<p style='font-family:sans-serif;margin:1px 0;font-size:12px;'>✓ {$r[0]}</p>";
-    $inserted++;
-}
-$conn->commit();
+$skipped  = 0;
 
-echo "<p style='color:green;font-family:sans-serif;padding:10px 0;font-size:15px;font-weight:600;'>Done — $inserted records inserted.</p>";
+foreach ($records as [$name, $dob, $dod]) {
+    $age = calcAge($dob, $dod);
+    try {
+        $stmt->execute([$name, $dob, $dod, $age]);
+        $inserted++;
+    } catch (Exception $e) {
+        echo "<p style='color:orange;font-family:sans-serif;'>Skipped <b>$name</b>: " . $e->getMessage() . "</p>";
+        $skipped++;
+    }
+}
+
+echo "<p style='color:green;font-family:sans-serif;padding:20px;font-size:16px;'>✓ Done — <b>$inserted</b> records inserted, <b>$skipped</b> skipped.</p>";
 echo "<a href='public/burial-records.php' style='font-family:sans-serif;'>Go to Burial Records</a>";
