@@ -24,64 +24,68 @@ $stats = [
 
 if ($conn) {
     try {
-        // Use subquery to get actual status for each lot first
-        $statusQuery = "
-            SELECT 
+        $stats['total_lots']    = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
+        $stats['total_sections']= $conn->query("SELECT COUNT(*) FROM sections")->fetchColumn();
+        $stats['total_blocks']  = $conn->query("SELECT COUNT(*) FROM blocks")->fetchColumn();
+        $stats['total_burials'] = $conn->query("SELECT COUNT(*) FROM deceased_records WHERE is_archived=0")->fetchColumn();
+
+        // Single efficient query: a lot is Occupied if it has any deceased_records OR any occupied lot_layer
+        $occupancyQuery = "
+            SELECT
                 cl.id,
-                s.name as section_name,
-                b.name as block_name,
-                CASE 
-                    WHEN (SELECT COUNT(*) FROM deceased_records dr WHERE dr.lot_id = cl.id) > 0 THEN 'Occupied'
-                    WHEN (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) > 0 THEN 'Occupied'
+                s.name  AS section_name,
+                b.name  AS block_name,
+                CASE
+                    WHEN dr_count.cnt  > 0 THEN 'Occupied'
+                    WHEN ll_count.cnt  > 0 THEN 'Occupied'
                     ELSE cl.status
-                END as actual_status
+                END AS actual_status
             FROM cemetery_lots cl
             LEFT JOIN sections s ON cl.section_id = s.id
-            LEFT JOIN blocks b ON s.block_id = b.id
+            LEFT JOIN blocks   b ON s.block_id    = b.id
+            LEFT JOIN (SELECT lot_id, COUNT(*) AS cnt FROM deceased_records WHERE is_archived=0 GROUP BY lot_id) dr_count ON dr_count.lot_id = cl.id
+            LEFT JOIN (SELECT lot_id, COUNT(*) AS cnt FROM lot_layers   WHERE is_occupied=1  GROUP BY lot_id) ll_count ON ll_count.lot_id = cl.id
         ";
 
-        $stats['total_lots'] = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
-        
-        $stats['available_lots'] = $conn->query("
-            SELECT COUNT(*) FROM ($statusQuery) as lots WHERE actual_status = 'Vacant'
-        ")->fetchColumn();
-        
-        $stats['occupied_lots'] = $conn->query("
-            SELECT COUNT(*) FROM ($statusQuery) as lots WHERE actual_status = 'Occupied'
-        ")->fetchColumn();
+        $row = $conn->query("
+            SELECT
+                SUM(CASE WHEN actual_status='Vacant'   THEN 1 ELSE 0 END) AS available,
+                SUM(CASE WHEN actual_status='Occupied' THEN 1 ELSE 0 END) AS occupied
+            FROM ($occupancyQuery) t
+        ")->fetch(PDO::FETCH_ASSOC);
 
-        // Fetch Section and Block counts
-        $stats['total_sections'] = $conn->query("SELECT COUNT(*) FROM sections")->fetchColumn();
-        $stats['total_blocks'] = $conn->query("SELECT COUNT(*) FROM blocks")->fetchColumn();
-        $stats['total_burials'] = $conn->query("SELECT COUNT(*) FROM deceased_records")->fetchColumn();
-        
+        $stats['available_lots'] = $row['available'] ?? 0;
+        $stats['occupied_lots']  = $row['occupied']  ?? 0;
+
         $stmt = $conn->query("
-            SELECT 
-                section_name as section,
-                block_name as block,
-                COUNT(*) as total,
-                SUM(CASE WHEN actual_status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
-                SUM(CASE WHEN actual_status = 'Vacant' THEN 1 ELSE 0 END) as vacant
-            FROM ($statusQuery) as lots
+            SELECT
+                section_name AS section,
+                block_name   AS block,
+                COUNT(*)     AS total,
+                SUM(CASE WHEN actual_status='Occupied' THEN 1 ELSE 0 END) AS occupied,
+                SUM(CASE WHEN actual_status='Vacant'   THEN 1 ELSE 0 END) AS vacant
+            FROM ($occupancyQuery) t
             WHERE section_name IS NOT NULL AND block_name IS NOT NULL
             GROUP BY section_name, block_name
-            ORDER BY section_name, block_name
+            ORDER BY CAST(SUBSTR(block_name,   INSTR(block_name,   ' ')+1) AS INTEGER),
+                     CAST(SUBSTR(section_name, INSTR(section_name, ' ')+1) AS INTEGER)
         ");
         $stats['sections'] = $stmt->fetchAll();
-        
-        // Fetch Recent Burials
+
+        // Recent burials
         $stmt = $conn->query("
-            SELECT dr.*, cl.lot_number, s.name as section_name
+            SELECT dr.*, cl.lot_number, s.name AS section_name
             FROM deceased_records dr
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
             LEFT JOIN sections s ON cl.section_id = s.id
+            WHERE dr.is_archived = 0
             ORDER BY dr.created_at DESC
             LIMIT 5
         ");
         $recent_burials = $stmt->fetchAll();
-        
+
         $available_percent = $stats['total_lots'] > 0 ? round(($stats['available_lots'] / $stats['total_lots']) * 100, 1) : 0;
-        $occupied_percent = $stats['total_lots'] > 0 ? round(($stats['occupied_lots'] / $stats['total_lots']) * 100, 1) : 0;
+        $occupied_percent  = $stats['total_lots'] > 0 ? round(($stats['occupied_lots']  / $stats['total_lots']) * 100, 1) : 0;
         
     } catch (PDOException $e) {
         $error = $e->getMessage();

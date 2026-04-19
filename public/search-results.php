@@ -23,8 +23,8 @@ if (strlen($query) >= 2) {
             FROM cemetery_lots cl
             LEFT JOIN sections s ON cl.section_id = s.id
             LEFT JOIN blocks b ON s.block_id = b.id
-            WHERE cl.lot_number LIKE ? OR s.name LIKE ? OR b.name LIKE ?
-            ORDER BY cl.lot_number
+            WHERE LOWER(cl.lot_number) LIKE LOWER(?) OR LOWER(s.name) LIKE LOWER(?) OR LOWER(b.name) LIKE LOWER(?)
+            ORDER BY CAST(SUBSTR(cl.lot_number, INSTR(cl.lot_number, '-') + 1) AS INTEGER)
         ");
         $stmt->execute([$searchParam, $searchParam, $searchParam]);
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -34,7 +34,7 @@ if (strlen($query) >= 2) {
                 'subtitle' => "Section: " . ($row['section_name'] ?: 'No Section') . " (Block: " . ($row['block_name'] ?: 'No Block') . ")",
                 'status' => $row['status'],
                 'type' => 'Lot',
-                'url' => "index.php?search=" . urlencode($row['lot_number'])
+                'url' => "index.php?search=" . urlencode($row['lot_number']) . "&q=" . urlencode($row['lot_number'])
             ];
         }
 
@@ -43,7 +43,7 @@ if (strlen($query) >= 2) {
             SELECT dr.id, dr.full_name, dr.date_of_death, cl.lot_number, 'deceased' as type 
             FROM deceased_records dr
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
-            WHERE dr.full_name LIKE ?
+            WHERE LOWER(dr.full_name) LIKE LOWER(?)
             ORDER BY dr.full_name
         ");
         $stmt->execute([$searchParam]);
@@ -54,7 +54,7 @@ if (strlen($query) >= 2) {
                 'subtitle' => "Deceased Record" . ($row['lot_number'] ? " (Lot: " . $row['lot_number'] . ")" : ""),
                 'status' => $row['date_of_death'] ? "Died: " . $row['date_of_death'] : "N/A",
                 'type' => 'Deceased',
-                'url' => "burial-records.php?search=" . urlencode($row['full_name'])
+                'url' => "burial-records.php?search=" . urlencode($row['full_name']) . "&q=" . urlencode($row['full_name'])
             ];
         }
     } catch (PDOException $e) {

@@ -27,7 +27,7 @@ if ($method === 'GET') {
         $where = [];
 
         if ($search) {
-            $where[] = "(s.name LIKE ? OR s.description LIKE ?)";
+            $where[] = "(LOWER(s.name) LIKE LOWER(?) OR LOWER(s.description) LIKE LOWER(?))";
             $params[] = "%$search%";
             $params[] = "%$search%";
         }
