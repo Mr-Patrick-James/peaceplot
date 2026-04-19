@@ -69,6 +69,13 @@ if ($method === 'GET') {
         if (!in_array($sort_by, $allowedSort)) $sort_by = 'name';
         $sort_order = strtoupper($sort_order) === 'DESC' ? 'DESC' : 'ASC';
 
+        // Numeric-aware sort for name fields
+        $orderExpr = match($sort_by) {
+            'name'       => "CAST(SUBSTR(s.name, INSTR(s.name, ' ') + 1) AS INTEGER) $sort_order, s.name $sort_order",
+            'block_name' => "CAST(SUBSTR(b.name, INSTR(b.name, ' ') + 1) AS INTEGER) $sort_order, b.name $sort_order",
+            default      => "$sort_by $sort_order",
+        };
+
         $query = "
             SELECT s.*, b.name as block_name,
                    (SELECT COUNT(*) FROM cemetery_lots WHERE section_id = s.id) as lot_count
@@ -77,7 +84,7 @@ if ($method === 'GET') {
             $whereClause
             GROUP BY s.id
             $havingClause
-            ORDER BY $sort_by $sort_order
+            ORDER BY $orderExpr
         ";
 
         $stmt = $db->prepare($query);

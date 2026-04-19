@@ -122,7 +122,14 @@ function handleGet($conn) {
             $params = [':is_archived' => $showArchived];
             
             if ($search) {
-                $whereClause .= " AND (dr.full_name LIKE :search OR cl.lot_number LIKE :search OR s.name LIKE :search OR b.name LIKE :search OR dr.deceased_info LIKE :search OR dr.remarks LIKE :search)";
+                $whereClause .= " AND (
+                    LOWER(dr.full_name)     LIKE LOWER(:search) OR
+                    LOWER(cl.lot_number)    LIKE LOWER(:search) OR
+                    LOWER(s.name)           LIKE LOWER(:search) OR
+                    LOWER(b.name)           LIKE LOWER(:search) OR
+                    LOWER(dr.deceased_info) LIKE LOWER(:search) OR
+                    LOWER(dr.remarks)       LIKE LOWER(:search)
+                )";
                 $params[':search'] = "%$search%";
             }
 
@@ -224,6 +231,13 @@ function handleGet($conn) {
             ];
             
             $sortColumn = $allowedSortColumns[$sortBy] ?? 'dr.created_at';
+
+            // Use numeric sort for lot_number
+            if ($sortBy === 'lot_number') {
+                $lotSort = "CAST(SUBSTR(cl.lot_number, INSTR(cl.lot_number, '-') + 1) AS INTEGER) $sortOrder, cl.lot_number $sortOrder";
+            } else {
+                $lotSort = "$sortColumn $sortOrder";
+            }
             
             $sql = "
                 SELECT dr.*, cl.lot_number, s.name as section, b.name as block, cl.status as lot_status
@@ -232,7 +246,7 @@ function handleGet($conn) {
                 LEFT JOIN sections s ON cl.section_id = s.id
                 LEFT JOIN blocks b ON s.block_id = b.id
                 $whereClause
-                ORDER BY $sortColumn $sortOrder, dr.id DESC
+                ORDER BY $lotSort, dr.id DESC
             ";
             
             if ($page !== null) {

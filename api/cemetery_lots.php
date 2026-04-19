@@ -271,7 +271,7 @@ function handleGet($conn) {
                 }
                 
                 if ($search) {
-                    $whereClauses[] = "(cl.lot_number = :exact_search OR cl.lot_number LIKE :search OR s.name LIKE :search OR b.name LIKE :search OR cl.position LIKE :search OR dr.full_name LIKE :search)";
+                    $whereClauses[] = "(cl.lot_number = :exact_search OR LOWER(cl.lot_number) LIKE LOWER(:search) OR LOWER(s.name) LIKE LOWER(:search) OR LOWER(b.name) LIKE LOWER(:search) OR LOWER(cl.position) LIKE LOWER(:search) OR LOWER(dr.full_name) LIKE LOWER(:search))";
                     $params[':exact_search'] = $search;
                     $params[':search'] = "%$search%";
                 }
@@ -322,9 +322,9 @@ function handleGet($conn) {
                 // Prioritize exact matches in sorting, then natural-ish length sort
                 $orderBy = " ORDER BY ";
                 if ($search) {
-                    $orderBy .= "CASE WHEN cl.lot_number = :exact_search THEN 0 ELSE 1 END, ";
+                    $orderBy .= "CASE WHEN LOWER(cl.lot_number) = LOWER(:exact_search) THEN 0 ELSE 1 END, ";
                 }
-                $orderBy .= "LENGTH(cl.lot_number) $sortOrder, cl.lot_number $sortOrder";
+                $orderBy .= "CAST(SUBSTR(cl.lot_number, INSTR(cl.lot_number, '-') + 1) AS INTEGER) $sortOrder, cl.lot_number $sortOrder";
                 
                 if (!$all) {
                     $query .= $orderBy . " LIMIT :limit OFFSET :offset";

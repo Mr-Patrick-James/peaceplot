@@ -1332,7 +1332,7 @@ async function showAssignBurialModal(lotId) {
         resultsContainer.innerHTML = '<div style="padding: 32px; text-align: center;"><div class="loading-spinner" style="display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(59, 130, 246, 0.1); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite;"></div></div>';
         
         try {
-            const result = await API.fetchBurialRecords(1, 50, query);
+            const result = await API.fetchBurialRecords(1, 50, query, '', '', 0, { assignment: 'Unassigned' });
             if (result.success) {
                 const unassigned = result.data.filter(r => !r.lot_id);
                 
@@ -1377,10 +1377,10 @@ async function showAssignBurialModal(lotId) {
     searchInput.oninput = (e) => {
         clearTimeout(searchTimeout);
         const query = e.target.value.trim();
-        if (query.length >= 2) {
+        if (query.length >= 1) {
             searchTimeout = setTimeout(() => performSearch(query), 300);
         } else {
-            resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">Type at least 2 characters to search...</div>';
+            resultsContainer.innerHTML = '<div style="padding: 32px; text-align: center; color: #64748b;"><div style="font-size: 24px; margin-bottom: 8px;">🔍</div>Type to search for unassigned burial records...</div>';
             selectedBurialId = null;
             confirmBtn.disabled = true;
         }

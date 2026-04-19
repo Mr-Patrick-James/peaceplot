@@ -1522,6 +1522,27 @@ function createRecordModal(record = null) {
     modal.querySelector('.modal-cancel').onclick = () => closeModal(modal);
     modal.onclick = (e) => { if (e.target === modal) closeModal(modal); };
     
+    // Auto-calculate age from date of birth and date of death
+    const dobInput  = modal.querySelector('input[name="date_of_birth"]');
+    const dodInput  = modal.querySelector('input[name="date_of_death"]');
+    const ageInput  = modal.querySelector('input[name="age"]');
+
+    function calcAgeFromDates() {
+        const dob = dobInput.value.trim();
+        const dod = dodInput.value.trim();
+        if (!dob || !dod) return;
+        const birth = new Date(dob);
+        const death = new Date(dod);
+        if (isNaN(birth) || isNaN(death) || death < birth) return;
+        let age = death.getFullYear() - birth.getFullYear();
+        const m = death.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && death.getDate() < birth.getDate())) age--;
+        ageInput.value = age;
+    }
+
+    dobInput.addEventListener('change', calcAgeFromDates);
+    dodInput.addEventListener('change', calcAgeFromDates);
+
     // Fetch lots and populate dropdown
     const lotSelect = modal.querySelector('select[name="lot_id"]');
     const layerSelect = modal.querySelector('#selectedLayer');

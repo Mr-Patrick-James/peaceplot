@@ -118,7 +118,7 @@ const API = {
         }
     },
 
-    async fetchBurialRecords(page = 1, limit = 10, search = '', status = '', section = '', archived = 0) {
+    async fetchBurialRecords(page = 1, limit = 10, search = '', status = '', section = '', archived = 0, extraParams = {}) {
         try {
             const url = new URL(`${window.location.origin}${API_BASE_URL}/burial_records.php`);
             url.searchParams.append('page', page);
@@ -127,6 +127,9 @@ const API = {
             if (status) url.searchParams.append('status', status);
             if (section) url.searchParams.append('section', section);
             if (archived) url.searchParams.append('archived', archived);
+            for (const [key, val] of Object.entries(extraParams)) {
+                if (val !== undefined && val !== '') url.searchParams.append(key, val);
+            }
             
             const response = await fetch(url.toString());
             const data = await response.json();

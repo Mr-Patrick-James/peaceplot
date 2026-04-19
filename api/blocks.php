@@ -14,7 +14,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     try {
-        $stmt = $db->query("SELECT * FROM blocks ORDER BY name ASC");
+        $stmt = $db->query("SELECT * FROM blocks ORDER BY CAST(SUBSTR(name, INSTR(name, ' ') + 1) AS INTEGER) ASC, name ASC");
         $blocks = $stmt->fetchAll();
         echo json_encode(['success' => true, 'data' => $blocks]);
     } catch (PDOException $e) {
