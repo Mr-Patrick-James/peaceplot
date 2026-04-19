@@ -1109,5 +1109,7 @@ if ($db) {
     window.existingSectionAreas = <?php echo json_encode(array_values($sectionsWithAreas)); ?>;
   </script>
   <script src="../assets/js/sections.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
 </body>
 </html>

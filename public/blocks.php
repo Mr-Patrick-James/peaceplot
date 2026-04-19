@@ -854,5 +854,6 @@ if ($db) {
   </script>
   <script src="../assets/js/api.js"></script>
   <script src="../assets/js/blocks.js"></script>
+  <script src="../assets/js/app.js"></script>
 </body>
 </html>

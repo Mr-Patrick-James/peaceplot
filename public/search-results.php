@@ -29,34 +29,87 @@ if (strlen($query) >= 2) {
         $stmt->execute([$searchParam, $searchParam, $searchParam]);
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $results[] = [
-                'id' => $row['id'],
-                'title' => "Lot " . $row['lot_number'],
-                'subtitle' => "Section: " . ($row['section_name'] ?: 'No Section') . " (Block: " . ($row['block_name'] ?: 'No Block') . ")",
-                'status' => $row['status'],
-                'type' => 'Lot',
-                'url' => "index.php?search=" . urlencode($row['lot_number']) . "&q=" . urlencode($row['lot_number'])
+                'id'         => $row['id'],
+                'title'      => "Lot " . $row['lot_number'],
+                'subtitle'   => "Section: " . ($row['section_name'] ?: 'No Section') . " · Block: " . ($row['block_name'] ?: 'No Block'),
+                'status'     => $row['status'],
+                'type'       => 'Lot',
+                'lot_number' => $row['lot_number'],
+                'url'        => "index.php?search=" . urlencode($row['lot_number']) . "&q=" . urlencode($row['lot_number']),
+                'map_url'    => "cemetery-map.php?highlight_lot=" . $row['id'],
             ];
         }
 
         // Search Deceased Records
         $stmt = $db->prepare("
-            SELECT dr.id, dr.full_name, dr.date_of_death, cl.lot_number, 'deceased' as type 
+            SELECT dr.id, dr.full_name, dr.date_of_death, cl.lot_number, cl.id as lot_id,
+                   s.name as section_name, b.name as block_name
             FROM deceased_records dr
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
+            LEFT JOIN sections s ON cl.section_id = s.id
+            LEFT JOIN blocks b ON s.block_id = b.id
             WHERE LOWER(dr.full_name) LIKE LOWER(?)
             ORDER BY dr.full_name
         ");
         $stmt->execute([$searchParam]);
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $sub = "Burial Record";
+            if ($row['lot_number'])    $sub .= " · Lot: " . $row['lot_number'];
+            if ($row['section_name'])  $sub .= " · " . $row['section_name'];
+            if ($row['block_name'])    $sub .= " · " . $row['block_name'];
             $results[] = [
-                'id' => $row['id'],
-                'title' => $row['full_name'],
-                'subtitle' => "Deceased Record" . ($row['lot_number'] ? " (Lot: " . $row['lot_number'] . ")" : ""),
-                'status' => $row['date_of_death'] ? "Died: " . $row['date_of_death'] : "N/A",
-                'type' => 'Deceased',
-                'url' => "burial-records.php?search=" . urlencode($row['full_name']) . "&q=" . urlencode($row['full_name'])
+                'id'         => $row['id'],
+                'title'      => $row['full_name'],
+                'subtitle'   => $sub,
+                'status'     => $row['date_of_death'] ? "Died: " . $row['date_of_death'] : "N/A",
+                'type'       => 'Deceased',
+                'lot_number' => $row['lot_number'],
+                'url'        => "burial-records.php?search=" . urlencode($row['full_name']) . "&q=" . urlencode($row['full_name']),
+                'map_url'    => $row['lot_number'] ? "cemetery-map.php?highlight_lot=" . $row['lot_id'] : null,
             ];
         }
+
+        // Search Sections
+        $stmt = $db->prepare("
+            SELECT s.id, s.name, b.name as block_name
+            FROM sections s
+            LEFT JOIN blocks b ON s.block_id = b.id
+            WHERE LOWER(s.name) LIKE LOWER(?) OR LOWER(b.name) LIKE LOWER(?)
+            ORDER BY CAST(SUBSTR(b.name, INSTR(b.name,' ')+1) AS INTEGER),
+                     CAST(SUBSTR(s.name, INSTR(s.name,' ')+1) AS INTEGER)
+        ");
+        $stmt->execute([$searchParam, $searchParam]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $results[] = [
+                'id'       => $row['id'],
+                'title'    => $row['name'],
+                'subtitle' => "Block: " . ($row['block_name'] ?: 'No Block'),
+                'status'   => 'Section',
+                'type'     => 'Section',
+                'url'      => "sections.php?search=" . urlencode($row['name']) . "&q=" . urlencode($row['name']),
+                'map_url'  => null,
+            ];
+        }
+
+        // Search Blocks
+        $stmt = $db->prepare("
+            SELECT id, name FROM blocks
+            WHERE LOWER(name) LIKE LOWER(?)
+            ORDER BY CAST(SUBSTR(name, INSTR(name,' ')+1) AS INTEGER)
+        ");
+        $stmt->execute([$searchParam]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $results[] = [
+                'id'      => $row['id'],
+                'title'   => $row['name'],
+                'subtitle'=> 'Cemetery Block',
+                'status'  => 'Block',
+                'type'    => 'Block',
+                'url'     => "blocks.php?search=" . urlencode($row['name']) . "&q=" . urlencode($row['name']),
+                'map_url' => null,
+            ];
+        }
+
     } catch (PDOException $e) {
         $error = $e->getMessage();
     }
@@ -395,33 +448,53 @@ if (strlen($query) >= 2) {
             <?php foreach ($results as $item): ?>
               <?php 
                 $type = strtolower($item['type']);
-                $status = strtolower($item['status']);
-                $statusClass = ($type === 'deceased') ? 'deceased' : $status;
+                $statusClass = in_array($type, ['lot']) ? strtolower($item['status']) : $type;
+                $iconColor = match($type) {
+                    'lot'     => ['bg'=>'#eff6ff','color'=>'#3b82f6'],
+                    'deceased'=> ['bg'=>'#fef2f2','color'=>'#ef4444'],
+                    'section' => ['bg'=>'#f0fdf4','color'=>'#16a34a'],
+                    'block'   => ['bg'=>'#fefce8','color'=>'#ca8a04'],
+                    default   => ['bg'=>'#f8fafc','color'=>'#64748b'],
+                };
               ?>
               <div class="result-card">
                 <div class="result-header">
-                  <div class="result-icon-box icon-box-<?php echo $type; ?>">
+                  <div class="result-icon-box" style="background:<?php echo $iconColor['bg']; ?>; color:<?php echo $iconColor['color']; ?>; width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <?php if ($type === 'lot'): ?>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <?php elseif ($type === 'deceased'): ?>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <?php elseif ($type === 'section'): ?>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                     <?php else: ?>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16M8 7v10M16 7v10"/></svg>
                     <?php endif; ?>
                   </div>
                   <div class="result-main-info">
-                    <span class="result-type-label label-<?php echo $type; ?>"><?php echo $item['type']; ?></span>
+                    <span class="result-type-label" style="background:<?php echo $iconColor['bg']; ?>; color:<?php echo $iconColor['color']; ?>; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; padding:2px 8px; border-radius:4px; display:inline-block; margin-bottom:6px;">
+                      <?php echo htmlspecialchars($item['type']); ?>
+                    </span>
                     <span class="result-title"><?php echo htmlspecialchars($item['title']); ?></span>
                   </div>
                 </div>
-                
-                <div class="result-details">
+
+                <div class="result-details" style="font-size:13px; color:#64748b; line-height:1.5;">
                   <?php echo htmlspecialchars($item['subtitle']); ?>
                 </div>
-                
+
                 <div class="result-footer">
-                  <span class="result-status-pill status-<?php echo $statusClass; ?>">
+                  <span class="result-status-pill" style="font-size:12px; font-weight:600; padding:4px 10px; border-radius:6px; background:#f1f5f9; color:#475569;">
                     <?php echo htmlspecialchars($item['status']); ?>
                   </span>
-                  <a href="<?php echo $item['url']; ?>" class="btn-view-result">View Details</a>
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <?php if (!empty($item['map_url'])): ?>
+                      <a href="<?php echo $item['map_url']; ?>" class="btn-view-result" style="background:#10b981; display:flex; align-items:center; gap:5px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>
+                        Map
+                      </a>
+                    <?php endif; ?>
+                    <a href="<?php echo $item['url']; ?>" class="btn-view-result">View Details</a>
+                  </div>
                 </div>
               </div>
             <?php endforeach; ?>
@@ -431,6 +504,7 @@ if (strlen($query) >= 2) {
     </main>
   </div>
 
+  <script src="../assets/js/api.js"></script>
   <script src="../assets/js/app.js"></script>
 </body>
 </html>

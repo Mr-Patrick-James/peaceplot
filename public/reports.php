@@ -1017,6 +1017,6 @@ if ($conn) {
       win.document.close();
     }
   </script>
-  <script src="../assets/js/app.js"></script>
-</body>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script></body>
 </html>
