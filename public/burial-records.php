@@ -722,7 +722,7 @@ if ($conn) {
                 <div class="popover-body">
                   <div class="popover-column">
                     <!-- Blocks + Sections Cascading Category -->
-                    <div class="filter-category active">
+                    <div class="filter-category">
                       <button class="category-toggle" onclick="toggleCategory(this)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         Blocks &amp; Sections
@@ -800,7 +800,7 @@ if ($conn) {
 
                   <div class="popover-column">
                     <!-- Assignment Category -->
-                    <div class="filter-category active">
+                    <div class="filter-category">
                       <button class="category-toggle" onclick="toggleCategory(this)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         Burial Assignment

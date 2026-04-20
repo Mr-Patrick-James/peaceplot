@@ -315,21 +315,50 @@ if ($conn) {
                 Filters
                 <span id="blockFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
               </button>
-              <div id="blockFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:280px; padding:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <div id="blockFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:300px; padding:0; overflow:hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #f1f5f9;">
                   <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
                   <button onclick="clearBlockFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
                 </div>
-                <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Occupancy Status</div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                    <input type="checkbox" id="blockHasOccupied" onchange="applyBlockFilters()" style="width:16px;height:16px;cursor:pointer;">
-                    Has Occupied Lots
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                    <input type="checkbox" id="blockHasVacant" onchange="applyBlockFilters()" style="width:16px;height:16px;cursor:pointer;">
-                    Has Vacant Lots
-                  </label>
+                <div style="max-height:480px; overflow-y:auto;">
+                  <!-- Blocks collapsible -->
+                  <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
+                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Blocks
+                    </button>
+                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                      <div style="display:flex; flex-direction:column; gap:2px;">
+                        <?php foreach ($stats['blocks'] as $b): ?>
+                          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
+                            <input type="checkbox" class="blk-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
+                              onchange="applyBlockFilters()" style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            <?php echo htmlspecialchars($b['block']); ?>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Occupancy collapsible -->
+                  <div class="rpt-category">
+                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Occupancy Status
+                    </button>
+                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                      <div style="display:flex; flex-direction:column; gap:8px;">
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                          <input type="checkbox" id="blockHasOccupied" onchange="applyBlockFilters()" style="width:16px;height:16px;cursor:pointer;">
+                          Has Occupied Lots
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                          <input type="checkbox" id="blockHasVacant" onchange="applyBlockFilters()" style="width:16px;height:16px;cursor:pointer;">
+                          Has Vacant Lots
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -429,53 +458,66 @@ if ($conn) {
                 Filters
                 <span id="sectionFilterBadge" style="display:none; background:#fff; color:#2f6df6; border-radius:10px; padding:1px 6px; font-size:11px; font-weight:700;"></span>
               </button>
-              <div id="sectionFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:420px; padding:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <div id="sectionFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:420px; padding:0; overflow:hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #f1f5f9;">
                   <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
                   <button onclick="clearSectionFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-                  <!-- Blocks with cascading sections -->
-                  <div style="grid-column:1/-1;">
-                    <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Blocks &amp; Sections</div>
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                      <?php foreach ($stats['blocks'] as $b):
-                        $bSections = array_filter($stats['sections'], fn($s) => strtolower($s['block_name'] ?? '') === strtolower($b['block']));
-                      ?>
-                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
-                          <input type="checkbox" class="sec-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
-                            onchange="onSecBlockChange('<?php echo addslashes($b['block']); ?>')"
-                            style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                          <?php echo htmlspecialchars($b['block']); ?>
-                        </label>
-                        <?php if (!empty($bSections)): ?>
-                          <div id="sec-secs-<?php echo htmlspecialchars($b['block']); ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:4px;">
-                            <?php foreach ($bSections as $s): ?>
-                              <label class="sec-section-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
-                                <input type="checkbox" class="sec-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"
-                                  onchange="applySectionFilters()"
-                                  style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-                                <?php echo htmlspecialchars($s['section']); ?>
-                              </label>
-                            <?php endforeach; ?>
-                          </div>
-                        <?php endif; ?>
-                      <?php endforeach; ?>
+                <div style="max-height:480px; overflow-y:auto;">
+                  <!-- Blocks & Sections collapsible -->
+                  <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
+                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Blocks &amp; Sections
+                    </button>
+                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                      <div style="display:flex; flex-direction:column; gap:2px;">
+                        <?php foreach ($stats['blocks'] as $b):
+                          $bSections = array_filter($stats['sections'], fn($s) => strtolower($s['block_name'] ?? '') === strtolower($b['block']));
+                        ?>
+                          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
+                            <input type="checkbox" class="sec-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
+                              onchange="onSecBlockChange('<?php echo addslashes($b['block']); ?>')"
+                              style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            <?php echo htmlspecialchars($b['block']); ?>
+                          </label>
+                          <?php if (!empty($bSections)): ?>
+                            <div id="sec-secs-<?php echo htmlspecialchars($b['block']); ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:4px;">
+                              <?php foreach ($bSections as $s): ?>
+                                <label class="sec-section-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
+                                  <input type="checkbox" class="sec-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"
+                                    onchange="applySectionFilters()"
+                                    style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                                  <?php echo htmlspecialchars($s['section']); ?>
+                                </label>
+                              <?php endforeach; ?>
+                            </div>
+                          <?php endif; ?>
+                        <?php endforeach; ?>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Occupancy Status</div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                    <input type="checkbox" id="secHasOccupied" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
-                    Has Occupied Lots
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
-                    <input type="checkbox" id="secHasVacant" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
-                    Has Vacant Lots
-                  </label>
+                  <!-- Occupancy Status collapsible -->
+                  <div class="rpt-category">
+                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Occupancy Status
+                    </button>
+                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                      <div style="display:flex; flex-direction:column; gap:8px;">
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                          <input type="checkbox" id="secHasOccupied" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
+                          Has Occupied Lots
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                          <input type="checkbox" id="secHasVacant" onchange="applySectionFilters()" style="width:16px;height:16px;cursor:pointer;">
+                          Has Vacant Lots
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -539,66 +581,75 @@ if ($conn) {
               </button>
 
               <!-- Filter Popover -->
-              <div id="burialFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:520px; padding:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <div id="burialFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:520px; padding:0; overflow:hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #f1f5f9;">
                   <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
                   <div style="display:flex; gap:12px;">
                     <button onclick="clearBurialFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
                   </div>
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                  <!-- Blocks + Sections cascading -->
-                  <div style="grid-column:1/-1;">
-                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px;">Blocks &amp; Sections</div>
-                    <div style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto;">
-                      <?php foreach ($stats['blocks'] as $b):
-                        $bSections = array_filter($stats['sections'], fn($s) => strtolower($s['block_name'] ?? '') === strtolower($b['block']));
-                      ?>
-                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
-                          <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
-                            onchange="onBurialBlockChange('<?php echo addslashes($b['block']); ?>')"
-                            style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                          <?php echo htmlspecialchars($b['block']); ?>
-                        </label>
-                        <?php if (!empty($bSections)): ?>
-                          <div id="burial-secs-<?php echo htmlspecialchars($b['block']); ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:4px;">
-                            <?php foreach ($bSections as $s): ?>
-                              <label class="burial-sec-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
-                                <input type="checkbox" class="burial-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"
-                                  onchange="applyBurialFilters()"
-                                  style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-                                <?php echo htmlspecialchars($s['section']); ?>
-                              </label>
-                            <?php endforeach; ?>
-                          </div>
-                        <?php endif; ?>
-                      <?php endforeach; ?>
+                <div style="max-height:480px; overflow-y:auto;">
+                  <!-- Blocks + Sections collapsible -->
+                  <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
+                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      Blocks &amp; Sections
+                    </button>
+                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                      <div style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto;">
+                        <?php foreach ($stats['blocks'] as $b):
+                          $bSections = array_filter($stats['sections'], fn($s) => strtolower($s['block_name'] ?? '') === strtolower($b['block']));
+                        ?>
+                          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
+                            <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
+                              onchange="onBurialBlockChange('<?php echo addslashes($b['block']); ?>')"
+                              style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            <?php echo htmlspecialchars($b['block']); ?>
+                          </label>
+                          <?php if (!empty($bSections)): ?>
+                            <div id="burial-secs-<?php echo htmlspecialchars($b['block']); ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:4px;">
+                              <?php foreach ($bSections as $s): ?>
+                                <label class="burial-sec-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
+                                  <input type="checkbox" class="burial-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"
+                                    onchange="applyBurialFilters()"
+                                    style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                                  <?php echo htmlspecialchars($s['section']); ?>
+                                </label>
+                              <?php endforeach; ?>
+                            </div>
+                          <?php endif; ?>
+                        <?php endforeach; ?>
+                      </div>
                     </div>
                   </div>
-                  <!-- Date Range -->
-                  <div style="grid-column:1/-1;">
-                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <!-- Date Range collapsible -->
+                  <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
+                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                       Date of Burial Range
-                    </div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                      <input type="date" id="burialDateFrom" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
-                      <span style="color:#94a3b8; font-size:13px;">to</span>
-                      <input type="date" id="burialDateTo" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                    </button>
+                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                      <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="date" id="burialDateFrom" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                        <span style="color:#94a3b8; font-size:13px;">to</span>
+                        <input type="date" id="burialDateTo" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                      </div>
                     </div>
                   </div>
-                  <!-- Age Range -->
-                  <div style="grid-column:1/-1;">
-                    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <!-- Age Range collapsible -->
+                  <div class="rpt-category">
+                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                       Age Range
-                    </div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                      <input type="number" id="burialAgeMin" min="0" max="150" placeholder="Min age" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
-                      <span style="color:#94a3b8; font-size:13px;">to</span>
-                      <input type="number" id="burialAgeMax" min="0" max="150" placeholder="Max age" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                    </button>
+                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                      <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="number" id="burialAgeMin" min="0" max="150" placeholder="Min age" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                        <span style="color:#94a3b8; font-size:13px;">to</span>
+                        <input type="number" id="burialAgeMax" min="0" max="150" placeholder="Max age" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -672,6 +723,15 @@ if ($conn) {
       if (!isOpen) document.getElementById(popId).style.display = 'block';
     }
 
+    // ── Collapsible category toggle for report popovers ────────
+    function toggleRptCategory(btn) {
+      const content = btn.nextElementSibling;
+      const arrow = btn.querySelector('svg');
+      const isOpen = content.style.display !== 'none';
+      content.style.display = isOpen ? 'none' : 'block';
+      if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
+    }
+
     document.addEventListener('click', e => {
       POPOVERS.forEach(popId => {
         const pop = document.getElementById(popId);
@@ -699,19 +759,22 @@ if ($conn) {
       const search      = (document.getElementById('blockSearch').value || '').toLowerCase().trim();
       const hasOccupied = document.getElementById('blockHasOccupied').checked;
       const hasVacant   = document.getElementById('blockHasVacant').checked;
+      const selectedBlocks = [...document.querySelectorAll('.blk-block-cb:checked')].map(c => c.value);
       let visible = 0;
       document.querySelectorAll('#blockTable tbody tr').forEach(row => {
+        if (!row.dataset.block) return; // skip section sub-rows
         const name     = (row.dataset.block || '').toLowerCase();
         const occupied = parseInt(row.dataset.occupied || 0);
         const vacant   = parseInt(row.dataset.vacant   || 0);
         let show = !search || name.includes(search);
         if (hasOccupied) show = show && occupied > 0;
         if (hasVacant)   show = show && vacant   > 0;
+        if (selectedBlocks.length > 0) show = show && selectedBlocks.includes(name);
         row.style.display = show ? '' : 'none';
         if (show) visible++;
       });
       document.getElementById('blockCount').textContent = `Showing ${visible} block${visible !== 1 ? 's' : ''}`;
-      const active = (hasOccupied ? 1 : 0) + (hasVacant ? 1 : 0);
+      const active = (hasOccupied ? 1 : 0) + (hasVacant ? 1 : 0) + selectedBlocks.length;
       const badge = document.getElementById('blockFilterBadge');
       badge.style.display = active > 0 ? 'inline' : 'none';
       badge.textContent = active;
@@ -720,6 +783,7 @@ if ($conn) {
       document.getElementById('blockHasOccupied').checked = false;
       document.getElementById('blockHasVacant').checked   = false;
       document.getElementById('blockSearch').value = '';
+      document.querySelectorAll('.blk-block-cb').forEach(cb => cb.checked = false);
       applyBlockFilters();
     }
 
