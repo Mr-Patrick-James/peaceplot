@@ -14,6 +14,19 @@ function toggleCategory(btn) {
     btn.parentElement.classList.toggle('active');
 }
 
+function onBlockFilterChange() {
+    const selectedBlocks = Array.from(document.querySelectorAll('input[name="block"]:checked')).map(cb => cb.value);
+
+    document.querySelectorAll('[id^="lot-secs-"]').forEach(div => {
+        const blockName = div.id.replace('lot-secs-', '');
+        const show = selectedBlocks.includes(blockName);
+        div.style.display = show ? 'flex' : 'none';
+        if (!show) div.querySelectorAll('input[name="section"]').forEach(cb => cb.checked = false);
+    });
+
+    updateFilters();
+}
+
 function updateFilters() {
     const activeBlocks = Array.from(document.querySelectorAll('input[name="block"]:checked')).map(cb => cb.value);
     const activeSections = Array.from(document.querySelectorAll('input[name="section"]:checked')).map(cb => cb.value);
@@ -70,6 +83,9 @@ function clearAllFilters() {
     const checkboxes = document.querySelectorAll('.filter-popover input[type="checkbox"]');
     checkboxes.forEach(cb => cb.checked = false);
     
+    // Hide all cascading section sub-lists
+    document.querySelectorAll('[id^="lot-secs-"]').forEach(div => div.style.display = 'none');
+
     const ascRadio = document.querySelector('input[name="sort_order"][value="ASC"]');
     if (ascRadio) ascRadio.checked = true;
 

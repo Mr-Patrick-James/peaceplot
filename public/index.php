@@ -1230,34 +1230,39 @@ if ($conn) {
                 </div>
                 <div class="popover-body">
                   <div class="popover-column">
-                    <!-- Blocks Category -->
+                    <!-- Blocks & Sections (cascading) -->
                     <div class="filter-category active">
                       <button class="category-toggle" onclick="toggleCategory(this)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        Blocks
+                        Blocks &amp; Sections
                       </button>
-                      <div class="category-content">
-                        <?php foreach ($blocks as $block): ?>
-                          <label class="filter-option">
-                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block['name']); ?>" onchange="updateFilters()">
+                      <div class="category-content" style="padding-left: 8px;">
+                        <?php foreach ($blocks as $block):
+                          $blockSections = array_filter($sections, fn($s) => ($s['block_name'] ?? '') === $block['name']);
+                        ?>
+                          <label class="filter-option" style="font-weight:600; color:#1e293b; background:#f8fafc; border-radius:8px; padding:6px 8px; margin-bottom:2px;">
+                            <input type="checkbox" name="block" value="<?php echo htmlspecialchars($block['name']); ?>"
+                              onchange="onBlockFilterChange()"
+                              style="accent-color:#10b981;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                             <?php echo htmlspecialchars($block['name']); ?>
                           </label>
-                        <?php endforeach; ?>
-                      </div>
-                    </div>
-
-                    <!-- Sections Category -->
-                    <div class="filter-category">
-                      <button class="category-toggle" onclick="toggleCategory(this)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        Sections
-                      </button>
-                      <div class="category-content">
-                        <?php foreach ($sections as $section): ?>
-                          <label class="filter-option">
-                            <input type="checkbox" name="section" value="<?php echo htmlspecialchars($section['name']); ?>" onchange="updateFilters()">
-                            <?php echo htmlspecialchars($section['name']); ?>
-                          </label>
+                          <?php if (!empty($blockSections)): ?>
+                            <div id="lot-secs-<?php echo htmlspecialchars($block['name']); ?>"
+                                 style="display:none; flex-direction:column; gap:1px; padding-left:18px; margin-bottom:4px;">
+                              <?php foreach ($blockSections as $sec): ?>
+                                <label class="filter-option lot-sec-label"
+                                       data-block="<?php echo htmlspecialchars($block['name']); ?>"
+                                       style="font-size:12px; color:#475569; padding:5px 8px; border-radius:8px;">
+                                  <input type="checkbox" name="section" value="<?php echo htmlspecialchars($sec['name']); ?>"
+                                    onchange="updateFilters()"
+                                    style="accent-color:#3b82f6;">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="width:11px;height:11px;flex-shrink:0;"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                                  <?php echo htmlspecialchars($sec['name']); ?>
+                                </label>
+                              <?php endforeach; ?>
+                            </div>
+                          <?php endif; ?>
                         <?php endforeach; ?>
                       </div>
                     </div>
