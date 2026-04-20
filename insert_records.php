@@ -14,15 +14,18 @@ function calcAge($dob, $dod) {
 }
 
 $records = [
-    ['Santiago Flores Bueno',   '1927-05-01', '2008-02-18'],
-    ['Maria Gina Bueno',        '1925-12-15', '2020-11-02'],
-    ['Elenor Garpa Bueno',      '1949-04-25', '2022-02-22'],
-    ['Romeo O. Garis',          '1951-03-06', '2024-02-08'],
-    ['Guillermo M. Berguera',   '1965-06-25', '2025-11-02'],
-    ['Unknown',                 null,         null],
-    ['Mario J. Gad',            '1942-09-12', '2024-01-23'],
-    ['Merced G. Magnaye',       '1955-09-24', '2021-10-08'],
-    ['Epifania Talicuran',      '1926-02-16', '2021-07-06'],
+    ['Sabina Moreno Abrigonda',      null,         '2021-03-17'], // birth day/year missing
+    ['Luke Andrean Venice S. Manalo','2013-01-09', '2013-01-09'],
+    ['Agustin Abanilla Abrigonda',   '1931-08-28', '2022-05-14'],
+    ['Nakay Festin',                 null,         null],
+    ['Rolando P. Andillo',           '1959-01-24', '2024-11-24'],
+    ['Gulliermo Quinto',             '1956-04-07', '2003-01-20'],
+    ['Selvina Quinto',               '1960-02-16', '2022-08-03'],
+    ['Avelino Alvarez Aniel',        '1953-11-10', '2023-07-29'],
+    ['Ariel Ordoña Aniel',           '1976-04-07', '2012-11-01'],
+    ['Rosalinda B. Ordoña-Aniel',    '1952-06-13', '2021-11-13'],
+    ['Renato De Villa Moreno',       '1969-12-10', '2025-10-05'],
+    ['Paulo M. Moreno',              '1947-01-11', '2025-04-08'],
 ];
 
 $inserted = 0;
