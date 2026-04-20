@@ -469,6 +469,30 @@ if ($conn) {
       display: none;
     }
 
+    .lot-remove-btn {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      width: 16px;
+      height: 16px;
+      background: rgba(239,68,68,0.85);
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      z-index: 10;
+      transition: background 0.15s;
+    }
+    .lot-remove-btn:hover { background: #dc2626; }
+    .lot-rectangle:hover .lot-remove-btn,
+    .lot-rectangle.selected .lot-remove-btn { display: flex; }
+
     .lot-layer-indicator {
       position: absolute;
       top: 0.5px;
@@ -1399,6 +1423,18 @@ if ($conn) {
       label.className = 'lot-label';
       label.innerHTML = `<span>${lotData.lot_number}</span><span class="section-tag">${lotData.section_name || lotData.section || ''}</span>`;
       rect.appendChild(label);
+
+      // X remove button
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'lot-remove-btn';
+      removeBtn.title = 'Remove from map';
+      removeBtn.innerHTML = '×';
+      removeBtn.addEventListener('mousedown', e => { e.stopPropagation(); });
+      removeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        removeMarkForLot(lotData.id);
+      });
+      rect.appendChild(removeBtn);
 
       if (isVertical) {
         const sectionTag = document.createElement('div');
