@@ -216,7 +216,7 @@ function handleGet($conn) {
                 $block = isset($_GET['block']) && $_GET['block'] !== '' ? $_GET['block'] : null;
                 $occupancy = isset($_GET['occupancy']) && $_GET['occupancy'] !== '' ? $_GET['occupancy'] : null;
                 $sortOrder = isset($_GET['sort_order']) && in_array(strtoupper($_GET['sort_order']), ['ASC', 'DESC']) ? strtoupper($_GET['sort_order']) : 'ASC';
-                $all = isset($_GET['all']) && $_GET['all'] === 'true';
+                $all = isset($_GET['all']) && ($_GET['all'] === 'true' || $_GET['all'] === '1');
                 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
                 
                 $whereClauses = [];

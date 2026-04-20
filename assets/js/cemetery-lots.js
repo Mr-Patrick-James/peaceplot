@@ -843,9 +843,13 @@ async function showMoveBurialModal(burialId, currentLotId, currentLayer) {
 
     // Fetch lots for searching
     try {
-        const result = await API.fetchLots(1, 1000); // Fetch all lots
+        const result = await API.fetchLots(1, 1000, '', '', '', '', '', 'ASC', true);
         if (result.success && result.data) {
-            allLots = result.data;
+            allLots = result.data.sort((a, b) => {
+                const numA = parseInt((a.lot_number || '').replace(/[^0-9]/g, '')) || 0;
+                const numB = parseInt((b.lot_number || '').replace(/[^0-9]/g, '')) || 0;
+                return numA - numB;
+            });
         }
     } catch (error) {
         console.error('Error fetching lots:', error);
@@ -862,7 +866,11 @@ async function showMoveBurialModal(burialId, currentLotId, currentLayer) {
             lot.lot_number.toLowerCase().includes(query) || 
             (lot.section_name || lot.section || '').toLowerCase().includes(query) || 
             (lot.block_name || lot.block || '').toLowerCase().includes(query)
-        ).slice(0, 10); // Limit to 10 results
+        ).sort((a, b) => {
+            const numA = parseInt(a.lot_number.replace(/[^0-9]/g, '')) || 0;
+            const numB = parseInt(b.lot_number.replace(/[^0-9]/g, '')) || 0;
+            return numA - numB;
+        }).slice(0, 20);
 
         if (filtered.length > 0) {
             lotSearchResults.innerHTML = filtered.map(lot => `
