@@ -16,6 +16,8 @@ $results = [];
 if (strlen($query) >= 2) {
     try {
         $searchParam = "%$query%";
+        $cleanQuery  = trim(preg_replace('/\s+/', ' ', preg_replace('/[.\-,\'\"]+/', ' ', $query)));
+        $cleanParam  = "%$cleanQuery%";
 
         // Search Lots
         $stmt = $db->prepare("
@@ -49,9 +51,10 @@ if (strlen($query) >= 2) {
             LEFT JOIN sections s ON cl.section_id = s.id
             LEFT JOIN blocks b ON s.block_id = b.id
             WHERE LOWER(dr.full_name) LIKE LOWER(?)
+               OR LOWER(REPLACE(REPLACE(REPLACE(dr.full_name,'.',''),'-',''),',','')) LIKE LOWER(?)
             ORDER BY dr.full_name
         ");
-        $stmt->execute([$searchParam]);
+        $stmt->execute([$searchParam, $cleanParam]);
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $sub = "Burial Record";
             if ($row['lot_number'])    $sub .= " · Lot: " . $row['lot_number'];

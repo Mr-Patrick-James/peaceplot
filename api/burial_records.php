@@ -122,15 +122,21 @@ function handleGet($conn) {
             $params = [':is_archived' => $showArchived];
             
             if ($search) {
+                // Strip punctuation from search so "R." matches "R" and vice versa
+                $cleanSearch = preg_replace('/[.\-,\'\"]+/', ' ', $search);
+                $cleanSearch = trim(preg_replace('/\s+/', ' ', $cleanSearch));
+                $params[':search']       = "%" . $search . "%";
+                $params[':search_clean'] = "%" . $cleanSearch . "%";
+                // Match against both original and punctuation-stripped versions of the field
                 $whereClause .= " AND (
                     LOWER(dr.full_name)     LIKE LOWER(:search) OR
+                    LOWER(REPLACE(REPLACE(REPLACE(dr.full_name,  '.',''), '-',''), ',','')) LIKE LOWER(:search_clean) OR
                     LOWER(cl.lot_number)    LIKE LOWER(:search) OR
                     LOWER(s.name)           LIKE LOWER(:search) OR
                     LOWER(b.name)           LIKE LOWER(:search) OR
                     LOWER(dr.deceased_info) LIKE LOWER(:search) OR
                     LOWER(dr.remarks)       LIKE LOWER(:search)
                 )";
-                $params[':search'] = "%$search%";
             }
 
             if ($filterSection) {

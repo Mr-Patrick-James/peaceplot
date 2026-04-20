@@ -271,9 +271,20 @@ function handleGet($conn) {
                 }
                 
                 if ($search) {
-                    $whereClauses[] = "(cl.lot_number = :exact_search OR LOWER(cl.lot_number) LIKE LOWER(:search) OR LOWER(s.name) LIKE LOWER(:search) OR LOWER(b.name) LIKE LOWER(:search) OR LOWER(cl.position) LIKE LOWER(:search) OR LOWER(dr.full_name) LIKE LOWER(:search))";
+                    $cleanSearch = preg_replace('/[.\-,\'\"]+/', ' ', $search);
+                    $cleanSearch = trim(preg_replace('/\s+/', ' ', $cleanSearch));
                     $params[':exact_search'] = $search;
-                    $params[':search'] = "%$search%";
+                    $params[':search']       = "%$search%";
+                    $params[':search_clean'] = "%$cleanSearch%";
+                    $whereClauses[] = "(
+                        LOWER(cl.lot_number) = LOWER(:exact_search) OR
+                        LOWER(cl.lot_number) LIKE LOWER(:search) OR
+                        LOWER(s.name)        LIKE LOWER(:search) OR
+                        LOWER(b.name)        LIKE LOWER(:search) OR
+                        LOWER(cl.position)   LIKE LOWER(:search) OR
+                        LOWER(dr.full_name)  LIKE LOWER(:search) OR
+                        LOWER(REPLACE(REPLACE(REPLACE(dr.full_name, '.',''), '-',''), ',','')) LIKE LOWER(:search_clean)
+                    )";
                 }
                 
                 $whereSQL = count($whereClauses) > 0 ? " WHERE " . implode(" AND ", $whereClauses) : "";
@@ -323,8 +334,7 @@ function handleGet($conn) {
                 $orderBy = " ORDER BY ";
                 if ($search) {
                     $orderBy .= "CASE WHEN LOWER(cl.lot_number) = LOWER(:exact_search) THEN 0 ELSE 1 END, ";
-                }
-                $orderBy .= "CAST(SUBSTR(cl.lot_number, INSTR(cl.lot_number, '-') + 1) AS INTEGER) $sortOrder, cl.lot_number $sortOrder";
+                }                $orderBy .= "CAST(SUBSTR(cl.lot_number, INSTR(cl.lot_number, '-') + 1) AS INTEGER) $sortOrder, cl.lot_number $sortOrder";
                 
                 if (!$all) {
                     $query .= $orderBy . " LIMIT :limit OFFSET :offset";
