@@ -60,7 +60,7 @@ if ($conn) {
 
         // All burials (no limit)
         $stmt = $conn->query("
-            SELECT dr.*, cl.lot_number, s.name as section, b.name as block
+            SELECT dr.*, cl.lot_number, cl.status as lot_status, s.name as section, b.name as block
             FROM deceased_records dr
             LEFT JOIN cemetery_lots cl ON dr.lot_id = cl.id
             LEFT JOIN sections s ON cl.section_id = s.id
@@ -581,74 +581,125 @@ if ($conn) {
               </button>
 
               <!-- Filter Popover -->
-              <div id="burialFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:520px; padding:0; overflow:hidden;">
+              <div id="burialFilterPopover" onclick="event.stopPropagation()" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.12); z-index:500; width:640px; padding:0; overflow:hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #f1f5f9;">
                   <span style="font-size:15px; font-weight:700; color:#1e293b;">Filters</span>
-                  <div style="display:flex; gap:12px;">
-                    <button onclick="clearBurialFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
-                  </div>
+                  <button onclick="clearBurialFilters()" style="font-size:13px; color:#ef4444; background:none; border:none; cursor:pointer; font-weight:600;">Clear all</button>
                 </div>
-                <div style="max-height:480px; overflow-y:auto;">
-                  <!-- Blocks + Sections collapsible -->
-                  <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
-                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
-                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Blocks &amp; Sections
-                    </button>
-                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
-                      <div style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto;">
-                        <?php foreach ($stats['blocks'] as $b):
-                          $bSections = array_filter($stats['sections'], fn($s) => strtolower($s['block_name'] ?? '') === strtolower($b['block']));
-                        ?>
-                          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
-                            <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
-                              onchange="onBurialBlockChange('<?php echo addslashes($b['block']); ?>')"
-                              style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                            <?php echo htmlspecialchars($b['block']); ?>
+                <div style="display:flex; max-height:480px; overflow-y:auto;">
+                  <!-- Left column -->
+                  <div style="flex:1; border-right:1px solid #f1f5f9;">
+                    <!-- Blocks + Sections -->
+                    <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
+                      <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                        <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Blocks &amp; Sections
+                      </button>
+                      <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                        <div style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto;">
+                          <?php foreach ($stats['blocks'] as $b):
+                            $bSections = array_filter($stats['sections'], fn($s) => strtolower($s['block_name'] ?? '') === strtolower($b['block']));
+                          ?>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:6px 8px; border-radius:8px; background:#f8fafc;">
+                              <input type="checkbox" class="burial-block-cb" value="<?php echo strtolower(htmlspecialchars($b['block'])); ?>"
+                                onchange="onBurialBlockChange('<?php echo addslashes($b['block']); ?>')"
+                                style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                              <?php echo htmlspecialchars($b['block']); ?>
+                            </label>
+                            <?php if (!empty($bSections)): ?>
+                              <div id="burial-secs-<?php echo htmlspecialchars($b['block']); ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:4px;">
+                                <?php foreach ($bSections as $s): ?>
+                                  <label class="burial-sec-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
+                                    <input type="checkbox" class="burial-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"
+                                      onchange="applyBurialFilters()"
+                                      style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                                    <?php echo htmlspecialchars($s['section']); ?>
+                                  </label>
+                                <?php endforeach; ?>
+                              </div>
+                            <?php endif; ?>
+                          <?php endforeach; ?>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Date of Burial Range -->
+                    <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
+                      <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                        <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Date of Burial Range
+                      </button>
+                      <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                          <input type="date" id="burialDateFrom" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                          <span style="color:#94a3b8; font-size:13px;">to</span>
+                          <input type="date" id="burialDateTo" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Age Range -->
+                    <div class="rpt-category">
+                      <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                        <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Age Range
+                      </button>
+                      <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                          <input type="number" id="burialAgeMin" min="0" max="150" placeholder="Min" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                          <span style="color:#94a3b8; font-size:13px;">to</span>
+                          <input type="number" id="burialAgeMax" min="0" max="150" placeholder="Max" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Right column -->
+                  <div style="flex:1;">
+                    <!-- Burial Assignment -->
+                    <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
+                      <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                        <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Burial Assignment
+                      </button>
+                      <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                          <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                            <input type="checkbox" class="burial-assignment-cb" value="assigned" onchange="applyBurialFilters()" style="width:15px;height:15px;cursor:pointer;accent-color:#10b981;">
+                            Assigned
                           </label>
-                          <?php if (!empty($bSections)): ?>
-                            <div id="burial-secs-<?php echo htmlspecialchars($b['block']); ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:4px;">
-                              <?php foreach ($bSections as $s): ?>
-                                <label class="burial-sec-label" data-block="<?php echo strtolower(htmlspecialchars($s['block_name'] ?? '')); ?>" style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer; padding:5px 8px; border-radius:8px;">
-                                  <input type="checkbox" class="burial-section-cb" value="<?php echo strtolower(htmlspecialchars($s['section'])); ?>"
-                                    onchange="applyBurialFilters()"
-                                    style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-                                  <?php echo htmlspecialchars($s['section']); ?>
-                                </label>
-                              <?php endforeach; ?>
-                            </div>
-                          <?php endif; ?>
-                        <?php endforeach; ?>
+                          <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; cursor:pointer;">
+                            <input type="checkbox" class="burial-assignment-cb" value="unassigned" onchange="applyBurialFilters()" style="width:15px;height:15px;cursor:pointer;accent-color:#f59e0b;">
+                            Unassigned
+                          </label>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <!-- Date Range collapsible -->
-                  <div class="rpt-category" style="border-bottom:1px solid #f8fafc;">
-                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
-                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Date of Burial Range
-                    </button>
-                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
-                      <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="date" id="burialDateFrom" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
-                        <span style="color:#94a3b8; font-size:13px;">to</span>
-                        <input type="date" id="burialDateTo" onchange="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
-                      </div>
-                    </div>
-                  </div>
-                  <!-- Age Range collapsible -->
-                  <div class="rpt-category">
-                    <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
-                      <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                      Age Range
-                    </button>
-                    <div class="rpt-content" style="display:none; padding:0 20px 12px 20px;">
-                      <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="number" id="burialAgeMin" min="0" max="150" placeholder="Min age" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
-                        <span style="color:#94a3b8; font-size:13px;">to</span>
-                        <input type="number" id="burialAgeMax" min="0" max="150" placeholder="Max age" oninput="applyBurialFilters()" style="padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; flex:1;">
+                    <!-- Sorting -->
+                    <div class="rpt-category">
+                      <button class="rpt-toggle" onclick="toggleRptCategory(this)" style="width:100%; padding:12px 20px; display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#1e293b;">
+                        <svg style="width:16px;height:16px;color:#94a3b8;transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        Sorting
+                      </button>
+                      <div class="rpt-content" style="display:none; padding:0 20px 16px 20px;">
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                          <div>
+                            <label style="font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:4px;">Sort By</label>
+                            <select id="burialSortBy" onchange="applyBurialFilters()" style="width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#1e293b; outline:none; background:#fff;">
+                              <option value="date_of_burial">Date of Burial</option>
+                              <option value="full_name">Full Name</option>
+                              <option value="date_of_death">Date of Death</option>
+                              <option value="age">Age</option>
+                              <option value="lot_number">Lot Number</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label style="font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:4px;">Order</label>
+                            <select id="burialSortOrder" onchange="applyBurialFilters()" style="width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#1e293b; outline:none; background:#fff;">
+                              <option value="desc">Descending</option>
+                              <option value="asc">Ascending</option>
+                            </select>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -680,12 +731,16 @@ if ($conn) {
               <?php if (empty($stats['recent_burials'])): ?>
                 <tr><td colspan="6" style="text-align:center; color:#6b7280;">No burial records found</td></tr>
               <?php else: ?>
-                <?php foreach ($stats['recent_burials'] as $burial): ?>
+                <?php foreach ($stats['recent_burials'] as $burial):
+                  $lotStatus = $burial['lot_id'] ? strtolower($burial['lot_status'] ?? 'occupied') : 'unassigned';
+                ?>
                   <tr data-name="<?php echo strtolower(htmlspecialchars($burial['full_name'])); ?>"
                       data-section="<?php echo strtolower(htmlspecialchars($burial['section'] ?? '')); ?>"
                       data-block="<?php echo strtolower(htmlspecialchars($burial['block'] ?? '')); ?>"
                       data-date="<?php echo $burial['date_of_burial'] ?? ''; ?>"
-                      data-age="<?php echo intval($burial['age'] ?? 0); ?>">
+                      data-age="<?php echo intval($burial['age'] ?? 0); ?>"
+                      data-lotstatus="<?php echo $lotStatus; ?>"
+                      data-lot="<?php echo htmlspecialchars($burial['lot_number'] ?? ''); ?>">
                     <td><?php echo htmlspecialchars($burial['full_name']); ?></td>
                     <td><?php echo htmlspecialchars($burial['lot_number'] ?: 'Unassigned'); ?></td>
                     <td><?php echo htmlspecialchars($burial['section'] ?: 'Unassigned'); ?></td>
@@ -848,35 +903,63 @@ if ($conn) {
     let burialFilteredRows = [];
 
     function applyBurialFilters() {
-      const search   = (document.getElementById('burialSearch').value || '').toLowerCase().trim();
-      const dateFrom = document.getElementById('burialDateFrom').value;
-      const dateTo   = document.getElementById('burialDateTo').value;
-      const ageMin   = document.getElementById('burialAgeMin').value !== '' ? parseInt(document.getElementById('burialAgeMin').value) : null;
-      const ageMax   = document.getElementById('burialAgeMax').value !== '' ? parseInt(document.getElementById('burialAgeMax').value) : null;
-      const blocks   = [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value);
-      const sections = [...document.querySelectorAll('.burial-section-cb:checked')].map(c => c.value);
+      const search    = (document.getElementById('burialSearch').value || '').toLowerCase().trim();
+      const dateFrom  = document.getElementById('burialDateFrom').value;
+      const dateTo    = document.getElementById('burialDateTo').value;
+      const ageMin    = document.getElementById('burialAgeMin').value !== '' ? parseInt(document.getElementById('burialAgeMin').value) : null;
+      const ageMax    = document.getElementById('burialAgeMax').value !== '' ? parseInt(document.getElementById('burialAgeMax').value) : null;
+      const blocks    = [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value);
+      const sections  = [...document.querySelectorAll('.burial-section-cb:checked')].map(c => c.value);
+      const assignment = [...document.querySelectorAll('.burial-assignment-cb:checked')].map(c => c.value);      const sortBy    = document.getElementById('burialSortBy')?.value || 'date_of_burial';
+      const sortOrder = document.getElementById('burialSortOrder')?.value || 'desc';
 
       const allRows = [...document.querySelectorAll('#burialTable tbody tr')];
       burialFilteredRows = allRows.filter(row => {
-        const name = (row.dataset.name    || '').toLowerCase();
-        const sec  = (row.dataset.section || '').toLowerCase();
-        const blk  = (row.dataset.block   || '').toLowerCase();
-        const date =  row.dataset.date    || '';
-        const age  = parseInt(row.dataset.age || 0);
+        const name   = (row.dataset.name    || '').toLowerCase();
+        const sec    = (row.dataset.section || '').toLowerCase();
+        const blk    = (row.dataset.block   || '').toLowerCase();
+        const date   =  row.dataset.date    || '';
+        const age    = parseInt(row.dataset.age || 0);
+        const status = (row.dataset.lotstatus || '').toLowerCase();
         let show = !search || name.includes(search);
-        if (blocks.length)   show = show && blocks.includes(blk);
-        if (sections.length) show = show && sections.includes(sec);
-        if (dateFrom)        show = show && date >= dateFrom;
-        if (dateTo)          show = show && date <= dateTo;
-        if (ageMin !== null) show = show && age >= ageMin;
-        if (ageMax !== null) show = show && age <= ageMax;
+        if (blocks.length)    show = show && blocks.includes(blk);
+        if (sections.length)  show = show && sections.includes(sec);
+        if (dateFrom)         show = show && date >= dateFrom;
+        if (dateTo)           show = show && date <= dateTo;
+        if (ageMin !== null)  show = show && age >= ageMin;
+        if (ageMax !== null)  show = show && age <= ageMax;
+        if (assignment.length) show = show && (
+          (assignment.includes('assigned')   &&  row.dataset.lot) ||
+          (assignment.includes('unassigned') && !row.dataset.lot)
+        );
         return show;
+      });
+
+      // Sort
+      burialFilteredRows.sort((a, b) => {
+        let va, vb;
+        if (sortBy === 'full_name') {
+          va = (a.dataset.name || ''); vb = (b.dataset.name || '');
+          return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        } else if (sortBy === 'age') {
+          va = parseInt(a.dataset.age || 0); vb = parseInt(b.dataset.age || 0);
+        } else if (sortBy === 'lot_number') {
+          va = (a.dataset.lot || ''); vb = (b.dataset.lot || '');
+          return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        } else {
+          va = a.dataset.date || ''; vb = b.dataset.date || '';
+          return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+        return sortOrder === 'asc' ? va - vb : vb - va;
       });
 
       burialCurrentPage = 1;
       renderBurialPage();
 
-      const activeCount = blocks.length + sections.length + (dateFrom || dateTo ? 1 : 0) + (ageMin !== null || ageMax !== null ? 1 : 0);
+      const activeCount = blocks.length + sections.length + assignment.length
+        + (dateFrom || dateTo ? 1 : 0)
+        + (ageMin !== null || ageMax !== null ? 1 : 0)
+        + (sortBy !== 'date_of_burial' || sortOrder !== 'desc' ? 1 : 0);
       const badge = document.getElementById('burialFilterBadge');
       badge.style.display = activeCount > 0 ? 'inline' : 'none';
       badge.textContent = activeCount;
@@ -948,13 +1031,15 @@ if ($conn) {
     }
 
     function clearBurialFilters() {
-      document.querySelectorAll('.burial-block-cb, .burial-section-cb').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.burial-block-cb, .burial-section-cb, .burial-assignment-cb').forEach(cb => cb.checked = false);
       document.querySelectorAll('[id^="burial-secs-"]').forEach(d => d.style.display = 'none');
-      document.getElementById('burialDateFrom').value = '';
-      document.getElementById('burialDateTo').value   = '';
-      document.getElementById('burialAgeMin').value   = '';
-      document.getElementById('burialAgeMax').value   = '';
-      document.getElementById('burialSearch').value   = '';
+      document.getElementById('burialDateFrom').value  = '';
+      document.getElementById('burialDateTo').value    = '';
+      document.getElementById('burialAgeMin').value    = '';
+      document.getElementById('burialAgeMax').value    = '';
+      document.getElementById('burialSearch').value    = '';
+      if (document.getElementById('burialSortBy'))    document.getElementById('burialSortBy').value    = 'date_of_burial';
+      if (document.getElementById('burialSortOrder')) document.getElementById('burialSortOrder').value = 'desc';
       applyBurialFilters();
     }
 

@@ -619,7 +619,7 @@ footer{background:#060a18;color:rgba(255,255,255,.55);padding:4.5rem 2rem 2rem}
   <div class="hero-content">
     <div class="hero-badge">Barcenaga, Naujan &nbsp;·&nbsp; Oriental Mindoro</div>
     <h1>Honoring Memories,<br><span class="grad">Preserving History</span></h1>
-    <p>The official cemetery management system of Holy Spirit Parish, Barcenaga, Naujan — digitally preserving burial records, mapping sacred grounds, and keeping family histories alive for generations.</p>
+    <p>The cemetery management system of Holy Spirit Parish, Barcenaga, Naujan — digitally preserving burial records, mapping sacred grounds, and keeping family histories alive for generations.</p>
     <div class="hero-btns">
       <button class="btn-primary" id="openLoginHero">Access System</button>
       <a href="#about" class="btn-outline">Learn More</a>

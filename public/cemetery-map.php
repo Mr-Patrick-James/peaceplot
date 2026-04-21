@@ -2476,9 +2476,13 @@ if ($conn) {
         const result = await response.json();
         
         if (result.success && result.data && result.data.length > 0) {
-          grid.innerHTML = result.data.map(img => `
-            <div class="grave-image-item" style="aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer; position: relative; group;">
-              <img src="../${img.image_path}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;" onclick="window.open('../${img.image_path}', '_blank')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+          const images = result.data;
+          grid.innerHTML = images.map((img, idx) => `
+            <div class="grave-image-item" style="aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer; position: relative;">
+              <img src="../${img.image_path}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;"
+                onclick="showImageGallery(${recordId}, '${img.id}')"
+                onmouseover="this.style.transform='scale(1.05)'"
+                onmouseout="this.style.transform='scale(1)'">
             </div>
           `).join('');
         } else {
@@ -2487,6 +2491,93 @@ if ($conn) {
       } catch (error) {
         grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444; font-size: 13px; padding: 20px;">Error loading images</div>';
       }
+    }
+
+    // ── Image Lightbox ─────────────────────────────────────────
+    function openImageLightbox(images, startIndex) {
+      let current = startIndex;
+
+      const lb = document.createElement('div');
+      lb.id = 'imageLightbox';
+      lb.style.cssText = `
+        position:fixed; inset:0; z-index:99999;
+        background:rgba(0,0,0,0.92); backdrop-filter:blur(6px);
+        display:flex; align-items:center; justify-content:center;
+      `;
+
+      lb.innerHTML = `
+        <!-- Close -->
+        <button onclick="document.getElementById('imageLightbox').remove()"
+          style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.15); border:none;
+                 color:#fff; width:40px; height:40px; border-radius:50%; font-size:22px; cursor:pointer;
+                 display:flex; align-items:center; justify-content:center; transition:background 0.2s;"
+          onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+          onmouseout="this.style.background='rgba(255,255,255,0.15)'">&times;</button>
+
+        <!-- Counter -->
+        <div id="lbCounter" style="position:absolute; top:24px; left:50%; transform:translateX(-50%);
+             color:rgba(255,255,255,0.7); font-size:13px; font-weight:600;"></div>
+
+        <!-- Prev -->
+        <button id="lbPrev" onclick="lbNavigate(-1)"
+          style="position:absolute; left:20px; background:rgba(255,255,255,0.15); border:none;
+                 color:#fff; width:44px; height:44px; border-radius:50%; font-size:22px; cursor:pointer;
+                 display:flex; align-items:center; justify-content:center;"
+          onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+          onmouseout="this.style.background='rgba(255,255,255,0.15)'">&#8249;</button>
+
+        <!-- Image -->
+        <img id="lbImg" style="max-width:88vw; max-height:82vh; border-radius:12px;
+             object-fit:contain; box-shadow:0 25px 60px rgba(0,0,0,0.5); transition:opacity 0.2s;">
+
+        <!-- Next -->
+        <button id="lbNext" onclick="lbNavigate(1)"
+          style="position:absolute; right:20px; background:rgba(255,255,255,0.15); border:none;
+                 color:#fff; width:44px; height:44px; border-radius:50%; font-size:22px; cursor:pointer;
+                 display:flex; align-items:center; justify-content:center;"
+          onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+          onmouseout="this.style.background='rgba(255,255,255,0.15)'">&#8250;</button>
+
+        <!-- Caption -->
+        <div id="lbCaption" style="position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+             color:rgba(255,255,255,0.8); font-size:13px; text-align:center; max-width:60vw;"></div>
+      `;
+
+      document.body.appendChild(lb);
+
+      // Close on backdrop click
+      lb.addEventListener('click', e => { if (e.target === lb) lb.remove(); });
+
+      // Keyboard nav
+      const onKey = e => {
+        if (e.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', onKey); }
+        if (e.key === 'ArrowLeft')  lbNavigate(-1);
+        if (e.key === 'ArrowRight') lbNavigate(1);
+      };
+      document.addEventListener('keydown', onKey);
+      lb.addEventListener('remove', () => document.removeEventListener('keydown', onKey));
+
+      function lbNavigate(dir) {
+        current = (current + dir + images.length) % images.length;
+        lbRender();
+      }
+      window.lbNavigate = lbNavigate;
+
+      function lbRender() {
+        const img = images[current];
+        const el = document.getElementById('lbImg');
+        el.style.opacity = '0';
+        setTimeout(() => {
+          el.src = '../' + img.image_path;
+          el.style.opacity = '1';
+        }, 150);
+        document.getElementById('lbCounter').textContent = `${current + 1} / ${images.length}`;
+        document.getElementById('lbCaption').textContent = img.image_caption || '';
+        document.getElementById('lbPrev').style.display = images.length > 1 ? 'flex' : 'none';
+        document.getElementById('lbNext').style.display = images.length > 1 ? 'flex' : 'none';
+      }
+
+      lbRender();
     }
 
     function closeLayerModal() {
