@@ -362,7 +362,7 @@ if ($conn) {
                 </div>
               </div>
             </div>
-            <button class="report-btn report-btn-print" onclick="printReport('blocks')">
+            <button class="report-btn report-btn-print" onclick="printBlockReport()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               Print
             </button>
@@ -521,7 +521,7 @@ if ($conn) {
                 </div>
               </div>
             </div>
-            <button class="report-btn report-btn-print" onclick="printReport('sections')">
+            <button class="report-btn report-btn-print" onclick="printSectionReport()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               Print
             </button>
@@ -706,7 +706,7 @@ if ($conn) {
                 </div>
               </div>
             </div>
-            <button class="report-btn report-btn-print" onclick="printReport('deceased_records')">
+            <button class="report-btn report-btn-print" onclick="printBurialReport()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               Print
             </button>
@@ -945,7 +945,9 @@ if ($conn) {
           va = parseInt(a.dataset.age || 0); vb = parseInt(b.dataset.age || 0);
         } else if (sortBy === 'lot_number') {
           va = (a.dataset.lot || ''); vb = (b.dataset.lot || '');
-          return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+          return sortOrder === 'asc'
+            ? va.localeCompare(vb, undefined, { numeric: true, sensitivity: 'base' })
+            : vb.localeCompare(va, undefined, { numeric: true, sensitivity: 'base' });
         } else {
           va = a.dataset.date || ''; vb = b.dataset.date || '';
           return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
@@ -1046,6 +1048,82 @@ if ($conn) {
     // Init on load
     document.addEventListener('DOMContentLoaded', () => applyBurialFilters());
 
+    // ── Burial print via dedicated page ───────────────────────
+    function printBurialReport() {      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'print_burial.php';
+      form.target = '_blank';
+
+      const fields = {
+        search:     document.getElementById('burialSearch')?.value || '',
+        date_from:  document.getElementById('burialDateFrom')?.value || '',
+        date_to:    document.getElementById('burialDateTo')?.value || '',
+        age_min:    document.getElementById('burialAgeMin')?.value || '',
+        age_max:    document.getElementById('burialAgeMax')?.value || '',
+        blocks:     [...document.querySelectorAll('.burial-block-cb:checked')].map(c => c.value).join(','),
+        sections:   [...document.querySelectorAll('.burial-section-cb:checked')].map(c => c.value).join(','),
+        assignment: [...document.querySelectorAll('.burial-assignment-cb:checked')].map(c => c.value).join(','),
+        sort_by:    document.getElementById('burialSortBy')?.value || 'date_of_burial',
+        sort_order: document.getElementById('burialSortOrder')?.value || 'desc',
+        title:      'Burial Records Report',
+      };
+
+      Object.entries(fields).forEach(([k, v]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = k;
+        input.value = v;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+    }
+
+    function printBlockReport() {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'print_blocks.php';
+      form.target = '_blank';
+      const fields = {
+        search:       document.getElementById('blockSearch')?.value || '',
+        has_occupied: document.getElementById('blockHasOccupied')?.checked ? '1' : '',
+        has_vacant:   document.getElementById('blockHasVacant')?.checked   ? '1' : '',
+        blocks:       [...document.querySelectorAll('.blk-block-cb:checked')].map(c => c.value).join(','),
+      };
+      Object.entries(fields).forEach(([k, v]) => {
+        const i = document.createElement('input');
+        i.type = 'hidden'; i.name = k; i.value = v;
+        form.appendChild(i);
+      });
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+    }
+
+    function printSectionReport() {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'print_sections.php';
+      form.target = '_blank';
+      const fields = {
+        search:       document.getElementById('sectionSearch')?.value || '',
+        has_occupied: document.getElementById('secHasOccupied')?.checked ? '1' : '',
+        has_vacant:   document.getElementById('secHasVacant')?.checked   ? '1' : '',
+        blocks:       [...document.querySelectorAll('.sec-block-cb:checked')].map(c => c.value).join(','),
+        sections:     [...document.querySelectorAll('.sec-section-cb:checked')].map(c => c.value).join(','),
+      };
+      Object.entries(fields).forEach(([k, v]) => {
+        const i = document.createElement('input');
+        i.type = 'hidden'; i.name = k; i.value = v;
+        form.appendChild(i);
+      });
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+    }
+
     // Report data from PHP
     const reportData = {
       stats: {
@@ -1117,10 +1195,14 @@ if ($conn) {
         </table>`;
       }
 
-      // Burial records — reads filtered visible rows
+      // Burial records — prints ALL filtered+sorted rows (not just current page)
       if (type === 'deceased_records' || type === 'all') {
-        const rows = getVisibleRows('burialTable');
-        bodyHtml += `<h3>Burial Records</h3><table>
+        const rows = burialFilteredRows.map(row => {
+          const cells = row.querySelectorAll('td');
+          return [...cells].map(c => c.innerText.trim());
+        });
+        const total = rows.length;
+        bodyHtml += `<h3>Burial Records <span style="font-weight:400; font-size:12px; color:#94a3b8;">(${total} record${total !== 1 ? 's' : ''})</span></h3><table>
           <thead><tr><th>Full Name</th><th>Lot</th><th>Section</th><th>Block</th><th>Date of Burial</th><th>Age</th></tr></thead>
           <tbody>${rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
         </table>`;
@@ -1150,9 +1232,15 @@ if ($conn) {
     tr:last-child td { border-bottom: none; }
     .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; }
     @media print { body { padding: 20px; } }
+    @page { margin: 1cm; size: A4; }
+    @page { -webkit-print-color-adjust: exact; }
   </style>
 </head>
 <body>
+  <div class="no-print" style="background:#fef9c3; border:1px solid #fde047; border-radius:8px; padding:10px 16px; margin-bottom:16px; font-size:12px; color:#713f12; display:flex; align-items:center; gap:8px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    To hide the "about:blank" URL and date/time, open <strong>More settings</strong> in the print dialog and uncheck <strong>Headers and footers</strong>.
+  </div>
   <div class="header">
     <div class="org">Barcenaga Holy Spirit Parish</div>
     <h1>${title}</h1>
@@ -1160,7 +1248,15 @@ if ($conn) {
   </div>
   ${bodyHtml}
   <div class="footer">© 2025 Barcenaga Holy Spirit Parish — PeacePlot Cemetery Management System</div>
-  <script>window.onload = function(){ window.print(); }<\/script>
+  <script>
+    window.onload = function() {
+      // Remove browser header/footer (about:blank URL and date/title lines)
+      const style = document.createElement('style');
+      style.textContent = '@page { margin: 1cm; } @page :first { margin-top: 1cm; }';
+      document.head.appendChild(style);
+      window.print();
+    }
+  <\/script>
 </body>
 </html>`);
       win.document.close();

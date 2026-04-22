@@ -10,36 +10,41 @@ require_once __DIR__ . '/../config/database.php';
 $database = new Database();
 $conn = $database->getConnection();
 
-$logs = [];
-$archivedLogs = [];
+$logs        = [];
 $showArchived = isset($_GET['view']) && $_GET['view'] === 'archived';
+$perPage     = 20;
+$currentPage = max(1, (int)($_GET['page'] ?? 1));
+$totalLogs   = 0;
 
 if ($conn) {
-    try {
-        // Ensure columns exist (migration helpers)
-        $conn->exec("ALTER TABLE activity_logs ADD COLUMN is_archived BOOLEAN DEFAULT 0");
-    } catch (PDOException $e) {
-        // Ignore if already exists
-    }
-    try {
-        $conn->exec("ALTER TABLE activity_logs ADD COLUMN session_id VARCHAR(128)");
-    } catch (PDOException $e) {
-        // Ignore if already exists
-    }
+    try { $conn->exec("ALTER TABLE activity_logs ADD COLUMN is_archived BOOLEAN DEFAULT 0"); } catch (PDOException $e) {}
+    try { $conn->exec("ALTER TABLE activity_logs ADD COLUMN session_id VARCHAR(128)"); } catch (PDOException $e) {}
 
     try {
         $archivedCondition = $showArchived ? "al.is_archived = 1" : "al.is_archived = 0";
-        // Fetch all activity logs including session events
-        $stmt = $conn->query("
-            SELECT al.*, u.full_name as user_name 
-            FROM activity_logs al 
-            LEFT JOIN users u ON al.user_id = u.id 
+
+        // Total count for pagination
+        $countStmt = $conn->query("SELECT COUNT(*) FROM activity_logs al WHERE $archivedCondition");
+        $totalLogs = (int)$countStmt->fetchColumn();
+        $totalPages = max(1, (int)ceil($totalLogs / $perPage));
+        $currentPage = min($currentPage, $totalPages);
+        $offset = ($currentPage - 1) * $perPage;
+
+        $stmt = $conn->prepare("
+            SELECT al.*, u.full_name as user_name
+            FROM activity_logs al
+            LEFT JOIN users u ON al.user_id = u.id
             WHERE $archivedCondition
             ORDER BY al.created_at DESC
+            LIMIT :limit OFFSET :offset
         ");
+        $stmt->bindValue(':limit',  $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset,  PDO::PARAM_INT);
+        $stmt->execute();
         $logs = $stmt->fetchAll();
     } catch (PDOException $e) {
         $error = $e->getMessage();
+        $totalPages = 1;
     }
 }
 ?>
@@ -198,7 +203,7 @@ if ($conn) {
         <div class="card-head" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
           <div>
             <h2 class="card-title"><?php echo $showArchived ? 'Archived System Activity' : 'System Activity Log'; ?></h2>
-            <p class="card-sub"><?php echo $showArchived ? 'History logs that have been moved to archive.' : 'A comprehensive log of all changes made in the system, from newest to oldest.'; ?></p>
+            <p class="card-sub"><?php echo $showArchived ? 'History logs that have been moved to archive.' : 'A comprehensive log of all changes made in the system, from newest to oldest.'; ?> &nbsp;<span style="color:#94a3b8;">(<?php echo number_format($totalLogs); ?> total)</span></p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:7px 14px; border-radius:10px;">
@@ -297,6 +302,64 @@ if ($conn) {
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination -->
+        <?php if ($totalPages > 1): ?>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px; border-top:1px solid #f1f5f9;">
+          <span style="font-size:13px; color:#94a3b8;">
+            Showing <?php echo number_format(($currentPage - 1) * $perPage + 1); ?>–<?php echo number_format(min($currentPage * $perPage, $totalLogs)); ?> of <?php echo number_format($totalLogs); ?> entries
+          </span>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <?php
+            $baseUrl = '?' . http_build_query(array_merge($_GET, ['page' => '']));
+            $viewParam = $showArchived ? '&view=archived' : '';
+            ?>
+            <!-- Prev -->
+            <?php if ($currentPage > 1): ?>
+              <a href="?page=<?php echo $currentPage - 1; ?><?php echo $viewParam; ?>" style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:8px; color:#64748b; text-decoration:none; font-size:13px; background:#fff;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              </a>
+            <?php else: ?>
+              <span style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:8px; color:#cbd5e1; font-size:13px; background:#f8fafc;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              </span>
+            <?php endif; ?>
+
+            <?php
+            $delta = 2;
+            $pages_shown = [];
+            for ($i = 1; $i <= $totalPages; $i++) {
+                if ($i === 1 || $i === $totalPages || ($i >= $currentPage - $delta && $i <= $currentPage + $delta)) {
+                    $pages_shown[] = $i;
+                }
+            }
+            $prev = null;
+            foreach ($pages_shown as $p):
+                if ($prev !== null && $p - $prev > 1): ?>
+                  <span style="color:#94a3b8; font-size:13px; padding:0 4px;">…</span>
+                <?php endif;
+                $active = $p === $currentPage;
+            ?>
+              <a href="?page=<?php echo $p; ?><?php echo $viewParam; ?>"
+                 style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid <?php echo $active ? '#3b82f6' : '#e2e8f0'; ?>; border-radius:8px; color:<?php echo $active ? '#fff' : '#475569'; ?>; background:<?php echo $active ? '#3b82f6' : '#fff'; ?>; text-decoration:none; font-size:13px; font-weight:<?php echo $active ? '700' : '400'; ?>;">
+                <?php echo $p; ?>
+              </a>
+            <?php $prev = $p; endforeach; ?>
+
+            <!-- Next -->
+            <?php if ($currentPage < $totalPages): ?>
+              <a href="?page=<?php echo $currentPage + 1; ?><?php echo $viewParam; ?>" style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:8px; color:#64748b; text-decoration:none; font-size:13px; background:#fff;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </a>
+            <?php else: ?>
+              <span style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:8px; color:#cbd5e1; font-size:13px; background:#f8fafc;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            <?php endif; ?>
+          </div>
+        </div>
+        <?php endif; ?>
+
       </section>
     </main>
   </div>
@@ -363,25 +426,21 @@ if ($conn) {
         const startDate = startDateInput.value;
         const endDate = endDateInput.value;
 
+        let visibleCount = 0;
         rows.forEach(row => {
-          const user = row.getAttribute('data-user');
+          const user   = row.getAttribute('data-user');
           const action = row.getAttribute('data-action');
-          const desc = row.getAttribute('data-desc');
+          const desc   = row.getAttribute('data-desc');
           const rowDate = row.getAttribute('data-date');
 
-          const matchesSearch = user.includes(searchTerm) || 
-                               action.includes(searchTerm) || 
-                               desc.includes(searchTerm);
-          
+          const matchesSearch = !searchTerm || user.includes(searchTerm) || action.includes(searchTerm) || desc.includes(searchTerm);
           let matchesDate = true;
           if (startDate && rowDate < startDate) matchesDate = false;
-          if (endDate && rowDate > endDate) matchesDate = false;
+          if (endDate   && rowDate > endDate)   matchesDate = false;
 
-          if (matchesSearch && matchesDate) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
+          const show = matchesSearch && matchesDate;
+          row.style.display = show ? '' : 'none';
+          if (show) visibleCount++;
         });
       }
 
