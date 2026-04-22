@@ -111,11 +111,6 @@ $perPage = 30;
 $allRows = [];
 foreach ($filtered as $b) {
     $allRows[] = ['type' => 'block', 'data' => $b];
-    foreach ($sections as $s) {
-        if (strtolower($s['block_name'] ?? '') === strtolower($b['block'])) {
-            $allRows[] = ['type' => 'section', 'data' => $s];
-        }
-    }
 }
 $pages     = array_chunk($allRows, $perPage);
 $pageCount = max(1, count($pages));

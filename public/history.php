@@ -68,7 +68,10 @@ if ($conn) {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 16px;
     }
+    .header-left { flex: 0 0 auto; }
+    .header-search { flex: 0 0 auto; }
     .header-left .title {
       font-size: 24px;
       font-weight: 700;
@@ -90,23 +93,7 @@ if ($conn) {
     }
     .breadcrumbs a { color: #94a3b8; text-decoration: none; }
     .breadcrumbs .current { color: #1e293b; font-weight: 600; }
-    .header-actions { display: flex; gap: 12px; }
 
-    .btn-outline {
-      padding: 10px 16px;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      background: #fff;
-      color: #475569;
-      font-size: 14px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
   </style>
 </head>
 <body>
@@ -187,16 +174,7 @@ if ($conn) {
           </div>
         </div>
 
-        <div class="header-actions">
-          <a href="history.php?view=<?php echo $showArchived ? 'active' : 'archived'; ?>" class="btn-outline" style="text-decoration:none; display: none;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 8v13H3V8"></path>
-              <path d="M1 3h22v5H1z"></path>
-              <path d="M10 12h4"></path>
-            </svg>
-            <?php echo $showArchived ? 'Active Logs' : 'Archived Logs'; ?>
-          </a>
-        </div>
+
       </header>
 
       <section class="card">
@@ -223,26 +201,25 @@ if ($conn) {
         </div>
 
         <div class="table-wrap">
-          <table class="table">
+          <table class="table history-table">
             <thead>
               <tr>
                 <th align="left">Date & Time</th>
                 <th align="left">User</th>
                 <th align="left">Action</th>
                 <th align="left">Description</th>
-                <th align="right">Actions</th>
               </tr>
             </thead>
             <tbody id="historyTableBody">
               <?php if (isset($error)): ?>
                 <tr>
-                  <td colspan="5" style="text-align:center; color:#ef4444;">
+                  <td colspan="4" style="text-align:center; color:#ef4444;">
                     Error loading data: <?php echo htmlspecialchars($error); ?>
                   </td>
                 </tr>
               <?php elseif (empty($logs)): ?>
                 <tr>
-                  <td colspan="5" style="text-align:center; color:#6b7280;">
+                  <td colspan="4" style="text-align:center; color:#6b7280;">
                     No system activity found.
                   </td>
                 </tr>
@@ -274,27 +251,21 @@ if ($conn) {
                         <?php echo htmlspecialchars($log['action']); ?>
                       </span>
                     </td>
-                    <td style="color: #4b5563;"><?php echo htmlspecialchars($log['description']); ?></td>
-                    <td align="right">
-                      <button class="btn-action archive-single-btn" 
-                              data-id="<?php echo $log['id']; ?>" 
-                              data-action-type="<?php echo $showArchived ? 'restore' : 'archive'; ?>"
-                              title="<?php echo $showArchived ? 'Restore to Active' : 'Move to Archive'; ?>"
-                              style="display: none;">
-                        <span class="icon">
+                    <td style="color:#4b5563;">
+                      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                        <span><?php echo htmlspecialchars($log['description']); ?></span>
+                        <button class="archive-single-btn" 
+                                data-id="<?php echo $log['id']; ?>" 
+                                data-action-type="<?php echo $showArchived ? 'restore' : 'archive'; ?>"
+                                title="<?php echo $showArchived ? 'Restore to Active' : 'Move to Archive'; ?>"
+                                style="flex-shrink:0; background:none; border:1px solid #e2e8f0; border-radius:8px; padding:4px 8px; cursor:pointer; color:#94a3b8; display:flex; align-items:center;">
                           <?php if ($showArchived): ?>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <polyline points="23 4 23 10 17 10"></polyline>
-                              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                            </svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                           <?php else: ?>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                              <rect x="1" y="3" width="22" height="5"></rect>
-                            </svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
                           <?php endif; ?>
-                        </span>
-                      </button>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -373,6 +344,10 @@ if ($conn) {
     .badge-logout { background: #f1f5f9; color: #475569; }
     .badge-page { background: #f0fdf4; color: #15803d; }
     .badge-image { background: #fdf4ff; color: #7e22ce; }
+
+    /* Compact table rows */
+    .table.history-table td,
+    .table.history-table th { padding: 8px 16px !important; }
 
     /* Override flatpickr input styles */
     .flatpickr-input {
