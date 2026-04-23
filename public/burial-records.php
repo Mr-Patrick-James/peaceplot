@@ -130,36 +130,83 @@ if ($conn) {
     }
     .btn-primary-modern:hover { background: #2563eb; transform: translateY(-1px); }
 
-    /* Stats Row */
+    /* ── Stat Cards ──────────────────────────────────────────── */
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 24px;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
     }
     .stat-box {
       background: #fff;
-      padding: 24px;
+      padding: 22px 20px 18px;
       border-radius: 16px;
-      border-left: 5px solid #0e1f35;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+      position: relative;
+      overflow: hidden;
       display: flex;
-      align-items: center;
-      gap: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      flex-direction: column;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .stat-box::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      border-radius: 16px 0 0 16px;
+    }
+    .stat-box:nth-child(1)::before { background: #3b82f6; }
+    .stat-box:nth-child(2)::before { background: #10b981; }
+    .stat-box:nth-child(3)::before { background: #f59e0b; }
+    .stat-box:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+    .stat-box:hover .stat-icon-wrap { transform: scale(1.1) rotate(-5deg); }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
     .stat-icon-wrap {
-      width: 48px;
-      height: 48px;
-      background: #eff6ff;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #2563eb;
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
     }
-    .stat-info .stat-label { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 4px; }
-    .stat-info .stat-number { font-size: 28px; font-weight: 700; color: #1e293b; line-height: 1; }
-    .stat-info .stat-sub { font-size: 12px; margin-top: 8px; color: #64748b; }
+    .stat-number {
+      font-size: 36px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+    .stat-sub {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 14px;
+      flex: 1;
+    }
+    .stat-bar {
+      height: 4px;
+      background: #f1f5f9;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: auto;
+    }
+    .stat-bar-fill { height: 100%; border-radius: 99px; }
+    .stat-box:nth-child(1) .stat-bar-fill { background: linear-gradient(90deg,#3b82f6,#60a5fa); width: 100%; }
+    .stat-box:nth-child(2) .stat-bar-fill { background: linear-gradient(90deg,#10b981,#34d399); width: 100%; }
+    .stat-box:nth-child(3) .stat-bar-fill { background: linear-gradient(90deg,#f59e0b,#fbbf24); width: 80%; }
 
     /* Filter Controls */
     .content-section {
@@ -554,6 +601,59 @@ if ($conn) {
     .sort-select:focus {
       border-color: #3b82f6;
     }
+
+    /* ── Premium overrides ───────────────────────────────────── */
+    .dashboard-header {
+      padding: 20px 28px !important;
+      border-radius: 18px !important;
+      margin-bottom: 22px !important;
+      align-items: center !important;
+      border: 1px solid #f1f5f9 !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
+    }
+    .header-left .title {
+      font-size: 22px !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+    }
+    .header-left .subtitle { font-size: 13px !important; margin: 0 !important; }
+    .btn-primary-modern {
+      background: linear-gradient(135deg, #3b82f6, #6366f1) !important;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.3) !important;
+    }
+    .btn-primary-modern:hover { opacity: 0.92 !important; transform: translateY(-1px) !important; }
+
+    /* Content section */
+    .content-section { border-radius: 18px !important; border: 1px solid #f1f5f9 !important; box-shadow: 0 2px 12px rgba(0,0,0,0.03) !important; }
+    .content-header { padding: 20px 26px !important; border-bottom: 1px solid #f8fafc !important; }
+    .table thead th { padding: 13px 22px !important; font-size: 10.5px !important; letter-spacing: 0.06em !important; }
+    .table tbody td { padding: 15px 22px !important; border-bottom: 1px solid #f8fafc !important; }
+    .table tbody tr:hover td { background: #f8faff !important; }
+    .pagination-container { padding: 16px 26px !important; }
+    .active-filters-row { padding: 10px 26px 0 !important; }
+
+    /* Search input */
+    .search-wrapper input {
+      background: #f8fafc !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 10px !important;
+    }
+    .search-wrapper input:focus { background: #fff !important; border-color: #3b82f6 !important; }
+
+    /* Filter button */
+    .btn-filter {
+      background: #fff !important;
+      color: #475569 !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 10px !important;
+      box-shadow: none !important;
+    }
+    .btn-filter:hover { background: #f8fafc !important; border-color: #3b82f6 !important; color: #3b82f6 !important; transform: none !important; }
+
+    /* Bulk bar */
+    .bulk-action-bar { background: linear-gradient(135deg, #1e293b, #0f172a) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -617,10 +717,10 @@ if ($conn) {
         <div class="header-left">
           <div class="breadcrumbs">
             <a href="dashboard.php">Dashboard</a>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             <span class="current">Burial Records</span>
           </div>
-          <h1 class="title">Deceased Records</h1>
+          <h1 class="title">Burial Records</h1>
           <p class="subtitle">Manage and organize deceased person records and burial information</p>
         </div>
 
@@ -629,18 +729,16 @@ if ($conn) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input type="text" class="universal-search-input" id="universalSearch" placeholder="Global Search lots, deceased names...">
           </div>
-          <div class="search-results-dropdown" id="searchResults">
-            <!-- Results will be injected here -->
-          </div>
+          <div class="search-results-dropdown" id="searchResults"></div>
         </div>
 
         <div class="header-actions">
           <button id="viewArchivedBtn" class="btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
             <span id="viewArchivedText">View Archived</span>
           </button>
           <button class="btn-primary-modern" data-action="add">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add Record
           </button>
         </div>
@@ -658,41 +756,49 @@ if ($conn) {
 
       <div class="stats-row">
         <div class="stat-box">
-          <div class="stat-icon-wrap">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
-          </div>
-          <div class="stat-info">
+          <div class="stat-top">
             <div class="stat-label">Total Records</div>
-            <div class="stat-number"><?php echo $totalRecords; ?></div>
-            <div class="stat-sub">+<?php echo $thisMonth; ?> this month</div>
+            <div class="stat-icon-wrap" style="background:#eff6ff;color:#3b82f6;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
           </div>
+          <div class="stat-number"><?php echo $totalRecords; ?></div>
+          <div class="stat-sub">+<?php echo $thisMonth; ?> this month</div>
+          <div class="stat-bar"><div class="stat-bar-fill"></div></div>
         </div>
         <div class="stat-box">
-          <div class="stat-icon-wrap" style="background: #f0fdf4; color: #10b981;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-          <div class="stat-info">
+          <div class="stat-top">
             <div class="stat-label">Active Records</div>
-            <div class="stat-number"><?php echo $totalRecords; ?></div>
-            <div class="stat-sub" style="display: none;">Excluding archived</div>
+            <div class="stat-icon-wrap" style="background:#ecfdf5;color:#10b981;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
           </div>
+          <div class="stat-number"><?php echo $totalRecords; ?></div>
+          <div class="stat-sub">Excluding archived</div>
+          <div class="stat-bar"><div class="stat-bar-fill"></div></div>
         </div>
         <div class="stat-box">
-          <div class="stat-icon-wrap" style="background: #fff7ed; color: #f97316;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <div class="stat-info">
+          <div class="stat-top">
             <div class="stat-label">Recent Burials</div>
-            <div class="stat-number"><?php echo $thisMonth; ?></div>
-            <div class="stat-sub">Last 30 days</div>
+            <div class="stat-icon-wrap" style="background:#fffbeb;color:#f59e0b;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
           </div>
+          <div class="stat-number"><?php echo $thisMonth; ?></div>
+          <div class="stat-sub">Last 30 days</div>
+          <div class="stat-bar"><div class="stat-bar-fill"></div></div>
         </div>
       </div>
 
       <section class="content-section">
         <div class="content-header">
           <div class="content-title-wrap">
-            <h2 class="title">Burial Records List</h2>
+            <h2 class="title">
+              <div class="title-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              Burial Records List
+            </h2>
             <p class="subtitle">Manage and filter deceased person records</p>
           </div>
           <div class="filter-controls">

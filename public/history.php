@@ -59,41 +59,120 @@ if ($conn) {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
+    /* ── Page Header ─────────────────────────────────────────── */
     .dashboard-header {
       background: #fff;
-      padding: 24px 32px;
-      border-radius: 16px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      padding: 20px 28px;
+      border-radius: 18px;
+      margin-bottom: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 16px;
+      border: 1px solid #f1f5f9;
     }
+    .header-left .title {
+      font-size: 22px; font-weight: 800; color: #0f172a;
+      margin: 0 0 3px 0; letter-spacing: -0.02em;
+    }
+    .header-left .subtitle { font-size: 13px; color: #64748b; margin: 0; }
     .header-left { flex: 0 0 auto; }
     .header-search { flex: 0 0 auto; }
-    .header-left .title {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1e293b;
-      margin: 0 0 4px 0;
-    }
-    .header-left .subtitle {
-      font-size: 14px;
-      color: #64748b;
-      margin: 0;
-    }
     .breadcrumbs {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #94a3b8; margin-bottom: 6px;
+    }
+    .breadcrumbs a { color: #94a3b8; text-decoration: none; transition: color 0.15s; }
+    .breadcrumbs a:hover { color: #3b82f6; }
+    .breadcrumbs .current { color: #475569; font-weight: 600; }
+
+    /* ── Content Card ────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 18px !important;
+      border: 1px solid #f1f5f9 !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.03) !important;
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 20px 26px !important;
+      border-bottom: 1px solid #f8fafc !important;
+    }
+    .card-title {
+      font-size: 16px !important; font-weight: 700 !important;
+      color: #0f172a !important; margin: 0 0 3px 0 !important;
+    }
+    .card-sub { font-size: 12px !important; color: #94a3b8 !important; margin: 0 !important; }
+
+    /* ── Table ───────────────────────────────────────────────── */
+    .table thead th {
+      background: #f8fafc !important;
+      color: #94a3b8 !important;
+      font-size: 10.5px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.06em !important;
+      padding: 12px 20px !important;
+      border-bottom: 1px solid #f1f5f9 !important;
+    }
+    .table tbody td {
+      padding: 13px 20px !important;
+      font-size: 13.5px !important;
+      color: #334155 !important;
+      border-bottom: 1px solid #f8fafc !important;
+      vertical-align: middle !important;
+    }
+    .table tbody tr:last-child td { border-bottom: none !important; }
+    .table tbody tr { transition: background 0.15s ease; }
+    .table tbody tr:hover td { background: #f8faff !important; }
+
+    /* ── Action badges ───────────────────────────────────────── */
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .badge-success     { background: #dcfce7; color: #166534; }
+    .badge-danger      { background: #fee2e2; color: #991b1b; }
+    .badge-warning     { background: #fef9c3; color: #854d0e; }
+    .badge-info        { background: #e0f2fe; color: #075985; }
+    .badge-login       { background: #ede9fe; color: #5b21b6; }
+    .badge-logout      { background: #f1f5f9; color: #475569; }
+    .badge-page        { background: #f0fdf4; color: #15803d; }
+    .badge-image       { background: #fdf4ff; color: #7e22ce; }
+
+    /* ── Archive button ──────────────────────────────────────── */
+    .archive-single-btn {
+      flex-shrink: 0;
+      background: none;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 5px 8px;
+      cursor: pointer;
+      color: #94a3b8;
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 8px;
+      transition: all 0.18s;
     }
-    .breadcrumbs a { color: #94a3b8; text-decoration: none; }
-    .breadcrumbs .current { color: #1e293b; font-weight: 600; }
+    .archive-single-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
+    /* ── Pagination ──────────────────────────────────────────── */
+    .hist-pagination {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 26px; border-top: 1px solid #f1f5f9;
+    }
+    .hist-pagination-info { font-size: 13px; color: #94a3b8; }
+    .hist-page-btn {
+      min-width: 32px; height: 32px; padding: 0 8px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; border: 1.5px solid #e2e8f0;
+      background: #fff; color: #475569; font-size: 13px; font-weight: 600;
+      text-decoration: none; transition: all 0.18s;
+    }
+    .hist-page-btn:hover { background: #eff6ff; color: #3b82f6; border-color: #3b82f6; }
+    .hist-page-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+    .hist-page-btn.disabled { opacity: 0.4; pointer-events: none; background: #f8fafc; }
+
+    /* ── Flatpickr overrides ─────────────────────────────────── */
+    .flatpickr-input { border: none !important; outline: none !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; }
+    #startDate, #endDate { border: none !important; outline: none !important; box-shadow: none !important; background: transparent !important; }
   </style>
 </head>
 <body>
@@ -157,7 +236,7 @@ if ($conn) {
         <div class="header-left">
           <div class="breadcrumbs">
             <a href="dashboard.php">Dashboard</a>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             <span class="current">System History</span>
           </div>
           <h1 class="title">System History</h1>
@@ -169,12 +248,8 @@ if ($conn) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input type="text" class="universal-search-input" id="universalSearch" placeholder="Global Search lots, deceased names...">
           </div>
-          <div class="search-results-dropdown" id="searchResults">
-            <!-- Results will be injected here -->
-          </div>
+          <div class="search-results-dropdown" id="searchResults"></div>
         </div>
-
-
       </header>
 
       <section class="card">
@@ -276,57 +351,29 @@ if ($conn) {
 
         <!-- Pagination -->
         <?php if ($totalPages > 1): ?>
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px; border-top:1px solid #f1f5f9;">
-          <span style="font-size:13px; color:#94a3b8;">
+        <div class="hist-pagination">
+          <span class="hist-pagination-info">
             Showing <?php echo number_format(($currentPage - 1) * $perPage + 1); ?>–<?php echo number_format(min($currentPage * $perPage, $totalLogs)); ?> of <?php echo number_format($totalLogs); ?> entries
           </span>
           <div style="display:flex; gap:6px; align-items:center;">
+            <?php $viewParam = $showArchived ? '&view=archived' : ''; ?>
+            <a href="?page=<?php echo max(1,$currentPage-1); ?><?php echo $viewParam; ?>" class="hist-page-btn <?php echo $currentPage <= 1 ? 'disabled' : ''; ?>">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </a>
             <?php
-            $baseUrl = '?' . http_build_query(array_merge($_GET, ['page' => '']));
-            $viewParam = $showArchived ? '&view=archived' : '';
-            ?>
-            <!-- Prev -->
-            <?php if ($currentPage > 1): ?>
-              <a href="?page=<?php echo $currentPage - 1; ?><?php echo $viewParam; ?>" style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:8px; color:#64748b; text-decoration:none; font-size:13px; background:#fff;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-              </a>
-            <?php else: ?>
-              <span style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:8px; color:#cbd5e1; font-size:13px; background:#f8fafc;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-              </span>
-            <?php endif; ?>
-
-            <?php
-            $delta = 2;
-            $pages_shown = [];
+            $delta = 2; $pages_shown = []; $prev = null;
             for ($i = 1; $i <= $totalPages; $i++) {
-                if ($i === 1 || $i === $totalPages || ($i >= $currentPage - $delta && $i <= $currentPage + $delta)) {
+                if ($i === 1 || $i === $totalPages || ($i >= $currentPage - $delta && $i <= $currentPage + $delta))
                     $pages_shown[] = $i;
-                }
             }
-            $prev = null;
             foreach ($pages_shown as $p):
-                if ($prev !== null && $p - $prev > 1): ?>
-                  <span style="color:#94a3b8; font-size:13px; padding:0 4px;">…</span>
-                <?php endif;
-                $active = $p === $currentPage;
+                if ($prev !== null && $p - $prev > 1) echo '<span style="color:#94a3b8;font-size:13px;padding:0 4px;">…</span>';
             ?>
-              <a href="?page=<?php echo $p; ?><?php echo $viewParam; ?>"
-                 style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid <?php echo $active ? '#3b82f6' : '#e2e8f0'; ?>; border-radius:8px; color:<?php echo $active ? '#fff' : '#475569'; ?>; background:<?php echo $active ? '#3b82f6' : '#fff'; ?>; text-decoration:none; font-size:13px; font-weight:<?php echo $active ? '700' : '400'; ?>;">
-                <?php echo $p; ?>
-              </a>
+              <a href="?page=<?php echo $p; ?><?php echo $viewParam; ?>" class="hist-page-btn <?php echo $p === $currentPage ? 'active' : ''; ?>"><?php echo $p; ?></a>
             <?php $prev = $p; endforeach; ?>
-
-            <!-- Next -->
-            <?php if ($currentPage < $totalPages): ?>
-              <a href="?page=<?php echo $currentPage + 1; ?><?php echo $viewParam; ?>" style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:8px; color:#64748b; text-decoration:none; font-size:13px; background:#fff;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-              </a>
-            <?php else: ?>
-              <span style="min-width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:8px; color:#cbd5e1; font-size:13px; background:#f8fafc;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-              </span>
-            <?php endif; ?>
+            <a href="?page=<?php echo min($totalPages,$currentPage+1); ?><?php echo $viewParam; ?>" class="hist-page-btn <?php echo $currentPage >= $totalPages ? 'disabled' : ''; ?>">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
           </div>
         </div>
         <?php endif; ?>
