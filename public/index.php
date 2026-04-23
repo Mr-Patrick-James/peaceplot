@@ -1131,15 +1131,15 @@ if ($conn) {
     </aside>
 
     <main class="main">
-      <header class="dashboard-header">
-        <div class="header-left">
-          <div class="breadcrumbs">
+      <header class="lm-header lm-fade lm-fade-1">
+        <div class="lm-header-left">
+          <div class="lm-breadcrumbs">
             <a href="dashboard.php">Dashboard</a>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <span class="sep">›</span>
             <span class="current">Manage Lots</span>
           </div>
-          <h1 class="title">Manage Lots</h1>
-          <p class="subtitle">Manage all cemetery lots in the institution</p>
+          <h1 class="lm-title">Manage Lots</h1>
+          <p class="lm-subtitle">View, add, and manage all cemetery lots</p>
         </div>
 
         <div class="header-search">
@@ -1147,57 +1147,58 @@ if ($conn) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input type="text" class="universal-search-input" id="universalSearch" placeholder="Global Search lots, deceased names...">
           </div>
-          <div class="search-results-dropdown" id="searchResults">
-            <!-- Results will be injected here -->
-          </div>
+          <div class="search-results-dropdown" id="searchResults"></div>
         </div>
 
-        <div class="header-actions">
-          <button class="btn-outline" style="display: none;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
-            Archived
-          </button>
-          <button class="btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <div class="lm-header-actions">
+          <button class="lm-btn-outline">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             Export
           </button>
-          <button class="btn-yellow" data-action="add">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <button class="lm-btn-primary" data-action="add">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add Lot
           </button>
         </div>
       </header>
 
-      <div class="stats-row">
-        <div class="stat-box">
-          <div class="stat-icon-wrap">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <?php
+        $vacantPct   = $stats['total'] > 0 ? round(($stats['vacant']  / $stats['total']) * 100) : 0;
+        $occupiedPct = $stats['total'] > 0 ? round(($stats['occupied'] / $stats['total']) * 100) : 0;
+      ?>
+      <div class="lm-stats-grid lm-fade lm-fade-2">
+        <div class="lm-stat-card accent-blue">
+          <div class="lm-stat-top">
+            <div class="lm-stat-label">Total Lots</div>
+            <div class="lm-stat-icon blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
           </div>
-          <div class="stat-info">
-            <div class="stat-label">Total Cemetery Lots</div>
-            <div class="stat-number"><?php echo $stats['total']; ?></div>
-            <div class="stat-sub growth">+0 this month</div>
-          </div>
+          <div class="lm-stat-value"><?php echo $stats['total']; ?></div>
+          <div class="lm-stat-sub">Across all sections &amp; blocks</div>
+          <div class="lm-stat-bar"><div class="lm-stat-bar-fill blue" style="width:100%"></div></div>
         </div>
-        <div class="stat-box">
-          <div class="stat-icon-wrap">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div class="lm-stat-card accent-emerald">
+          <div class="lm-stat-top">
+            <div class="lm-stat-label">Vacant Lots</div>
+            <div class="lm-stat-icon emerald">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
           </div>
-          <div class="stat-info">
-            <div class="stat-label">Vacant</div>
-            <div class="stat-number"><?php echo $stats['vacant']; ?></div>
-            <div class="stat-sub percent"><?php echo $stats['total'] > 0 ? round(($stats['vacant']/$stats['total'])*100) : 0; ?>%</div>
-          </div>
+          <div class="lm-stat-value"><?php echo $stats['vacant']; ?></div>
+          <div class="lm-stat-sub"><strong style="color:#10b981"><?php echo $vacantPct; ?>%</strong> availability rate</div>
+          <div class="lm-stat-bar"><div class="lm-stat-bar-fill emerald" style="width:<?php echo $vacantPct; ?>%"></div></div>
         </div>
-        <div class="stat-box">
-          <div class="stat-icon-wrap">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div class="lm-stat-card accent-amber">
+          <div class="lm-stat-top">
+            <div class="lm-stat-label">Occupied Lots</div>
+            <div class="lm-stat-icon amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
           </div>
-          <div class="stat-info">
-            <div class="stat-label">Occupied</div>
-            <div class="stat-number"><?php echo $stats['occupied']; ?></div>
-            <div class="stat-sub percent"><?php echo $stats['total'] > 0 ? round(($stats['occupied']/$stats['total'])*100) : 0; ?>%</div>
-          </div>
+          <div class="lm-stat-value"><?php echo $stats['occupied']; ?></div>
+          <div class="lm-stat-sub"><strong style="color:#f59e0b"><?php echo $occupiedPct; ?>%</strong> occupancy rate</div>
+          <div class="lm-stat-bar"><div class="lm-stat-bar-fill amber" style="width:<?php echo $occupiedPct; ?>%"></div></div>
         </div>
       </div>
 

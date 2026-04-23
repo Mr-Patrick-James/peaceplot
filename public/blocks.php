@@ -563,15 +563,15 @@ if ($db) {
     </aside>
 
     <main class="main">
-      <header class="dashboard-header">
-        <div class="header-left">
-          <div class="breadcrumbs">
+      <header class="lm-header lm-fade lm-fade-1">
+        <div class="lm-header-left">
+          <div class="lm-breadcrumbs">
             <a href="dashboard.php">Dashboard</a>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <span class="sep">›</span>
             <span class="current">Manage Blocks</span>
           </div>
-          <h1 class="title">Block Management</h1>
-          <p class="subtitle">Manage and categorize cemetery lots by blocks</p>
+          <h1 class="lm-title">Block Management</h1>
+          <p class="lm-subtitle">Manage and categorize cemetery lots by blocks</p>
         </div>
 
         <div class="header-search">
@@ -579,46 +579,50 @@ if ($db) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input type="text" class="universal-search-input" id="universalSearch" placeholder="Global Search lots, deceased names...">
           </div>
-          <div class="search-results-dropdown" id="searchResults">
-            <!-- Results will be injected here -->
-          </div>
+          <div class="search-results-dropdown" id="searchResults"></div>
         </div>
-        
-        <div class="header-actions">
-          <button class="btn-blue" onclick="openAddModal()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+
+        <div class="lm-header-actions">
+          <button class="lm-btn-primary" onclick="openAddModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add New Block
           </button>
         </div>
       </header>
 
-      <div class="dashboard-stats">
-        <div class="dash-stat-card">
-          <div class="dash-stat-info">
-            <div class="label">Total Blocks</div>
-            <div class="value"><?php echo $stats['total']; ?></div>
+      <div class="lm-stats-grid lm-fade lm-fade-2">
+        <div class="lm-stat-card accent-indigo">
+          <div class="lm-stat-top">
+            <div class="lm-stat-label">Total Blocks</div>
+            <div class="lm-stat-icon indigo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+            </div>
           </div>
-          <div class="dash-stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-          </div>
+          <div class="lm-stat-value"><?php echo $stats['total']; ?></div>
+          <div class="lm-stat-sub">All registered blocks</div>
+          <div class="lm-stat-bar"><div class="lm-stat-bar-fill indigo" style="width:100%"></div></div>
         </div>
-        <div class="dash-stat-card">
-          <div class="dash-stat-info">
-            <div class="label">With Assigned Lots</div>
-            <div class="value"><?php echo $stats['with_lots']; ?></div>
+        <div class="lm-stat-card accent-emerald">
+          <div class="lm-stat-top">
+            <div class="lm-stat-label">With Assigned Lots</div>
+            <div class="lm-stat-icon emerald">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
           </div>
-          <div class="dash-stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </div>
+          <div class="lm-stat-value"><?php echo $stats['with_lots']; ?></div>
+          <div class="lm-stat-sub">Blocks with active lots</div>
+          <div class="lm-stat-bar"><div class="lm-stat-bar-fill emerald" style="width:<?php echo $stats['total'] > 0 ? round(($stats['with_lots']/$stats['total'])*100) : 0; ?>%"></div></div>
         </div>
-        <div class="dash-stat-card">
-          <div class="dash-stat-info">
-            <div class="label">Unused Blocks</div>
-            <div class="value"><?php echo $stats['empty']; ?></div>
+        <div class="lm-stat-card accent-rose">
+          <div class="lm-stat-top">
+            <div class="lm-stat-label">Unused Blocks</div>
+            <div class="lm-stat-icon rose">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
           </div>
-          <div class="dash-stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
+          <div class="lm-stat-value"><?php echo $stats['empty']; ?></div>
+          <div class="lm-stat-sub">No lots assigned yet</div>
+          <div class="lm-stat-bar"><div class="lm-stat-bar-fill rose" style="width:<?php echo $stats['total'] > 0 ? round(($stats['empty']/$stats['total'])*100) : 0; ?>%"></div></div>
         </div>
       </div>
 
