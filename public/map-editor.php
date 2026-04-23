@@ -27,22 +27,46 @@ if ($conn) {
         $blockStmt = $conn->query("SELECT * FROM blocks ORDER BY name ASC");
         $blocks = $blockStmt->fetchAll();
 
+        // ── Optimised lots query ──────────────────────────────
+        // Only fetch the columns the map actually needs.
+        // Occupancy is derived from two pre-aggregated subqueries
+        // (one scan each) instead of correlated per-row subqueries.
+        // deceased_records is aggregated separately so the main join
+        // stays 1-to-1 with cemetery_lots.
         $stmt = $conn->query("
-            SELECT cl.*, s.name as section_name, b.name as block_name,
-                   (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
-                   (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
-                   COUNT(DISTINCT dr.id) as burial_count,
-                   CASE 
-                       WHEN COUNT(DISTINCT dr.id) > 0 THEN 'Occupied'
-                       WHEN EXISTS (SELECT 1 FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) THEN 'Occupied'
-                       ELSE cl.status
-                   END as actual_status,
-                   dr.full_name as deceased_name 
-            FROM cemetery_lots cl 
-            LEFT JOIN sections s ON cl.section_id = s.id
-            LEFT JOIN blocks b ON s.block_id = b.id
-            LEFT JOIN deceased_records dr ON cl.id = dr.lot_id 
-            GROUP BY cl.id
+            SELECT
+                cl.id, cl.lot_number, cl.section_id, cl.status,
+                cl.map_x, cl.map_y, cl.map_width, cl.map_height,
+                cl.map_rotation, cl.layers, cl.position,
+                s.name  AS section_name,
+                b.name  AS block_name,
+                COALESCE(ll.total_layers, 0)    AS total_layers,
+                COALESCE(ll.occupied_layers, 0) AS occupied_layers,
+                COALESCE(dr.burial_count, 0)    AS burial_count,
+                dr.deceased_name,
+                CASE
+                    WHEN COALESCE(dr.burial_count, 0)    > 0 THEN 'Occupied'
+                    WHEN COALESCE(ll.occupied_layers, 0) > 0 THEN 'Occupied'
+                    ELSE cl.status
+                END AS actual_status
+            FROM cemetery_lots cl
+            LEFT JOIN sections s ON s.id = cl.section_id
+            LEFT JOIN blocks   b ON b.id = s.block_id
+            LEFT JOIN (
+                SELECT lot_id,
+                       COUNT(*)                          AS total_layers,
+                       SUM(CASE WHEN is_occupied=1 THEN 1 ELSE 0 END) AS occupied_layers
+                FROM lot_layers
+                GROUP BY lot_id
+            ) ll ON ll.lot_id = cl.id
+            LEFT JOIN (
+                SELECT lot_id,
+                       COUNT(*)   AS burial_count,
+                       MIN(full_name) AS deceased_name
+                FROM deceased_records
+                WHERE is_archived = 0
+                GROUP BY lot_id
+            ) dr ON dr.lot_id = cl.id
             ORDER BY LENGTH(cl.lot_number), cl.lot_number
         ");
         $lots = $stmt->fetchAll();
@@ -835,6 +859,114 @@ if ($conn) {
     .btn-confirm-cancel:hover {
       background: #e2e8f0;
     }
+
+    /* ── Map Legend ─────────────────────────────────────────────
+       position:absolute inside .map-canvas-wrapper (NOT inside
+       .map-canvas) so it stays pinned while the map pans/zooms.
+    ─────────────────────────────────────────────────────────── */
+    .map-legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
+      width: 200px;
+      background: rgba(10, 15, 28, 0.86);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      padding: 15px 17px 13px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      pointer-events: none;
+      animation: mlSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes mlSlideIn {
+      from { opacity:0; transform:translateY(10px) scale(0.96); }
+      to   { opacity:1; transform:translateY(0)    scale(1); }
+    }
+    .ml-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 9px;
+      font-weight: 800;
+      color: rgba(148,163,184,0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .ml-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg,#3b82f6,#6366f1);
+      box-shadow: 0 0 6px rgba(99,102,241,0.6);
+      flex-shrink: 0;
+    }
+    .ml-rows { display:flex; flex-direction:column; gap:8px; }
+    .ml-row  { display:flex; align-items:center; gap:10px; }
+    .ml-swatch {
+      width: 28px; height: 12px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      border: 1.5px solid;
+      position: relative;
+      overflow: hidden;
+    }
+    .ml-swatch::after {
+      content:'';
+      position:absolute;
+      top:0; left:0; right:0;
+      height:50%;
+      background:rgba(255,255,255,0.16);
+    }
+    .ml-swatch.vacant   { background:rgba(34,197,94,0.38);  border-color:#22c55e; }
+    .ml-swatch.occupied { background:rgba(249,115,22,0.38); border-color:#f97316; }
+    .ml-row-info {
+      flex:1;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .ml-label { font-size:12.5px; font-weight:500; color:rgba(203,213,225,0.9); }
+    .ml-count {
+      font-size:14px; font-weight:800; color:#fff;
+      letter-spacing:-0.03em; min-width:20px; text-align:right;
+      transition: color 0.2s;
+    }
+    .ml-count.pop { animation: mlPop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes mlPop {
+      0%  { transform:scale(1); }
+      50% { transform:scale(1.35); color:#fbbf24; }
+      100%{ transform:scale(1); }
+    }
+    .ml-divider { height:1px; background:rgba(255,255,255,0.07); margin:9px 0 8px; }
+    .ml-total-row { display:flex; justify-content:space-between; align-items:center; }
+    .ml-total-label { font-size:10px; font-weight:600; color:rgba(148,163,184,0.65); text-transform:uppercase; letter-spacing:0.06em; }
+    .ml-total-count { font-size:13px; font-weight:800; color:rgba(226,232,240,0.8); }
+    .ml-bar-wrap { margin-top:11px; }
+    .ml-bar {
+      height:5px;
+      background:rgba(255,255,255,0.07);
+      border-radius:99px;
+      overflow:hidden;
+      display:flex;
+    }
+    .ml-bar-seg {
+      height:100%;
+      transition:width 0.65s cubic-bezier(0.4,0,0.2,1);
+    }
+    .ml-bar-seg.vacant   { background:linear-gradient(90deg,#22c55e,#4ade80); border-radius:99px 0 0 99px; }
+    .ml-bar-seg.occupied { background:linear-gradient(90deg,#f97316,#fb923c); border-radius:0 99px 99px 0; }
+    .ml-bar-pcts {
+      display:flex;
+      justify-content:space-between;
+      margin-top:4px;
+      font-size:9px;
+      font-weight:600;
+      color:rgba(100,116,139,0.75);
+    }
   </style>
 </head>
 <body>
@@ -962,6 +1094,42 @@ if ($conn) {
                  id="mapImage">
             <div id="rectanglesContainer"></div>
           </div>
+
+          <!-- Legend sits inside wrapper but OUTSIDE map-canvas so it never pans/zooms -->
+          <div class="map-legend" id="mapLegend">
+            <div class="ml-title"><span class="ml-dot"></span>Map Legend</div>
+            <div class="ml-rows">
+              <div class="ml-row">
+                <div class="ml-swatch vacant"></div>
+                <div class="ml-row-info">
+                  <span class="ml-label">Vacant</span>
+                  <span class="ml-count" id="mlVacant">0</span>
+                </div>
+              </div>
+              <div class="ml-row">
+                <div class="ml-swatch occupied"></div>
+                <div class="ml-row-info">
+                  <span class="ml-label">Occupied</span>
+                  <span class="ml-count" id="mlOccupied">0</span>
+                </div>
+              </div>
+            </div>
+            <div class="ml-divider"></div>
+            <div class="ml-total-row">
+              <span class="ml-total-label">On Map</span>
+              <span class="ml-total-count" id="mlTotal">0</span>
+            </div>
+            <div class="ml-bar-wrap">
+              <div class="ml-bar">
+                <div class="ml-bar-seg vacant"   id="mlBarV" style="width:0%"></div>
+                <div class="ml-bar-seg occupied" id="mlBarO" style="width:0%"></div>
+              </div>
+              <div class="ml-bar-pcts">
+                <span id="mlPctV">0% vacant</span>
+                <span id="mlPctO">0% occupied</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -1062,7 +1230,13 @@ if ($conn) {
   </div>
 
   <script>
-    const lotsData = <?php echo json_encode($lots); ?>;
+    // Split at PHP level: mapped lots for canvas rendering, unmapped for dropdown
+    // This avoids serializing full lot data for every option in the select
+    const lotsData = <?php
+      // Only emit the fields the map canvas actually needs
+      $mapped = array_filter($lots, fn($l) => $l['map_x'] !== null && $l['map_y'] !== null);
+      echo json_encode(array_values($mapped), JSON_UNESCAPED_UNICODE);
+    ?>;
     let currentTool = 'draw';
     let zoom = 1;
     let panX = 0;
@@ -1110,11 +1284,15 @@ if ($conn) {
       }
     }
 
-    // Load existing rectangles from lots
-    lotsData.forEach(lot => {
-      if (lot.map_x !== null && lot.map_y !== null && lot.map_width !== null && lot.map_height !== null) {
+    // Render mapped lot rectangles after first paint using rAF batching
+    // so the page displays immediately and lots appear in the next frame
+    requestAnimationFrame(() => {
+      const frag = document.createDocumentFragment();
+      const tempContainer = document.createElement('div');
+      lotsData.forEach(lot => {
         addRectangle(lot.map_x, lot.map_y, lot.map_width, lot.map_height, lot, lot.map_rotation || 0);
-      }
+      });
+      updateLegend();
     });
 
     // Initialize map view
@@ -1351,11 +1529,18 @@ if ($conn) {
       }
     });
 
+    let _rafPending = false;
     window.addEventListener('mousemove', (e) => {
       if (isPanning) {
         panX = e.clientX - startPanX;
         panY = e.clientY - startPanY;
-        updateTransform(true); // skip save during pan
+        if (!_rafPending) {
+          _rafPending = true;
+          requestAnimationFrame(() => {
+            updateTransform(true);
+            _rafPending = false;
+          });
+        }
       } else if (isDrawing && currentRect) {
         const rect = mapWrapper.getBoundingClientRect();
         const x = (e.clientX - rect.left - panX) / zoom;
@@ -1476,6 +1661,33 @@ if ($conn) {
       
       rectanglesContainer.appendChild(rect);
       rectangles.push({ rect, lotData, x, y, width, height, rotation });
+    }
+
+    // ── Legend ────────────────────────────────────────────────
+    function updateLegend() {
+      let v = 0, o = 0;
+      rectangles.forEach(r => {
+        const s = (r.lotData.actual_status || r.lotData.status || '').toLowerCase();
+        if (s === 'vacant') v++; else o++;
+      });
+      const total = v + o;
+      function upd(id, val) {
+        const el = document.getElementById(id);
+        if (!el || el.textContent === String(val)) return;
+        el.textContent = val;
+        el.classList.remove('pop');
+        void el.offsetWidth;
+        el.classList.add('pop');
+      }
+      upd('mlVacant',  v);
+      upd('mlOccupied', o);
+      upd('mlTotal',   total);
+      const vP = total > 0 ? +(v/total*100).toFixed(1) : 0;
+      const oP = total > 0 ? +(o/total*100).toFixed(1) : 0;
+      const sw = (id, p) => { const el = document.getElementById(id); if (el) el.style.width = p + '%'; };
+      sw('mlBarV', vP); sw('mlBarO', oP);
+      const st = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+      st('mlPctV', vP + '% vacant'); st('mlPctO', oP + '% occupied');
     }
 
     // ── Edit Mode: Photoshop-style ─────────────────────────────
@@ -1705,7 +1917,9 @@ if ($conn) {
         entry.height   = parseFloat(rect.style.height);
         entry.rotation = parseFloat(rect.getAttribute('data-rotation') || 0);
       }
-      saveAllLots(true);
+      // Debounce: only save 600ms after the last interaction ends
+      clearTimeout(window._syncSaveDebounce);
+      window._syncSaveDebounce = setTimeout(() => saveAllLots(true), 600);
     }
     // ── End Edit Mode ─────────────────────────────────────────
     function filterSectionsByBlock() {
@@ -2115,6 +2329,7 @@ if ($conn) {
 
       // Add to lots data
       lotsData.push(lotData);
+      updateLegend();
 
       closeAssignModal();
       showNotification(mode === 'existing' ? 'Lot assigned successfully!' : 'New lot created and assigned successfully!', 'success');
@@ -2167,6 +2382,7 @@ if ($conn) {
         onConfirm: async () => {
           target.rect.remove();
           rectangles.splice(targetIndex, 1);
+          updateLegend();
 
           try {
             const response = await fetch('../api/save_map_coordinates.php', {
