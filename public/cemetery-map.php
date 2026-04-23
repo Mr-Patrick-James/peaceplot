@@ -23,24 +23,40 @@ if (!file_exists($mapPath)) {
 
 if ($conn) {
     try {
-        // Get all lots with their map coordinates and layer information
+        // Pre-aggregate lot_layers and deceased_records into derived tables
+        // (one scan each) so the main join stays 1-to-1 with cemetery_lots.
+        // This eliminates the row-multiplication + GROUP BY that caused the 10s load.
         $stmt = $conn->query("
         SELECT cl.*, s.name as section_name, b.name as block_name,
-               (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id) as total_layers,
-               (SELECT COUNT(*) FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) as occupied_layers,
-               COUNT(DISTINCT dr.id) as burial_count,
-               GROUP_CONCAT(DISTINCT dr.full_name || '|' || COALESCE(dr.layer, 1)) as burial_info,
-               GROUP_CONCAT(DISTINCT dr.next_of_kin) as kin_names,
-               CASE 
-                   WHEN COUNT(DISTINCT dr.id) > 0 THEN 'Occupied'
-                   WHEN EXISTS (SELECT 1 FROM lot_layers ll WHERE ll.lot_id = cl.id AND ll.is_occupied = 1) THEN 'Occupied'
+               COALESCE(ll.total_layers, 0)    as total_layers,
+               COALESCE(ll.occupied_layers, 0) as occupied_layers,
+               COALESCE(dr.burial_count, 0)    as burial_count,
+               dr.burial_info,
+               dr.kin_names,
+               CASE
+                   WHEN COALESCE(dr.burial_count, 0)    > 0 THEN 'Occupied'
+                   WHEN COALESCE(ll.occupied_layers, 0) > 0 THEN 'Occupied'
                    ELSE cl.status
                END as actual_status
-        FROM cemetery_lots cl 
-        LEFT JOIN sections s ON cl.section_id = s.id
-        LEFT JOIN blocks b ON s.block_id = b.id
-        LEFT JOIN deceased_records dr ON cl.id = dr.lot_id
-        GROUP BY cl.id
+        FROM cemetery_lots cl
+        LEFT JOIN sections s ON s.id = cl.section_id
+        LEFT JOIN blocks   b ON b.id = s.block_id
+        LEFT JOIN (
+            SELECT lot_id,
+                   COUNT(*) as total_layers,
+                   SUM(CASE WHEN is_occupied = 1 THEN 1 ELSE 0 END) as occupied_layers
+            FROM lot_layers
+            GROUP BY lot_id
+        ) ll ON ll.lot_id = cl.id
+        LEFT JOIN (
+            SELECT lot_id,
+                   COUNT(*) as burial_count,
+                   GROUP_CONCAT(DISTINCT full_name || '|' || COALESCE(layer, 1)) as burial_info,
+                   GROUP_CONCAT(DISTINCT next_of_kin) as kin_names
+            FROM deceased_records
+            WHERE is_archived = 0
+            GROUP BY lot_id
+        ) dr ON dr.lot_id = cl.id
         ORDER BY LENGTH(cl.lot_number), cl.lot_number
     ");
     $lots = $stmt->fetchAll();
