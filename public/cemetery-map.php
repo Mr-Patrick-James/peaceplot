@@ -327,10 +327,9 @@ if ($conn) {
     
     .highlighted-marker {
       z-index: 105 !important;
-      outline: 2px solid #ef4444 !important;
-      background: rgba(239, 68, 68, 0.2) !important;
-      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
-    } box-shadow: 0 0 0 1px white, 0 0 8px rgba(239, 68, 68, 0.6) !important;
+      outline: 2.5px solid #ef4444 !important;
+      background: rgba(239, 68, 68, 0.22) !important;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 0 12px rgba(239,68,68,0.7) !important;
     }
 
     /* Highlight filter states */
@@ -695,46 +694,75 @@ if ($conn) {
       transform: scale(1.05);
     }
     
-    .map-legend {
+    /* ── Map-editor style frosted legend ────────────────────── */
+    .cm-legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
       display: flex;
-      gap: 16px;
-      margin-bottom: 16px;
-      padding: 12px 16px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      position: relative;
-      z-index: 10;
-      flex-wrap: wrap;
+      flex-direction: column;
+      min-width: 200px;
+      background: rgba(10, 15, 28, 0.86);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      padding: 14px 16px 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+      pointer-events: none;
+      animation: cmLegendIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
     }
-    
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 500;
+    @keyframes cmLegendIn {
+      from { opacity:0; transform:translateY(-6px) scale(0.97); }
+      to   { opacity:1; transform:translateY(0)    scale(1); }
     }
-    
-    .legend-box {
-      width: 20px;
-      height: 20px;
-      border-radius: 3px;
-      border: 2px solid rgba(0,0,0,0.2);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    .cm-legend-title {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 9px; font-weight: 800;
+      color: rgba(148,163,184,0.7);
+      text-transform: uppercase; letter-spacing: 0.12em;
+      margin-bottom: 11px; padding-bottom: 9px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
     }
-    
-    .legend-box.vacant { 
-      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    .cm-legend-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: linear-gradient(135deg,#3b82f6,#6366f1);
+      box-shadow: 0 0 6px rgba(99,102,241,0.6);
+      flex-shrink: 0;
     }
-    .legend-box.occupied { 
-      background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    .cm-legend-rows { display:flex; flex-direction:column; gap:7px; }
+    .cm-legend-row  { display:flex; align-items:center; gap:10px; }
+    .cm-swatch {
+      width: 28px; height: 12px; border-radius: 4px;
+      flex-shrink: 0; border: 1.5px solid; position: relative; overflow: hidden;
     }
-    .legend-box.maintenance { 
-      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    .cm-swatch::after {
+      content:''; position:absolute; top:0; left:0; right:0; height:50%;
+      background:rgba(255,255,255,0.16);
     }
-    
-    
+    .cm-swatch.vacant   { background:rgba(34,197,94,0.38);  border-color:#22c55e; }
+    .cm-swatch.occupied { background:rgba(249,115,22,0.38); border-color:#f97316; }
+    .cm-row-info { flex:1; display:flex; justify-content:space-between; align-items:center; }
+    .cm-label { font-size:12.5px; font-weight:500; color:rgba(203,213,225,0.9); }
+    .cm-count { font-size:14px; font-weight:800; color:#fff; letter-spacing:-0.03em; min-width:20px; text-align:right; }
+    .cm-legend-divider { height:1px; background:rgba(255,255,255,0.07); margin:8px 0 7px; }
+    .cm-legend-total { display:flex; justify-content:space-between; align-items:center; }
+    .cm-total-label { font-size:10px; font-weight:600; color:rgba(148,163,184,0.65); text-transform:uppercase; letter-spacing:0.06em; }
+    .cm-total-count { font-size:13px; font-weight:800; color:rgba(226,232,240,0.8); }
+    .cm-bar-wrap { margin-top:10px; }
+    .cm-bar {
+      height:5px; background:rgba(255,255,255,0.07);
+      border-radius:99px; overflow:hidden; display:flex;
+    }
+    .cm-bar-seg { height:100%; }
+    .cm-bar-seg.vacant   { background:linear-gradient(90deg,#22c55e,#4ade80); border-radius:99px 0 0 99px; }
+    .cm-bar-seg.occupied { background:linear-gradient(90deg,#f97316,#fb923c); border-radius:0 99px 99px 0; }
+    .cm-bar-pcts {
+      display:flex; justify-content:space-between; margin-top:4px;
+      font-size:9px; font-weight:600; color:rgba(100,116,139,0.75);
+    }
+
     .modal-map {
       display: none;
       position: fixed;
@@ -1378,19 +1406,14 @@ if ($conn) {
       <?php else: ?>
 
       <div class="map-container">
-        <div class="map-legend" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-          <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-            <div class="legend-item">
-              <div class="legend-box vacant"></div>
-              <span>Vacant</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-box occupied"></div>
-              <span>Occupied</span>
-            </div>
-          </div>
+        <?php
+          $vacantCount   = count(array_filter($lots, fn($l) => ($l['actual_status'] ?? $l['status']) === 'Vacant'));
+          $occupiedCount = count(array_filter($lots, fn($l) => ($l['actual_status'] ?? $l['status']) === 'Occupied'));
+          $total = $vacantCount + $occupiedCount;
+        ?>
 
-          <!-- Highlight Filter -->
+        <!-- Highlight Filter toolbar (above map) -->
+        <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
           <div style="position:relative;">
             <button id="highlightFilterBtn" onclick="event.stopPropagation(); toggleHighlightPanel()"
               style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:#2f6df6; color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s;">
@@ -1409,7 +1432,6 @@ if ($conn) {
                 <?php foreach ($map_blocks as $b):
                   $bSections = array_filter($map_sections, fn($s) => $s['block_id'] == $b['id']);
                 ?>
-                  <!-- Block row -->
                   <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; padding:7px 8px; border-radius:8px; background:#f8fafc;">
                     <input type="checkbox" class="hl-block-cb" value="<?php echo $b['id']; ?>"
                       onchange="onHlBlockChange(<?php echo $b['id']; ?>)"
@@ -1417,7 +1439,6 @@ if ($conn) {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     <?php echo htmlspecialchars($b['name']); ?>
                   </label>
-                  <!-- Sections of this block -->
                   <?php if (!empty($bSections)): ?>
                     <div id="hl-secs-<?php echo $b['id']; ?>" style="display:none; flex-direction:column; gap:1px; padding-left:20px; margin-bottom:6px;">
                       <?php foreach ($bSections as $s): ?>
@@ -1439,6 +1460,43 @@ if ($conn) {
 
         <?php if ($mapImage): ?>
           <div class="map-image-wrapper">
+
+            <!-- Legend: absolute inside wrapper, does NOT pan/zoom with the map -->
+            <div class="cm-legend">
+              <div class="cm-legend-title"><span class="cm-legend-dot"></span>Map Legend</div>
+              <div class="cm-legend-rows">
+                <div class="cm-legend-row">
+                  <div class="cm-swatch vacant"></div>
+                  <div class="cm-row-info">
+                    <span class="cm-label">Vacant</span>
+                    <span class="cm-count"><?php echo $vacantCount; ?></span>
+                  </div>
+                </div>
+                <div class="cm-legend-row">
+                  <div class="cm-swatch occupied"></div>
+                  <div class="cm-row-info">
+                    <span class="cm-label">Occupied</span>
+                    <span class="cm-count"><?php echo $occupiedCount; ?></span>
+                  </div>
+                </div>
+              </div>
+              <div class="cm-legend-divider"></div>
+              <div class="cm-legend-total">
+                <span class="cm-total-label">On Map</span>
+                <span class="cm-total-count"><?php echo $total; ?></span>
+              </div>
+              <div class="cm-bar-wrap">
+                <div class="cm-bar">
+                  <div class="cm-bar-seg vacant"   style="width:<?php echo $total > 0 ? round($vacantCount/$total*100) : 0; ?>%"></div>
+                  <div class="cm-bar-seg occupied" style="width:<?php echo $total > 0 ? round($occupiedCount/$total*100) : 0; ?>%"></div>
+                </div>
+                <div class="cm-bar-pcts">
+                  <span><?php echo $total > 0 ? round($vacantCount/$total*100) : 0; ?>% vacant</span>
+                  <span><?php echo $total > 0 ? round($occupiedCount/$total*100) : 0; ?>% occupied</span>
+                </div>
+              </div>
+            </div>
+
             <div class="map-canvas" id="mapCanvas">
               <img src="../assets/images/<?php echo htmlspecialchars($mapImage); ?>" 
                    alt="Cemetery Map" 
