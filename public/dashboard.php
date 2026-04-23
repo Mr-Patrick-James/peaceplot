@@ -1773,7 +1773,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       // Map button — only show if lot has coordinates
       const mapBtn = document.getElementById('bdpMapBtn');
       if (b.lot_id && b.map_x !== null) {
-        mapBtn.onclick = () => openInlineMap(b.lot_id, null);
+        mapBtn.onclick = () => { window.location.href = `cemetery-map.php?highlight_lot=${b.lot_id}`; };
         mapBtn.style.display = 'flex';
       } else {
         mapBtn.style.display = 'none';
@@ -1794,13 +1794,13 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       // Map
       html += `<p class="bdp-section-title">🗺️ Map Location</p>`;
       if (b.map_x !== null && b.map_image_exists) {
-        html += `<div class="bdp-map-wrap" onclick="openInlineMap(${b.lot_id}, event)" title="Click to expand map">
+        html += `<div class="bdp-map-wrap" onclick="window.location.href='cemetery-map.php?highlight_lot=${b.lot_id}'" title="Click to view on cemetery map">
           <canvas id="bdpMapCanvas" width="376" height="180"></canvas>
           <div class="bdp-map-pin-overlay"><span class="bdp-map-pin-icon">📍</span></div>
           <div class="bdp-map-label">Lot ${b.lot_number || ''} · ${b.section_name || ''}</div>
           <div class="bdp-map-hover-hint">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>
-            Expand Map
+            View on Map
           </div>
         </div>`;
       } else {
