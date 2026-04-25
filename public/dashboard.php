@@ -145,6 +145,37 @@ $firstName = explode(' ', trim($user['full_name']))[0];
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: 'Inter', system-ui, sans-serif; }
 
+    /* ── Notification Bell ───────────────────────────────────── */
+    .notif-bell {
+      position: relative;
+      width: 42px; height: 42px;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #64748b; flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: all 0.2s ease;
+    }
+    .notif-bell:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #0f172a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .notif-bell:hover svg {
+      animation: bellRing 0.5s ease;
+      transform-origin: top center;
+    }
+    @keyframes bellRing {
+      0%,100% { transform: rotate(0deg); }
+      20%  { transform: rotate(15deg); }
+      40%  { transform: rotate(-12deg); }
+      60%  { transform: rotate(8deg); }
+      80%  { transform: rotate(-5deg); }
+    }
+
     /* ── Fade-in keyframes ───────────────────────────────────── */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(18px); }
@@ -1209,6 +1240,13 @@ $firstName = explode(' ', trim($user['full_name']))[0];
           </div>
           <div class="search-results-dropdown" id="searchResults"></div>
         </div>
+        <!-- Notification bell — placeholder for lot renewal feature -->
+        <button class="notif-bell" title="Notifications (coming soon)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </button>
       </header>
 
       <?php if (isset($error)): ?>
