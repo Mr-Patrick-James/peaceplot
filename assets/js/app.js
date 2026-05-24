@@ -140,3 +140,77 @@
     });
   }
 })();
+
+// ═══════════════════════════════════════════════════════════════
+// Mobile Navigation - Sidebar Toggle
+// ═══════════════════════════════════════════════════════════════
+(function() {
+  'use strict';
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    // Create hamburger toggle button
+    const toggle = document.createElement('button');
+    toggle.className = 'mobile-menu-toggle';
+    toggle.setAttribute('aria-label', 'Toggle navigation menu');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.innerHTML = '<span></span><span></span><span></span>';
+    document.body.appendChild(toggle);
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      toggle.classList.add('active');
+      overlay.classList.add('active');
+      toggle.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      toggle.classList.remove('active');
+      overlay.classList.remove('active');
+      toggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    toggle.addEventListener('click', function() {
+      if (sidebar.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar on escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+        closeSidebar();
+      }
+    });
+
+    // Close sidebar when a nav link is clicked (on mobile)
+    sidebar.querySelectorAll('.nav a:not(.dropdown-toggle)').forEach(function(link) {
+      link.addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+      });
+    });
+
+    // Handle window resize - close sidebar if resized to desktop
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 768 && sidebar.classList.contains('open')) {
+        closeSidebar();
+      }
+    });
+  });
+})();

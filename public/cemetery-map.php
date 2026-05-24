@@ -120,6 +120,7 @@ if ($conn) {
       cursor: grab;
       background: #f8f9fa;
       border: 1px solid #e9ecef;
+      touch-action: none;
     }
 
     .map-image-wrapper.grabbing {
@@ -408,21 +409,22 @@ if ($conn) {
     @media (max-width: 768px) {
       .map-container {
         width: 100%;
-        padding: 16px;
+        padding: 12px;
       }
       
       .map-image-wrapper {
-        height: 50vh;
+        height: 60vh;
         min-height: 350px;
-        max-height: 600px;
+        max-height: 700px;
         border-radius: 8px;
+        touch-action: none;
+        -webkit-overflow-scrolling: touch;
       }
       
+      /* Hide legend on mobile */
+      .cm-legend,
       .map-legend {
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px 12px;
-        font-size: 12px;
+        display: none !important;
       }
       
       .legend-item {
@@ -433,19 +435,31 @@ if ($conn) {
         width: 16px;
         height: 16px;
       }
+
+      .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+        gap: 12px;
+      }
+      .header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+      }
     }
     
     @media (max-width: 480px) {
       .map-image-wrapper {
-        height: 40vh;
+        height: 55vh;
         min-height: 300px;
-        max-height: 500px;
+        max-height: 600px;
         border-radius: 6px;
       }
       
+      /* Hide legend on small mobile too */
+      .cm-legend,
       .map-legend {
-        padding: 6px 8px;
-        font-size: 11px;
+        display: none !important;
       }
       
       .legend-box {
@@ -1923,6 +1937,123 @@ if ($conn) {
         mapWrapper.classList.remove('grabbing');
         document.body.style.userSelect = '';
       });
+
+      // ═══════════════════════════════════════════════════════════
+      // Touch support for mobile pan & pinch-to-zoom
+      // ═══════════════════════════════════════════════════════════
+      let lastTouchDist = 0;
+      let lastTouchMidX = 0;
+      let lastTouchMidY = 0;
+      let isTouchPanning = false;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartPanX = 0;
+      let touchStartPanY = 0;
+      let didTouchPan = false;
+
+      function getTouchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      function getTouchMidpoint(touches) {
+        return {
+          x: (touches[0].clientX + touches[1].clientX) / 2,
+          y: (touches[0].clientY + touches[1].clientY) / 2
+        };
+      }
+
+      mapWrapper.addEventListener('touchstart', (e) => {
+        if (isAnimating) return;
+
+        if (e.touches.length === 1) {
+          // Single finger pan
+          isTouchPanning = true;
+          didTouchPan = false;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchStartPanX = panX;
+          touchStartPanY = panY;
+          mapWrapper.classList.add('grabbing');
+        } else if (e.touches.length === 2) {
+          // Pinch to zoom
+          isTouchPanning = false;
+          lastTouchDist = getTouchDistance(e.touches);
+          const mid = getTouchMidpoint(e.touches);
+          lastTouchMidX = mid.x;
+          lastTouchMidY = mid.y;
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      mapWrapper.addEventListener('touchmove', (e) => {
+        if (isAnimating) return;
+
+        if (e.touches.length === 1 && isTouchPanning) {
+          // Single finger pan
+          const dx = e.touches[0].clientX - touchStartX;
+          const dy = e.touches[0].clientY - touchStartY;
+
+          if (!didTouchPan && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+            didTouchPan = true;
+          }
+
+          if (didTouchPan) {
+            e.preventDefault();
+            panX = touchStartPanX + dx;
+            panY = touchStartPanY + dy;
+            updateTransform();
+          }
+        } else if (e.touches.length === 2) {
+          // Pinch to zoom
+          e.preventDefault();
+          const newDist = getTouchDistance(e.touches);
+          const mid = getTouchMidpoint(e.touches);
+
+          if (lastTouchDist > 0) {
+            const scale = newDist / lastTouchDist;
+            const newZoom = Math.min(5, Math.max(0.3, zoom * scale));
+
+            if (newZoom !== zoom) {
+              setZoomAt(newZoom, mid.x, mid.y);
+            }
+          }
+
+          lastTouchDist = newDist;
+          lastTouchMidX = mid.x;
+          lastTouchMidY = mid.y;
+        }
+      }, { passive: false });
+
+      mapWrapper.addEventListener('touchend', (e) => {
+        if (e.touches.length === 0) {
+          isTouchPanning = false;
+          mapWrapper.classList.remove('grabbing');
+          
+          // If it was a tap (no pan), allow the click to pass through
+          if (didTouchPan) {
+            didTouchPan = false;
+          }
+          lastTouchDist = 0;
+        } else if (e.touches.length === 1) {
+          // Went from pinch to single finger - reset pan start
+          isTouchPanning = true;
+          didTouchPan = false;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchStartPanX = panX;
+          touchStartPanY = panY;
+          lastTouchDist = 0;
+        }
+      });
+
+      // Prevent default touch behavior on the map to avoid page scroll
+      mapWrapper.addEventListener('touchmove', (e) => {
+        if (e.touches.length >= 1 && didTouchPan) {
+          e.preventDefault();
+        }
+      }, { passive: false });
     }
 
     function showLotDetails(lot) {

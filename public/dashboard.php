@@ -841,6 +841,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
     .inline-map-canvas-wrap {
       position: absolute; inset: 0;
       cursor: grab;
+      touch-action: none;
     }
     .inline-map-canvas-wrap.grabbing { cursor: grabbing; }
     .inline-map-canvas {
@@ -2085,8 +2086,18 @@ $firstName = explode(' ', trim($user['full_name']))[0];
     // Drag to pan
     (function() {
       const getWrap = () => document.getElementById('inlineMapWrap');
+      let pinchStartDist = 0;
+
       function onDown(e) {
         if (!document.getElementById('inlineMapModal').classList.contains('open')) return;
+        if (e.touches && e.touches.length === 2) {
+          // Start pinch
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          pinchStartDist = Math.sqrt(dx * dx + dy * dy);
+          e.preventDefault();
+          return;
+        }
         imDragging = true;
         const pt = e.touches ? e.touches[0] : e;
         imDragStartX = pt.clientX; imDragStartY = pt.clientY;
@@ -2095,6 +2106,31 @@ $firstName = explode(' ', trim($user['full_name']))[0];
         e.preventDefault();
       }
       function onMove(e) {
+        if (!document.getElementById('inlineMapModal').classList.contains('open')) return;
+        if (e.touches && e.touches.length === 2) {
+          // Pinch to zoom
+          e.preventDefault();
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (pinchStartDist > 0) {
+            const scale = dist / pinchStartDist;
+            const wrap = getWrap(), img = document.getElementById('inlineMapImg');
+            const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            const rect = wrap.getBoundingClientRect();
+            const cx = midX - rect.left, cy = midY - rect.top;
+            const newZoom = Math.min(10, Math.max(0.5, imZoom * scale));
+            const factor = newZoom / imZoom;
+            imPanX = cx - (cx - imPanX) * factor;
+            imPanY = cy - (cy - imPanY) * factor;
+            imZoom = newZoom;
+            clampPan(img.clientWidth, img.clientHeight, wrap.clientWidth, wrap.clientHeight);
+            applyInlineTransform(false);
+            pinchStartDist = dist;
+          }
+          return;
+        }
         if (!imDragging) return;
         const pt = e.touches ? e.touches[0] : e;
         const dx = pt.clientX - imDragStartX, dy = pt.clientY - imDragStartY;
@@ -2105,8 +2141,9 @@ $firstName = explode(' ', trim($user['full_name']))[0];
         applyInlineTransform(false);
         e.preventDefault();
       }
-      function onUp() {
+      function onUp(e) {
         imDragging = false;
+        pinchStartDist = 0;
         const w = getWrap(); if (w) w.classList.remove('grabbing');
       }
       document.addEventListener('mousedown',  onDown, { passive: false });
