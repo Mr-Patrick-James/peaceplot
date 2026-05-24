@@ -1,5 +1,4 @@
 # Database files
-database/*.db
 database/*.db-journal
 database/*.sqlite
 database/*.sqlite3
