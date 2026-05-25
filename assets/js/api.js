@@ -1,4 +1,13 @@
-const API_BASE_URL = '/peaceplot/api';
+const API_BASE_URL = (() => {
+    const path = window.location.pathname;
+    // If running from a subfolder (e.g., /peaceplot/public/...), detect it
+    const match = path.match(/^(\/[^/]+)\/(?:public|api)\//);
+    if (match) return match[1] + '/api';
+    // If public folder is at root level (e.g., /public/...)
+    if (path.startsWith('/public/')) return '/api';
+    // Default: assume app is at root
+    return '/api';
+})();
 
 const API = {
     async fetchLots(page = 1, limit = 20, search = '', status = '', section = '', block = '', occupancy = '', sortOrder = 'ASC', all = false) {
