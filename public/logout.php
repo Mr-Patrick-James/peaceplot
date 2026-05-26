@@ -17,6 +17,11 @@ if ($user) {
 
 logout();
 
-header('Location: /peaceplot/index.php');
+// Detect base path dynamically
+$scriptPath = dirname($_SERVER['SCRIPT_NAME']);
+$basePath = dirname($scriptPath); // Go up from /public to root
+$basePath = ($basePath === '/' || $basePath === '\\') ? '' : $basePath;
+
+header('Location: ' . $basePath . '/index.php');
 exit;
 ?>
