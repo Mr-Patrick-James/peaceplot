@@ -77,13 +77,13 @@ if ($conn) {
       align-items: flex-start;
     }
     .header-left .title {
-      font-size: 24px;
+      font-size: 16px;
       font-weight: 700;
       color: #1e293b;
       margin: 0 0 4px 0;
     }
     .header-left .subtitle {
-      font-size: 14px;
+      font-size: 10.5px;
       color: #64748b;
       margin: 0 0 16px 0;
     }
@@ -91,7 +91,7 @@ if ($conn) {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
+      font-size: 11px;
       color: #94a3b8;
     }
     .breadcrumbs a {
@@ -107,16 +107,16 @@ if ($conn) {
       gap: 12px;
     }
     .btn-outline {
-      padding: 10px 16px;
+      padding: 7px 12px;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
       background: #fff;
       color: #475569;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -127,14 +127,14 @@ if ($conn) {
     .btn-yellow {
       background: #3b82f6;
       color: #fff;
-      padding: 10px 20px;
+      padding: 7px 14px;
       border-radius: 10px;
       border: none;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 11px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
       transition: all 0.2s;
@@ -180,19 +180,19 @@ if ($conn) {
       color: #2563eb;
     }
     .stat-info .stat-label {
-      font-size: 13px;
+      font-size: 9px;
       font-weight: 600;
       color: #94a3b8;
       margin-bottom: 4px;
     }
     .stat-info .stat-number {
-      font-size: 28px;
+      font-size: 20px;
       font-weight: 700;
       color: #1e293b;
       line-height: 1;
     }
     .stat-info .stat-sub {
-      font-size: 12px;
+      font-size: 10px;
       margin-top: 8px;
     }
     .stat-sub.growth { color: #10b981; }
@@ -214,13 +214,13 @@ if ($conn) {
       z-index: 1001;
     }
     .content-title-wrap .title {
-      font-size: 18px;
+      font-size: 13px;
       font-weight: 700;
       color: #1e293b;
       margin: 0 0 4px 0;
     }
     .content-title-wrap .subtitle {
-      font-size: 13px;
+      font-size: 10px;
       color: #94a3b8;
       margin: 0;
     }
@@ -240,11 +240,11 @@ if ($conn) {
       color: #94a3b8;
     }
     .search-wrapper input {
-      padding: 10px 16px 10px 40px;
+      padding: 8px 12px 8px 36px;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
-      font-size: 14px;
-      width: 280px;
+      font-size: 11px;
+      width: 240px;
       outline: none;
       transition: all 0.2s;
     }
@@ -253,10 +253,10 @@ if ($conn) {
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     .select-styled {
-      padding: 10px 16px;
+      padding: 8px 12px;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 11px;
       background: #fff;
       color: #1e293b;
       outline: none;
@@ -279,14 +279,14 @@ if ($conn) {
     .btn-filter {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
+      gap: 6px;
+      padding: 7px 12px;
       background: #3b82f6;
       color: #fff;
       border: none;
       border-radius: 10px;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 11px;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
       transition: all 0.2s;
@@ -415,15 +415,15 @@ if ($conn) {
     .table thead th {
       background: #f8fafc;
       color: #94a3b8;
-      font-size: 11px;
+      font-size: 8.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding: 16px 32px;
+      padding: 10px 20px;
     }
     .table tbody td {
-      padding: 16px 32px;
-      font-size: 14px;
+      padding: 10px 20px;
+      font-size: 11px;
       color: #475569;
       vertical-align: middle;
     }
@@ -433,8 +433,8 @@ if ($conn) {
       gap: 16px;
     }
     .lot-icon {
-      width: 36px;
-      height: 36px;
+      width: 30px;
+      height: 30px;
       background: #3b82f6;
       border-radius: 8px;
       display: flex;
@@ -446,15 +446,16 @@ if ($conn) {
       font-weight: 600;
       color: #1e293b;
       display: block;
+      font-size: 11px;
     }
     .lot-name-info .sub {
-      font-size: 12px;
+      font-size: 9.5px;
       color: #94a3b8;
     }
     .status-badge {
-      padding: 4px 12px;
+      padding: 3px 8px;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
     }
@@ -483,21 +484,21 @@ if ($conn) {
       border-top: 1px solid #f1f5f9;
     }
     .pagination-text {
-      font-size: 13px;
+      font-size: 10.5px;
       color: #94a3b8;
     }
     .pagination-controls {
       display: flex;
-      gap: 8px;
+      gap: 6px;
     }
     .page-num {
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
-      font-size: 13px;
+      border-radius: 6px;
+      font-size: 10.5px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;

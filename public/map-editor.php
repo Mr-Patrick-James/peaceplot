@@ -96,14 +96,14 @@ if ($conn) {
       border: 1px solid #f1f5f9;
     }
     .header-left .title {
-      font-size: 26px;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: 800;
       color: #0f172a;
       margin: 0 0 6px 0;
       letter-spacing: -0.02em;
     }
     .header-left .subtitle {
-      font-size: 14px;
+      font-size: 10.5px;
       color: #64748b;
       margin: 0;
       font-weight: 400;
@@ -112,7 +112,7 @@ if ($conn) {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
+      font-size: 11px;
       color: #94a3b8;
       margin-bottom: 8px;
     }
@@ -121,16 +121,16 @@ if ($conn) {
     .header-actions { display: flex; gap: 12px; }
 
     .btn-outline {
-      padding: 10px 16px;
+      padding: 7px 14px;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
       background: #fff;
       color: #475569;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -144,14 +144,14 @@ if ($conn) {
     .btn-primary-modern {
       background: #3b82f6;
       color: #fff;
-      padding: 10px 20px;
+      padding: 7px 14px;
       border-radius: 10px;
       border: none;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 11px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
       transition: all 0.2s;
@@ -184,18 +184,18 @@ if ($conn) {
     }
     
     .tool-btn {
-      padding: 10px 18px;
+      padding: 8px 14px;
       border: 1px solid #e2e8f0;
       background: white;
       border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
       color: #475569;
-      font-size: 14px;
+      font-size: 11px;
       transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     
@@ -231,13 +231,13 @@ if ($conn) {
     }
     
     .zoom-btn {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border: 1px solid #e2e8f0;
       background: white;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 500;
       color: #64748b;
       display: flex;
@@ -254,10 +254,10 @@ if ($conn) {
     
     .zoom-level {
       font-weight: 600;
-      min-width: 50px;
+      min-width: 40px;
       text-align: center;
       color: #475569;
-      font-size: 13px;
+      font-size: 11px;
       user-select: none;
     }
     
@@ -869,13 +869,13 @@ if ($conn) {
       bottom: 20px;
       right: 20px;
       z-index: 200;
-      width: 200px;
+      width: 150px;
       background: rgba(10, 15, 28, 0.86);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 16px;
-      padding: 15px 17px 13px;
+      border-radius: 12px;
+      padding: 10px 12px 9px;
       box-shadow: 0 12px 40px rgba(0,0,0,0.35);
       pointer-events: none;
       animation: mlSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
@@ -887,28 +887,28 @@ if ($conn) {
     .ml-title {
       display: flex;
       align-items: center;
-      gap: 7px;
-      font-size: 9px;
+      gap: 5px;
+      font-size: 7px;
       font-weight: 800;
       color: rgba(148,163,184,0.7);
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
+      margin-bottom: 8px;
+      padding-bottom: 7px;
       border-bottom: 1px solid rgba(255,255,255,0.07);
     }
     .ml-dot {
-      width: 6px; height: 6px;
+      width: 5px; height: 5px;
       border-radius: 50%;
       background: linear-gradient(135deg,#3b82f6,#6366f1);
       box-shadow: 0 0 6px rgba(99,102,241,0.6);
       flex-shrink: 0;
     }
-    .ml-rows { display:flex; flex-direction:column; gap:8px; }
-    .ml-row  { display:flex; align-items:center; gap:10px; }
+    .ml-rows { display:flex; flex-direction:column; gap:5px; }
+    .ml-row  { display:flex; align-items:center; gap:8px; }
     .ml-swatch {
-      width: 28px; height: 12px;
-      border-radius: 4px;
+      width: 22px; height: 9px;
+      border-radius: 3px;
       flex-shrink: 0;
       border: 1.5px solid;
       position: relative;
@@ -929,10 +929,10 @@ if ($conn) {
       justify-content:space-between;
       align-items:center;
     }
-    .ml-label { font-size:12.5px; font-weight:500; color:rgba(203,213,225,0.9); }
+    .ml-label { font-size:9.5px; font-weight:500; color:rgba(203,213,225,0.9); }
     .ml-count {
-      font-size:14px; font-weight:800; color:#fff;
-      letter-spacing:-0.03em; min-width:20px; text-align:right;
+      font-size:10.5px; font-weight:800; color:#fff;
+      letter-spacing:-0.03em; min-width:16px; text-align:right;
       transition: color 0.2s;
     }
     .ml-count.pop { animation: mlPop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
@@ -941,13 +941,13 @@ if ($conn) {
       50% { transform:scale(1.35); color:#fbbf24; }
       100%{ transform:scale(1); }
     }
-    .ml-divider { height:1px; background:rgba(255,255,255,0.07); margin:9px 0 8px; }
+    .ml-divider { height:1px; background:rgba(255,255,255,0.07); margin:6px 0 5px; }
     .ml-total-row { display:flex; justify-content:space-between; align-items:center; }
-    .ml-total-label { font-size:10px; font-weight:600; color:rgba(148,163,184,0.65); text-transform:uppercase; letter-spacing:0.06em; }
-    .ml-total-count { font-size:13px; font-weight:800; color:rgba(226,232,240,0.8); }
-    .ml-bar-wrap { margin-top:11px; }
+    .ml-total-label { font-size:8px; font-weight:600; color:rgba(148,163,184,0.65); text-transform:uppercase; letter-spacing:0.06em; }
+    .ml-total-count { font-size:10px; font-weight:800; color:rgba(226,232,240,0.8); }
+    .ml-bar-wrap { margin-top:7px; }
     .ml-bar {
-      height:5px;
+      height:4px;
       background:rgba(255,255,255,0.07);
       border-radius:99px;
       overflow:hidden;
@@ -962,8 +962,8 @@ if ($conn) {
     .ml-bar-pcts {
       display:flex;
       justify-content:space-between;
-      margin-top:4px;
-      font-size:9px;
+      margin-top:3px;
+      font-size:7.5px;
       font-weight:600;
       color:rgba(100,116,139,0.75);
     }

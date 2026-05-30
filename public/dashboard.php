@@ -204,14 +204,14 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       border: 1px solid #f1f5f9;
     }
     .header-left .title {
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 700;
       color: #0f172a;
       margin: 0 0 4px 0;
       letter-spacing: -0.02em;
     }
     .header-left .subtitle {
-      font-size: 13px;
+      font-size: 11.5px;
       color: #64748b;
       margin: 0;
     }
@@ -244,24 +244,24 @@ $firstName = explode(' ', trim($user['full_name']))[0];
     }
     .hero-left { position: relative; z-index: 1; }
     .hero-greeting {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 500;
       color: #93c5fd;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .hero-title {
-      font-size: 34px;
+      font-size: 26px;
       font-weight: 800;
       color: #fff;
       letter-spacing: -0.03em;
       line-height: 1.15;
-      margin: 0 0 12px 0;
+      margin: 0 0 10px 0;
     }
     .hero-title span { color: #60a5fa; }
     .hero-subtitle {
-      font-size: 15px;
+      font-size: 13px;
       color: #94a3b8;
       margin: 0;
       font-weight: 400;
@@ -282,13 +282,13 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       margin-bottom: 6px;
     }
     .hero-date {
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 700;
       color: #e2e8f0;
       letter-spacing: -0.02em;
     }
     .hero-time {
-      font-size: 13px;
+      font-size: 11px;
       color: #64748b;
       margin-top: 4px;
     }
@@ -299,11 +299,11 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       background: rgba(59,130,246,0.15);
       border: 1px solid rgba(59,130,246,0.3);
       color: #93c5fd;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      padding: 6px 14px;
+      padding: 5px 12px;
       border-radius: 20px;
-      margin-top: 16px;
+      margin-top: 14px;
     }
     .hero-badge-dot {
       width: 7px; height: 7px;
@@ -358,7 +358,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       margin-bottom: 14px;
     }
     .stat-label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       color: #94a3b8;
       text-transform: uppercase;
@@ -373,7 +373,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       flex-shrink: 0;
     }
     .stat-value {
-      font-size: 36px;
+      font-size: 28px;
       font-weight: 800;
       color: #0f172a;
       letter-spacing: -0.03em;
@@ -381,7 +381,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       margin-bottom: 6px;
     }
     .stat-subtext {
-      font-size: 12px;
+      font-size: 11px;
       color: #64748b;
       font-weight: 400;
       margin-bottom: 12px;
@@ -473,8 +473,8 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       transition: transform 0.22s ease;
     }
     .qa-text { display: flex; flex-direction: column; gap: 2px; }
-    .qa-label { font-size: 14px; font-weight: 700; color: #0f172a; }
-    .qa-sub   { font-size: 11px; color: #94a3b8; font-weight: 400; }
+    .qa-label { font-size: 12.5px; font-weight: 700; color: #0f172a; }
+    .qa-sub   { font-size: 10px; color: #94a3b8; font-weight: 400; }
 
     /* ── Two-column layout ───────────────────────────────────── */
     .two-col {
@@ -939,7 +939,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       align-items: center;
     }
     .card-title {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
       color: #0f172a;
       margin: 0;
@@ -1068,7 +1068,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       pointer-events: none;
     }
     .donut-center-num {
-      font-size: 30px;
+      font-size: 24px;
       font-weight: 800;
       color: #0f172a;
       letter-spacing: -0.03em;
@@ -1090,7 +1090,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
     }
     .legend-item { text-align: center; }
     .legend-num {
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1;

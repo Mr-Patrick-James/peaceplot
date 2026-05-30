@@ -288,8 +288,8 @@ if ($conn) {
 
         <div class="monitoring-filters">
           <div>
-            <h2 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;"><?php echo htmlspecialchars($filterStatus); ?> Lots Inventory</h2>
-            <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">
+            <h2 style="font-size: 13px; font-weight: 700; color: #1e293b; margin: 0;"><?php echo htmlspecialchars($filterStatus); ?> Lots Inventory</h2>
+            <p style="font-size: 10px; color: #64748b; margin: 4px 0 0 0;">
               Showing <?php echo $totalItems > 0 ? ($offset + 1) : 0; ?>-<?php echo min($offset + $itemsPerPage, $totalItems); ?> of <?php echo $totalItems; ?> records
             </p>
           </div>
@@ -515,9 +515,9 @@ if ($conn) {
     }
     .monitoring-tab {
       flex: 1;
-      padding: 12px;
+      padding: 10px;
       text-align: center;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 600;
       color: #64748b;
       text-decoration: none;
@@ -544,14 +544,14 @@ if ($conn) {
       align-items: center;
     }
     .filter-select {
-      padding: 10px 16px;
+      padding: 8px 12px;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
-      font-size: 14px;
+      font-size: 11px;
       color: #475569;
       font-weight: 500;
       background: #fff;
-      min-width: 160px;
+      min-width: 140px;
       cursor: pointer;
       outline: none;
       transition: all 0.2s;
@@ -565,39 +565,39 @@ if ($conn) {
     }
     .table-modern th {
       background: #f8fafc;
-      padding: 16px 28px;
+      padding: 10px 20px;
       text-align: left;
-      font-size: 12px;
+      font-size: 8.5px;
       font-weight: 600;
       color: #64748b;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
     .table-modern td {
-      padding: 18px 28px;
+      padding: 10px 20px;
       border-bottom: 1px solid #f1f5f9;
-      font-size: 14px;
+      font-size: 11px;
       color: #334155;
     }
     .table-modern tr:last-child td { border-bottom: none; }
     .table-modern tr:hover td { background: #fcfdfe; }
 
     .lot-badge {
-      padding: 6px 12px;
+      padding: 4px 10px;
       border-radius: 8px;
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 600;
     }
     .badge-vacant { background: #f0fdf4; color: #166534; }
     .badge-occupied { background: #fff7ed; color: #9a3412; }
 
     .pagination-btn {
-      padding: 8px 14px;
+      padding: 6px 12px;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
       background: white;
       color: #475569;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
@@ -621,17 +621,17 @@ if ($conn) {
     }
 
     .btn-view-map {
-      padding: 8px 16px;
+      padding: 6px 12px;
       background: #eff6ff;
       color: #3b82f6;
       border-radius: 10px;
-      font-size: 13px;
+      font-size: 10.5px;
       font-weight: 600;
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       transition: all 0.2s;
     }
     .btn-view-map:hover { background: #dbeafe; }
@@ -667,10 +667,10 @@ if ($conn) {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 12px 16px;
+      padding: 10px 14px;
       text-decoration: none;
       color: #475569;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 500;
       border-radius: 8px;
       transition: all 0.2s;

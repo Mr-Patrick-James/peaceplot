@@ -74,13 +74,13 @@ if ($conn) {
       gap: 16px;
     }
     .header-left .title {
-      font-size: 24px;
-      font-weight: 700;
+      font-size: 16px;
+      font-weight: 800;
       color: #1e293b;
       margin: 0 0 4px 0;
     }
     .header-left .subtitle {
-      font-size: 14px;
+      font-size: 10.5px;
       color: #64748b;
       margin: 0;
     }
@@ -91,7 +91,7 @@ if ($conn) {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
+      font-size: 11px;
       color: #94a3b8;
     }
     .breadcrumbs a { color: #94a3b8; text-decoration: none; }
@@ -99,16 +99,16 @@ if ($conn) {
     .header-actions { display: flex; gap: 12px; }
     
     .btn-outline {
-      padding: 10px 16px;
+      padding: 7px 14px;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
       background: #fff;
       color: #475569;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -116,14 +116,14 @@ if ($conn) {
     .btn-primary-modern {
       background: #3b82f6;
       color: #fff;
-      padding: 10px 20px;
+      padding: 7px 14px;
       border-radius: 10px;
       border: none;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 11px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
       transition: all 0.2s;
@@ -169,7 +169,7 @@ if ($conn) {
       margin-bottom: 12px;
     }
     .stat-label {
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 700;
       color: #94a3b8;
       text-transform: uppercase;
@@ -183,7 +183,7 @@ if ($conn) {
       transition: transform 0.25s ease;
     }
     .stat-number {
-      font-size: 36px;
+      font-size: 24px;
       font-weight: 800;
       color: #0f172a;
       line-height: 1;
@@ -191,7 +191,7 @@ if ($conn) {
       margin-bottom: 6px;
     }
     .stat-sub {
-      font-size: 12px;
+      font-size: 10px;
       color: #64748b;
       margin-bottom: 14px;
       flex: 1;
@@ -215,24 +215,40 @@ if ($conn) {
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
     }
     .content-header {
-      padding: 24px 32px;
+      padding: 18px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid #f1f5f9;
       position: relative;
       z-index: 1001;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    .filter-controls { display: flex; gap: 12px; align-items: center; }
+    .filter-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .content-title-wrap .title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 3px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .content-title-wrap .subtitle {
+      font-size: 10px;
+      color: #94a3b8;
+      margin: 0;
+    }
     
     .search-wrapper { position: relative; }
     .search-wrapper svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
     .search-wrapper input {
-      padding: 10px 16px 10px 40px;
+      padding: 8px 12px 8px 36px;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
-      font-size: 14px;
-      width: 280px;
+      font-size: 11px;
+      width: 240px;
       outline: none;
       transition: all 0.2s;
     }
@@ -241,14 +257,14 @@ if ($conn) {
     .btn-filter {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
+      gap: 6px;
+      padding: 7px 12px;
       background: #3b82f6;
       color: #fff;
       border: none;
       border-radius: 10px;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 11px;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
       transition: all 0.2s;
@@ -308,14 +324,14 @@ if ($conn) {
     .filter-category:last-child { border-bottom: none; }
     .category-toggle {
       width: 100%;
-      padding: 12px 20px;
+      padding: 10px 16px;
       display: flex;
       align-items: center;
       gap: 10px;
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 600;
       color: #1e293b;
       transition: background 0.2s;
@@ -332,7 +348,7 @@ if ($conn) {
       gap: 10px;
       padding: 6px 0;
       cursor: pointer;
-      font-size: 13.5px;
+      font-size: 11px;
       color: #475569;
     }
     .filter-option input[type="checkbox"] { width: 16px; height: 16px; border-radius: 4px; border: 2px solid #cbd5e1; cursor: pointer; }
@@ -361,14 +377,14 @@ if ($conn) {
     .date-range-wrapper {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: #fff;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
     }
-    .date-range-wrapper label { font-size: 12px; font-weight: 600; color: #64748b; }
-    .date-range-wrapper input { border: none; outline: none; font-size: 13px; color: #1e293b; background: transparent; }
+    .date-range-wrapper label { font-size: 10px; font-weight: 600; color: #64748b; }
+    .date-range-wrapper input { border: none; outline: none; font-size: 11px; color: #1e293b; background: transparent; }
 
     /* Age Range Styles */
     .age-range-inputs {
@@ -413,13 +429,13 @@ if ($conn) {
     .table thead th {
       background: #f8fafc;
       color: #94a3b8;
-      font-size: 11px;
+      font-size: 8.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding: 16px 32px;
+      padding: 10px 20px;
     }
-    .table tbody td { padding: 16px 32px; font-size: 14px; color: #475569; vertical-align: middle; }
+    .table tbody td { padding: 10px 20px; font-size: 11px; color: #475569; vertical-align: middle; }
     
     .pagination-container {
         display: flex;
@@ -429,20 +445,20 @@ if ($conn) {
         background: #fff;
         border-top: 1px solid #f1f5f9;
     }
-    .pagination-info { font-size: 13px; color: #94a3b8; }
-    .pagination-controls { display: flex; gap: 8px; }
+    .pagination-info { font-size: 10.5px; color: #94a3b8; }
+    .pagination-controls { display: flex; gap: 6px; }
     .pagination-btn {
-        min-width: 32px;
-        height: 32px;
-        padding: 0 8px;
+        min-width: 28px;
+        height: 28px;
+        padding: 0 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
+        border-radius: 6px;
         border: 1px solid #e2e8f0;
         background: #fff;
         color: #94a3b8;
-        font-size: 13px;
+        font-size: 10.5px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;

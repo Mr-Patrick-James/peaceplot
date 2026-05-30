@@ -96,13 +96,13 @@ if ($conn) {
       border: 1px solid #f1f5f9;
     }
     .header-left .title {
-      font-size: 22px; font-weight: 800; color: #0f172a;
+      font-size: 16px; font-weight: 800; color: #0f172a;
       margin: 0 0 3px 0; letter-spacing: -0.02em;
     }
-    .header-left .subtitle { font-size: 13px; color: #64748b; margin: 0; }
+    .header-left .subtitle { font-size: 10.5px; color: #64748b; margin: 0; }
     .breadcrumbs {
       display: flex; align-items: center; gap: 6px;
-      font-size: 12px; color: #94a3b8; margin-bottom: 6px;
+      font-size: 11px; color: #94a3b8; margin-bottom: 6px;
     }
     .breadcrumbs a { color: #94a3b8; text-decoration: none; transition: color 0.15s; }
     .breadcrumbs a:hover { color: #3b82f6; }
@@ -110,8 +110,8 @@ if ($conn) {
     .header-actions { display: flex; gap: 10px; }
 
     .btn-outline {
-      padding: 9px 16px; border: 1.5px solid #e2e8f0; border-radius: 10px;
-      background: #fff; color: #475569; font-size: 13.5px; font-weight: 600;
+      padding: 7px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+      background: #fff; color: #475569; font-size: 11px; font-weight: 600;
       display: flex; align-items: center; gap: 7px; cursor: pointer; transition: all 0.2s;
     }
     .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; transform: translateY(-1px); }
@@ -166,7 +166,7 @@ if ($conn) {
     .report-rose   .report-icon { background: #fff1f2; color: #f43f5e; }
 
     .report-number {
-      font-size: 38px; font-weight: 800; color: #0f172a;
+      font-size: 26px; font-weight: 800; color: #0f172a;
       letter-spacing: -0.03em; line-height: 1; margin-bottom: 8px;
     }
     .report-blue   .report-number { color: #3b82f6; }
@@ -175,11 +175,11 @@ if ($conn) {
     .report-rose   .report-number { color: #f43f5e; }
 
     .report-title {
-      font-size: 14px; font-weight: 700; color: #0f172a;
+      font-size: 11.5px; font-weight: 700; color: #0f172a;
       line-height: 1.3; margin-bottom: 6px;
     }
     .report-desc {
-      font-size: 12.5px; color: #64748b; line-height: 1.5;
+      font-size: 10px; color: #64748b; line-height: 1.5;
       margin-bottom: 18px; flex: 1;
     }
     .report-actions {
@@ -189,9 +189,9 @@ if ($conn) {
     }
     .report-btn {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 7px 14px; border-radius: 8px;
+      padding: 6px 12px; border-radius: 8px;
       border: 1.5px solid #e2e8f0; background: transparent;
-      font-size: 12.5px; font-weight: 600; color: #475569;
+      font-size: 10.5px; font-weight: 600; color: #475569;
       cursor: pointer; transition: all 0.18s; text-decoration: none;
     }
     .report-btn svg { width: 13px; height: 13px; stroke: currentColor; }
@@ -212,20 +212,20 @@ if ($conn) {
       border-bottom: 1px solid #f8fafc !important;
     }
     .card-title {
-      font-size: 16px !important; font-weight: 700 !important;
+      font-size: 13px !important; font-weight: 700 !important;
       color: #0f172a !important; margin: 0 0 3px 0 !important;
     }
-    .card-sub { font-size: 12px !important; color: #94a3b8 !important; margin: 0 !important; }
+    .card-sub { font-size: 10px !important; color: #94a3b8 !important; margin: 0 !important; }
 
     /* ── Table ───────────────────────────────────────────────── */
     .table thead th {
       background: #f8fafc !important; color: #94a3b8 !important;
-      font-size: 10.5px !important; font-weight: 700 !important;
+      font-size: 8.5px !important; font-weight: 700 !important;
       text-transform: uppercase !important; letter-spacing: 0.06em !important;
-      padding: 12px 22px !important; border-bottom: 1px solid #f1f5f9 !important;
+      padding: 10px 18px !important; border-bottom: 1px solid #f1f5f9 !important;
     }
     .table tbody td {
-      padding: 13px 22px !important; font-size: 13.5px !important;
+      padding: 10px 18px !important; font-size: 11px !important;
       color: #334155 !important; border-bottom: 1px solid #f8fafc !important;
       vertical-align: middle !important;
     }

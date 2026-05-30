@@ -906,7 +906,7 @@ function injectModalStyles() {
         
         .section-header h3 {
             margin: 0;
-            font-size: 16px;
+            font-size: 12px;
             font-weight: 600;
         }
         
@@ -927,7 +927,7 @@ function injectModalStyles() {
         }
         
         .info-item label {
-            font-size: 12px;
+            font-size: 9px;
             font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
@@ -935,7 +935,7 @@ function injectModalStyles() {
         }
         
         .info-item span {
-            font-size: 14px;
+            font-size: 11px;
             color: #1e293b;
             font-weight: 500;
         }

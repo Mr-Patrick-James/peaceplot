@@ -716,13 +716,13 @@ if ($conn) {
       z-index: 200;
       display: flex;
       flex-direction: column;
-      min-width: 200px;
+      min-width: 150px;
       background: rgba(10, 15, 28, 0.86);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 16px;
-      padding: 14px 16px 12px;
+      border-radius: 12px;
+      padding: 10px 12px 9px;
       box-shadow: 0 12px 40px rgba(0,0,0,0.25);
       pointer-events: none;
       animation: cmLegendIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
@@ -732,23 +732,23 @@ if ($conn) {
       to   { opacity:1; transform:translateY(0)    scale(1); }
     }
     .cm-legend-title {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 9px; font-weight: 800;
+      display: flex; align-items: center; gap: 5px;
+      font-size: 7px; font-weight: 800;
       color: rgba(148,163,184,0.7);
       text-transform: uppercase; letter-spacing: 0.12em;
-      margin-bottom: 11px; padding-bottom: 9px;
+      margin-bottom: 8px; padding-bottom: 7px;
       border-bottom: 1px solid rgba(255,255,255,0.07);
     }
     .cm-legend-dot {
-      width: 6px; height: 6px; border-radius: 50%;
+      width: 5px; height: 5px; border-radius: 50%;
       background: linear-gradient(135deg,#3b82f6,#6366f1);
       box-shadow: 0 0 6px rgba(99,102,241,0.6);
       flex-shrink: 0;
     }
-    .cm-legend-rows { display:flex; flex-direction:column; gap:7px; }
-    .cm-legend-row  { display:flex; align-items:center; gap:10px; }
+    .cm-legend-rows { display:flex; flex-direction:column; gap:5px; }
+    .cm-legend-row  { display:flex; align-items:center; gap:8px; }
     .cm-swatch {
-      width: 28px; height: 12px; border-radius: 4px;
+      width: 22px; height: 9px; border-radius: 3px;
       flex-shrink: 0; border: 1.5px solid; position: relative; overflow: hidden;
     }
     .cm-swatch::after {
@@ -758,23 +758,23 @@ if ($conn) {
     .cm-swatch.vacant   { background:rgba(34,197,94,0.38);  border-color:#22c55e; }
     .cm-swatch.occupied { background:rgba(249,115,22,0.38); border-color:#f97316; }
     .cm-row-info { flex:1; display:flex; justify-content:space-between; align-items:center; }
-    .cm-label { font-size:12.5px; font-weight:500; color:rgba(203,213,225,0.9); }
-    .cm-count { font-size:14px; font-weight:800; color:#fff; letter-spacing:-0.03em; min-width:20px; text-align:right; }
-    .cm-legend-divider { height:1px; background:rgba(255,255,255,0.07); margin:8px 0 7px; }
+    .cm-label { font-size:9.5px; font-weight:500; color:rgba(203,213,225,0.9); }
+    .cm-count { font-size:10.5px; font-weight:800; color:#fff; letter-spacing:-0.03em; min-width:16px; text-align:right; }
+    .cm-legend-divider { height:1px; background:rgba(255,255,255,0.07); margin:6px 0 5px; }
     .cm-legend-total { display:flex; justify-content:space-between; align-items:center; }
-    .cm-total-label { font-size:10px; font-weight:600; color:rgba(148,163,184,0.65); text-transform:uppercase; letter-spacing:0.06em; }
-    .cm-total-count { font-size:13px; font-weight:800; color:rgba(226,232,240,0.8); }
-    .cm-bar-wrap { margin-top:10px; }
+    .cm-total-label { font-size:8px; font-weight:600; color:rgba(148,163,184,0.65); text-transform:uppercase; letter-spacing:0.06em; }
+    .cm-total-count { font-size:10px; font-weight:800; color:rgba(226,232,240,0.8); }
+    .cm-bar-wrap { margin-top:7px; }
     .cm-bar {
-      height:5px; background:rgba(255,255,255,0.07);
+      height:4px; background:rgba(255,255,255,0.07);
       border-radius:99px; overflow:hidden; display:flex;
     }
     .cm-bar-seg { height:100%; }
     .cm-bar-seg.vacant   { background:linear-gradient(90deg,#22c55e,#4ade80); border-radius:99px 0 0 99px; }
     .cm-bar-seg.occupied { background:linear-gradient(90deg,#f97316,#fb923c); border-radius:0 99px 99px 0; }
     .cm-bar-pcts {
-      display:flex; justify-content:space-between; margin-top:4px;
-      font-size:9px; font-weight:600; color:rgba(100,116,139,0.75);
+      display:flex; justify-content:space-between; margin-top:3px;
+      font-size:7.5px; font-weight:600; color:rgba(100,116,139,0.75);
     }
 
     .modal-map {

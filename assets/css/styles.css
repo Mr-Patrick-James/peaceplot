@@ -27,10 +27,10 @@ body{
 .app{min-height:100vh; display:flex}
 
 .sidebar{
-  width:220px;
+  width:200px;
   background:linear-gradient(180deg,var(--sidebar-bg-2),var(--sidebar-bg-1));
   color:#c9d4ea;
-  padding:16px 14px;
+  padding:14px 12px;
   display:flex;
   flex-direction:column;
   position:fixed;
@@ -42,21 +42,21 @@ body{
   flex-shrink:0;
 }
 
-.brand{padding:6px 8px 12px}
-.brand-title{font-weight:600; font-size:18px; letter-spacing:-0.02em; color:#fff}
-.brand-sub{font-size:12px; font-weight:400; color:rgba(159, 176, 204, 0.8); margin-top:4px}
+.brand{padding:6px 8px 10px}
+.brand-title{font-weight:600; font-size:15px; letter-spacing:-0.02em; color:#fff}
+.brand-sub{font-size:10.5px; font-weight:400; color:rgba(159, 176, 204, 0.8); margin-top:3px}
 
-.nav{margin-top:24px; display:flex; flex-direction:column; gap:4px}
+.nav{margin-top:20px; display:flex; flex-direction:column; gap:2px}
 .nav a{
   color:rgba(201, 212, 234, 0.85);
   text-decoration:none;
   display:flex;
   align-items:center;
-  gap:12px;
-  padding:11px 12px;
-  border-radius:10px;
+  gap:10px;
+  padding:9px 10px;
+  border-radius:8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size:14px;
+  font-size:12.5px;
   font-weight:400;
 }
 .nav a:hover{background:rgba(255,255,255,.08); color:#fff}
@@ -69,7 +69,7 @@ body{
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 400px;
+  max-width: 320px;
   z-index: 1000;
 }
 
@@ -91,10 +91,10 @@ body{
 
 .universal-search-input {
   width: 100%;
-  padding: 10px 16px 10px 42px;
+  padding: 8px 14px 8px 38px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 11px;
   outline: none;
   transition: all 0.2s ease;
   background: #f8fafc;
@@ -180,10 +180,10 @@ body{
   cursor: pointer;
   color: rgba(201, 212, 234, 0.85);
   text-decoration: none;
-  padding: 11px 12px;
-  border-radius: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
   transition: all 0.2s ease;
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 400;
 }
 .dropdown-toggle:hover { background: rgba(255,255,255,.08); color: #fff; }
@@ -255,8 +255,8 @@ body{
   display: flex;
 }
 .dropdown-content a {
-  padding: 8px 16px !important;
-  font-size: 13.5px !important;
+  padding: 7px 14px !important;
+  font-size: 12px !important;
   background: transparent !important;
   box-shadow: none !important;
   color: rgba(159, 176, 204, 0.7) !important;
@@ -274,40 +274,40 @@ body{
 
 
 .icon{
-  width:17px;
-  height:17px;
+  width:15px;
+  height:15px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   color:currentColor;
 }
-.icon svg{width:17px;height:17px;stroke:currentColor}
+.icon svg{width:15px;height:15px;stroke:currentColor}
 
-.sidebar-footer{margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.05)}
+.sidebar-footer{margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05)}
 .user{
   display:flex;
-  gap:12px;
+  gap:10px;
   align-items:center;
-  padding:12px;
-  border-radius:12px;
+  padding:10px;
+  border-radius:10px;
   background:rgba(255,255,255,.05) !important;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   transition: background 0.2s ease;
 }
 .user:hover{
   background:rgba(255,255,255,.08) !important;
 }
 .avatar{
-  width:36px;
-  height:36px;
-  border-radius:10px;
+  width:32px;
+  height:32px;
+  border-radius:8px;
   background:var(--primary);
   display:flex;
   align-items:center;
   justify-content:center;
   font-weight:500;
   color:#fff;
-  font-size:13px;
+  font-size:11px;
   flex-shrink:0;
 }
 .user-info-text{
@@ -317,13 +317,13 @@ body{
   gap: 2px;
 }
 .user-name{
-  font-size:13.5px; 
+  font-size:12px; 
   font-weight:500; 
   color:#fff !important; 
   display:block !important;
 }
 .user-email{
-  font-size:11px; 
+  font-size:10px; 
   color:rgba(201, 212, 234, 0.5) !important; 
   display:block !important;
 }
@@ -332,18 +332,18 @@ body{
   margin-top:4px;
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:10px;
   color:rgba(201, 212, 234, 0.7);
-  padding:10px 12px;
-  border-radius:10px;
+  padding:9px 10px;
+  border-radius:8px;
   text-decoration:none;
-  font-size: 13.5px;
+  font-size: 12px;
   font-weight: 400;
   transition: all 0.2s ease;
 }
 .logout:hover{background:rgba(255,255,255,.06); color:#fff}
 
-.main{flex:1; padding:22px 26px; margin-left:220px; min-width:0; box-sizing:border-box;}
+.main{flex:1; padding:22px 26px; margin-left:200px; min-width:0; box-sizing:border-box;}
 
 .page-header{
   display:flex;
@@ -1677,7 +1677,7 @@ body{
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
   color: #94a3b8;
   margin-bottom: 8px;
 }
@@ -1686,14 +1686,14 @@ body{
 .lm-breadcrumbs .sep { opacity: 0.5; }
 .lm-breadcrumbs .current { color: #475569; font-weight: 600; }
 .lm-title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   color: #0f172a;
   margin: 0 0 3px 0;
   letter-spacing: -0.02em;
 }
 .lm-subtitle {
-  font-size: 13px;
+  font-size: 11.5px;
   color: #64748b;
   margin: 0;
 }
@@ -1747,7 +1747,7 @@ body{
   margin-bottom: 12px;
 }
 .lm-stat-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: #94a3b8;
   text-transform: uppercase;
@@ -1771,7 +1771,7 @@ body{
 .lm-stat-icon.purple { background: #f5f3ff; color: #8b5cf6; }
 
 .lm-stat-value {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.03em;
@@ -1779,7 +1779,7 @@ body{
   margin-bottom: 6px;
 }
 .lm-stat-sub {
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
   margin-bottom: 12px;
 }
@@ -1819,7 +1819,7 @@ body{
   gap: 16px;
 }
 .lm-card-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: #0f172a;
   margin: 0;
@@ -1835,7 +1835,7 @@ body{
   justify-content: center;
 }
 .lm-card-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: #94a3b8;
   margin: 3px 0 0;
 }
@@ -1861,7 +1861,7 @@ body{
   padding: 9px 14px 9px 38px;
   border: 1.5px solid #e2e8f0;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: 12px;
   width: 260px;
   outline: none;
   transition: all 0.2s;
@@ -1880,12 +1880,12 @@ body{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 9px 16px;
   background: linear-gradient(135deg, #3b82f6, #6366f1);
   color: #fff;
   border: none;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(59,130,246,0.3);
@@ -1902,12 +1902,12 @@ body{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 16px;
+  padding: 8px 14px;
   background: #fff;
   color: #475569;
   border: 1.5px solid #e2e8f0;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -1923,12 +1923,12 @@ body{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 16px;
+  padding: 8px 14px;
   background: #fff;
   color: #475569;
   border: 1.5px solid #e2e8f0;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -1952,9 +1952,9 @@ body{
 .lm-table { width: 100%; border-collapse: collapse; }
 .lm-table thead th {
   background: #f8fafc;
-  padding: 13px 24px;
+  padding: 12px 22px;
   text-align: left;
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 700;
   color: #94a3b8;
   text-transform: uppercase;
@@ -1963,9 +1963,9 @@ body{
   white-space: nowrap;
 }
 .lm-table tbody td {
-  padding: 15px 24px;
+  padding: 13px 22px;
   border-bottom: 1px solid #f8fafc;
-  font-size: 13.5px;
+  font-size: 12px;
   color: #334155;
   vertical-align: middle;
 }
@@ -1993,11 +1993,11 @@ body{
 .lm-item-name {
   font-weight: 700;
   color: #0f172a;
-  font-size: 14px;
+  font-size: 12.5px;
   line-height: 1.2;
 }
 .lm-item-sub {
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: #94a3b8;
   margin-top: 2px;
 }
@@ -2007,9 +2007,9 @@ body{
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2030,7 +2030,7 @@ body{
 /* ── Layer Progress Bar ──────────────────────────────────────── */
 .lm-layer-wrap { min-width: 100px; }
 .lm-layer-text {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #475569;
   margin-bottom: 4px;
@@ -2058,10 +2058,10 @@ body{
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 8px;
   border: 1.5px solid transparent;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   background: transparent;
@@ -2089,15 +2089,15 @@ body{
   align-items: center;
   border-top: 1px solid #f1f5f9;
 }
-.lm-pagination-info { font-size: 13px; color: #94a3b8; }
+.lm-pagination-info { font-size: 11.5px; color: #94a3b8; }
 .lm-pagination-controls { display: flex; gap: 6px; }
 .lm-page-btn {
-  width: 34px; height: 34px;
+  width: 30px; height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
   border: 1.5px solid #e2e8f0;
@@ -2146,8 +2146,8 @@ body{
   border-bottom: 1px solid #f1f5f9;
 }
 .lm-tab {
-  padding: 10px 20px;
-  font-size: 13.5px;
+  padding: 9px 18px;
+  font-size: 12px;
   font-weight: 600;
   color: #64748b;
   cursor: pointer;

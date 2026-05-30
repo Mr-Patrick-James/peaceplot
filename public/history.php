@@ -73,15 +73,15 @@ if ($conn) {
       border: 1px solid #f1f5f9;
     }
     .header-left .title {
-      font-size: 22px; font-weight: 800; color: #0f172a;
+      font-size: 16px; font-weight: 800; color: #0f172a;
       margin: 0 0 3px 0; letter-spacing: -0.02em;
     }
-    .header-left .subtitle { font-size: 13px; color: #64748b; margin: 0; }
+    .header-left .subtitle { font-size: 10.5px; color: #64748b; margin: 0; }
     .header-left { flex: 0 0 auto; }
     .header-search { flex: 0 0 auto; }
     .breadcrumbs {
       display: flex; align-items: center; gap: 6px;
-      font-size: 12px; color: #94a3b8; margin-bottom: 6px;
+      font-size: 11px; color: #94a3b8; margin-bottom: 6px;
     }
     .breadcrumbs a { color: #94a3b8; text-decoration: none; transition: color 0.15s; }
     .breadcrumbs a:hover { color: #3b82f6; }
@@ -100,16 +100,16 @@ if ($conn) {
       border-bottom: 1px solid #f8fafc !important;
     }
     .card-title {
-      font-size: 16px !important; font-weight: 700 !important;
+      font-size: 13px !important; font-weight: 700 !important;
       color: #0f172a !important; margin: 0 0 3px 0 !important;
     }
-    .card-sub { font-size: 12px !important; color: #94a3b8 !important; margin: 0 !important; }
+    .card-sub { font-size: 10px !important; color: #94a3b8 !important; margin: 0 !important; }
 
     /* ── Table ───────────────────────────────────────────────── */
     .table thead th {
       background: #f8fafc !important;
       color: #94a3b8 !important;
-      font-size: 10.5px !important;
+      font-size: 8.5px !important;
       font-weight: 700 !important;
       text-transform: uppercase !important;
       letter-spacing: 0.06em !important;
@@ -117,8 +117,8 @@ if ($conn) {
       border-bottom: 1px solid #f1f5f9 !important;
     }
     .table tbody td {
-      padding: 13px 20px !important;
-      font-size: 13.5px !important;
+      padding: 10px 20px !important;
+      font-size: 11px !important;
       color: #334155 !important;
       border-bottom: 1px solid #f8fafc !important;
       vertical-align: middle !important;
@@ -128,7 +128,7 @@ if ($conn) {
     .table tbody tr:hover td { background: #f8faff !important; }
 
     /* ── Action badges ───────────────────────────────────────── */
-    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
     .badge-success     { background: #dcfce7; color: #166534; }
     .badge-danger      { background: #fee2e2; color: #991b1b; }
     .badge-warning     { background: #fef9c3; color: #854d0e; }
@@ -158,12 +158,12 @@ if ($conn) {
       display: flex; justify-content: space-between; align-items: center;
       padding: 16px 26px; border-top: 1px solid #f1f5f9;
     }
-    .hist-pagination-info { font-size: 13px; color: #94a3b8; }
+    .hist-pagination-info { font-size: 10.5px; color: #94a3b8; }
     .hist-page-btn {
       min-width: 32px; height: 32px; padding: 0 8px;
       display: flex; align-items: center; justify-content: center;
       border-radius: 8px; border: 1.5px solid #e2e8f0;
-      background: #fff; color: #475569; font-size: 13px; font-weight: 600;
+      background: #fff; color: #475569; font-size: 10.5px; font-weight: 600;
       text-decoration: none; transition: all 0.18s;
     }
     .hist-page-btn:hover { background: #eff6ff; color: #3b82f6; border-color: #3b82f6; }
@@ -261,15 +261,15 @@ if ($conn) {
           <div style="display:flex; gap:10px; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:7px 14px; border-radius:10px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <input type="text" id="startDate" placeholder="Start date" style="border:none; outline:none; font-size:13px; color:#1e293b; width:85px; background:transparent; cursor:pointer;">
+              <input type="text" id="startDate" placeholder="Start date" style="border:none; outline:none; font-size:11px; color:#1e293b; width:85px; background:transparent; cursor:pointer;">
               <span style="color:#cbd5e1;">—</span>
-              <input type="text" id="endDate" placeholder="End date" style="border:none; outline:none; font-size:13px; color:#1e293b; width:85px; background:transparent; cursor:pointer;">
+              <input type="text" id="endDate" placeholder="End date" style="border:none; outline:none; font-size:11px; color:#1e293b; width:85px; background:transparent; cursor:pointer;">
             </div>
             <input 
               id="historySearch" 
               type="text" 
               placeholder="Search activity…" 
-              style="padding:9px 14px 9px 36px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13px; width:260px; outline:none; transition:border-color 0.2s; background:#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E\") no-repeat 10px center;"
+              style="padding:8px 12px 8px 34px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:11px; width:220px; outline:none; transition:border-color 0.2s; background:#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E\") no-repeat 10px center;"
               onfocus="this.style.borderColor='#3b82f6';"
               onblur="this.style.borderColor='#e2e8f0';">>
           </div>
