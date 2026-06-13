@@ -1336,6 +1336,7 @@ body{
   max-width:500px;
   box-shadow:0 20px 60px rgba(0,0,0,0.3);
   animation:modalSlideIn 0.3s ease;
+  font-size:8px;
 }
 
 @keyframes modalSlideIn{
@@ -1353,7 +1354,7 @@ body{
 
 .modal-header h2{
   margin:0;
-  font-size:20px;
+  font-size:10px;
   font-weight:600;
   color:var(--text);
 }
@@ -1361,12 +1362,12 @@ body{
 .modal-close{
   background:none;
   border:none;
-  font-size:28px;
+  font-size:16px;
   color:var(--muted);
   cursor:pointer;
   padding:0;
-  width:32px;
-  height:32px;
+  width:24px;
+  height:24px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -1383,17 +1384,18 @@ body{
   padding:24px;
   max-height:60vh;
   overflow-y:auto;
+  font-size:8px;
 }
 
 .form-group{
-  margin-bottom:18px;
+  margin-bottom:12px;
 }
 
 .form-group label{
   display:block;
-  margin-bottom:6px;
+  margin-bottom:4px;
   font-weight:400;
-  font-size:14px;
+  font-size:8px;
   color:var(--text);
 }
 
@@ -1401,10 +1403,10 @@ body{
 .form-group select,
 .form-group textarea{
   width:100%;
-  padding:10px 12px;
+  padding:6px 8px;
   border:1px solid var(--border);
   border-radius:8px;
-  font-size:14px;
+  font-size:8px;
   font-family:inherit;
   transition:all 0.2s;
 }
@@ -1419,23 +1421,23 @@ body{
 
 .form-group textarea{
   resize:vertical;
-  min-height:80px;
+  min-height:60px;
 }
 
 .modal-footer{
-  padding:16px 24px;
+  padding:12px 24px;
   border-top:1px solid var(--border);
   display:flex;
   justify-content:flex-end;
-  gap:12px;
+  gap:8px;
 }
 
 .btn-secondary{
-  padding:10px 20px;
+  padding:6px 12px;
   background:white;
   border:1px solid var(--border);
   border-radius:8px;
-  font-size:14px;
+  font-size:8px;
   font-weight:400;
   color:var(--text);
   cursor:pointer;
