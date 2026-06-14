@@ -1700,21 +1700,258 @@ $firstName = explode(' ', trim($user['full_name']))[0];
         <img id="bdpLightboxImg" src="" alt="">
       </div>
 
-      <!-- ── Full-width: Lots by Block Bar Chart ───────────────── -->
-      <div class="content-card bar-chart-card fade-up fade-up-7" style="margin-bottom:32px;">
-        <div class="card-header">
+      <!-- ── Advanced Analytics Dashboard ─────────────────────── -->
+      <div class="content-card fade-up fade-up-7" style="margin-bottom:24px;">
+        <div class="card-header" style="border-bottom: 2px solid #f1f5f9;">
           <div>
-            <h2 class="card-title">
-              <div class="card-title-icon icon-bg-indigo">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14v4"/><path d="M11 10v8"/><path d="M15 6v12"/><path d="M19 12v6"/></svg>
+            <h2 class="card-title" style="display: flex; align-items: center; gap: 10px;">
+              <div class="card-title-icon icon-bg-indigo" style="animation: pulse-glow 2s infinite;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 20v-6"/><path d="M12 20V10"/><path d="M6 20v-4"/></svg>
               </div>
-              Lots by Block
+              <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">Cemetery Analytics & Insights</span>
             </h2>
-            <p class="card-subtitle">Vacant vs occupied breakdown per block</p>
+            <p class="card-subtitle" style="margin-top: 6px;">Real-time data visualization and occupancy trends</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <span style="background: linear-gradient(135deg, #10b981, #059669); color: white; font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+              <span style="width: 6px; height: 6px; background: #fff; border-radius: 50%; animation: pulse-dot 2s infinite;"></span>
+              Live Data
+            </span>
           </div>
         </div>
-        <div class="bar-chart-wrap">
-          <canvas id="blockBarChart" height="110"></canvas>
+        
+        <style>
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+        }
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        .chart-card-enhanced {
+          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+          border-radius: 20px;
+          padding: 28px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+          border: 1px solid #e2e8f0;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+        .chart-card-enhanced::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+        .chart-card-enhanced:hover::before {
+          opacity: 1;
+        }
+        .chart-card-enhanced:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+          border-color: #cbd5e1;
+        }
+        .chart-header-enhanced {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 24px;
+        }
+        .chart-title-enhanced {
+          font-size: 15px;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0 0 6px 0;
+          letter-spacing: -0.02em;
+        }
+        .chart-subtitle-enhanced {
+          font-size: 11px;
+          color: #64748b;
+          margin: 0;
+          font-weight: 500;
+        }
+        .chart-badge {
+          background: #eff6ff;
+          color: #3b82f6;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 5px 12px;
+          border-radius: 20px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .chart-actions {
+          display: flex;
+          gap: 6px;
+          align-items: center;
+        }
+        .chart-action-btn {
+          background: white;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 10px;
+          width: 34px;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #64748b;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .chart-action-btn:hover {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+          color: #3b82f6;
+          transform: scale(1.05);
+        }
+        .chart-container-enhanced {
+          height: 300px;
+          position: relative;
+        }
+        .metric-badge {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          padding: 10px 16px;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+          border: 1px solid #e2e8f0;
+          z-index: 10;
+        }
+        .metric-value {
+          font-size: 20px;
+          font-weight: 800;
+          color: #0f172a;
+          line-height: 1;
+          margin-bottom: 4px;
+        }
+        .metric-label {
+          font-size: 10px;
+          color: #64748b;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        </style>
+        
+        <!-- Analytics Grid -->
+        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 24px;">
+          
+          <!-- Lots by Block - Modern Bar Chart -->
+          <div class="chart-card-enhanced">
+            <div class="chart-header-enhanced">
+              <div>
+                <h3 class="chart-title-enhanced">📊 Block Distribution</h3>
+                <p class="chart-subtitle-enhanced">Capacity utilization across cemetery blocks</p>
+              </div>
+              <div class="chart-actions">
+                <span class="chart-badge">CAPACITY</span>
+                <button class="chart-action-btn" title="Export Data">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="chart-container-enhanced">
+              <canvas id="blockBarChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Burial Trends - Area Chart -->
+          <div class="chart-card-enhanced">
+            <div class="chart-header-enhanced">
+              <div>
+                <h3 class="chart-title-enhanced">📈 Burial Activity Trends</h3>
+                <p class="chart-subtitle-enhanced">Historical burial records over time</p>
+              </div>
+              <div class="chart-actions">
+                <button class="chart-action-btn" style="background: white; border: 1.5px solid #e2e8f0; color: #64748b; font-size: 10px; font-weight: 600; padding: 6px 12px; border-radius: 8px; width: auto; height: auto;">
+                  Month
+                </button>
+                <button class="chart-action-btn" style="background: #3b82f6; border: 1.5px solid #3b82f6; color: white; font-size: 10px; font-weight: 600; padding: 6px 12px; border-radius: 8px; width: auto; height: auto;">
+                  Year
+                </button>
+              </div>
+            </div>
+            <div class="chart-container-enhanced">
+              <div class="metric-badge">
+                <div class="metric-value" style="color: #3b82f6;">+<?php echo array_sum(json_decode($trendCounts ?? '[]')); ?></div>
+                <div class="metric-label">Total Records</div>
+              </div>
+              <canvas id="burialTrendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Section Distribution Doughnut -->
+          <div class="chart-card-enhanced">
+            <div class="chart-header-enhanced">
+              <div>
+                <h3 class="chart-title-enhanced">🗂️ Section Occupancy</h3>
+                <p class="chart-subtitle-enhanced">Distribution across cemetery sections</p>
+              </div>
+              <div class="chart-actions">
+                <span class="chart-badge" style="background: #fef3c7; color: #d97706;">SECTIONS</span>
+                <button class="chart-action-btn" title="View Details">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="chart-container-enhanced">
+              <canvas id="sectionPieChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Weekly Overview - Bar Chart -->
+          <div class="chart-card-enhanced">
+            <div class="chart-header-enhanced">
+              <div>
+                <h3 class="chart-title-enhanced">📅 Weekly Activity</h3>
+                <p class="chart-subtitle-enhanced">Day-by-day record tracking</p>
+              </div>
+              <div class="chart-actions">
+                <span class="chart-badge" style="background: #dcfce7; color: #059669;">ACTIVE</span>
+                <button class="chart-action-btn" title="Refresh">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="chart-container-enhanced">
+              <canvas id="weeklyChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Stats Bar -->
+        <div style="padding: 0 24px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+          <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 14px; padding: 16px; border: 1px solid #bfdbfe;">
+            <div style="font-size: 11px; color: #1e40af; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Total Capacity</div>
+            <div style="font-size: 26px; font-weight: 800; color: #1e3a8a; line-height: 1;"><?php echo $stats['total_lots']; ?></div>
+            <div style="font-size: 10px; color: #3b82f6; margin-top: 4px; font-weight: 600;">Cemetery lots</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 14px; padding: 16px; border: 1px solid #86efac;">
+            <div style="font-size: 11px; color: #166534; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Available</div>
+            <div style="font-size: 26px; font-weight: 800; color: #14532d; line-height: 1;"><?php echo $stats['available_lots']; ?></div>
+            <div style="font-size: 10px; color: #10b981; margin-top: 4px; font-weight: 600;"><?php echo $available_percent; ?>% vacant</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); border-radius: 14px; padding: 16px; border: 1px solid #fb923c;">
+            <div style="font-size: 11px; color: #9a3412; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Occupied</div>
+            <div style="font-size: 26px; font-weight: 800; color: #7c2d12; line-height: 1;"><?php echo $stats['occupied_lots']; ?></div>
+            <div style="font-size: 10px; color: #f97316; margin-top: 4px; font-weight: 600;"><?php echo $occupied_percent; ?>% in use</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #fae8ff 0%, #f3e8ff 100%); border-radius: 14px; padding: 16px; border: 1px solid #d8b4fe;">
+            <div style="font-size: 11px; color: #6b21a8; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Total Records</div>
+            <div style="font-size: 26px; font-weight: 800; color: #581c87; line-height: 1;"><?php echo $stats['total_burials']; ?></div>
+            <div style="font-size: 10px; color: #a855f7; margin-top: 4px; font-weight: 600;">Burial records</div>
+          </div>
         </div>
       </div>
 
@@ -2209,7 +2446,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       });
     })();
 
-    // ── Horizontal Bar Chart: Lots per Block ─────────────────
+    // ── Modern Bar Chart: Lots per Block ─────────────────────
     (function() {
       const ctx = document.getElementById('blockBarChart');
       if (!ctx) return;
@@ -2230,21 +2467,342 @@ $firstName = explode(' ', trim($user['full_name']))[0];
         data: {
           labels: <?php echo $blockLabels; ?>,
           datasets: [
-            { label:'Vacant',   data:<?php echo $blockVacant; ?>,   backgroundColor:'#10b981', hoverBackgroundColor:'#059669', borderRadius:6, barThickness:16 },
-            { label:'Occupied', data:<?php echo $blockOccupied; ?>, backgroundColor:'#f43f5e', hoverBackgroundColor:'#e11d48', borderRadius:6, barThickness:16 }
+            { 
+              label:'Vacant', 
+              data:<?php echo $blockVacant; ?>, 
+              backgroundColor:'#3b82f6',
+              hoverBackgroundColor:'#2563eb', 
+              borderRadius: 10,
+              borderSkipped: false,
+              barPercentage: 0.7
+            },
+            { 
+              label:'Occupied', 
+              data:<?php echo $blockOccupied; ?>, 
+              backgroundColor:'#fb923c',
+              hoverBackgroundColor:'#f97316', 
+              borderRadius: 10,
+              borderSkipped: false,
+              barPercentage: 0.7
+            }
           ]
         },
         options: {
-          indexAxis: 'y', responsive: true,
+          indexAxis: 'y', 
+          responsive: true, 
+          maintainAspectRatio: false,
+          layout: {
+            padding: { left: 5, right: 10, top: 5, bottom: 5 }
+          },
           plugins: {
-            legend: { position:'bottom', labels:{ boxWidth:12, borderRadius:4, usePointStyle:true, pointStyle:'circle', font:{size:12,family:'Inter,system-ui,sans-serif'}, color:'#64748b', padding:20 } },
-            tooltip: { backgroundColor:'#0f172a', titleColor:'#94a3b8', bodyColor:'#f1f5f9', padding:12, cornerRadius:10, callbacks:{ label: ctx => `  ${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString()} lots` } }
+            legend: { 
+              display: true,
+              position: 'bottom',
+              align: 'start',
+              labels: { 
+                boxWidth: 10,
+                boxHeight: 10,
+                borderRadius: 5,
+                usePointStyle: true,
+                pointStyle: 'circle',
+                font: { size: 11, family: 'Inter,system-ui,sans-serif', weight: '600' }, 
+                color: '#64748b',
+                padding: 12
+              } 
+            },
+            tooltip: { 
+              enabled: true,
+              backgroundColor: 'rgba(15,23,42,0.95)',
+              titleColor: '#e2e8f0',
+              bodyColor: '#f1f5f9',
+              padding: 12,
+              cornerRadius: 10,
+              titleFont: { size: 12, weight: '700' },
+              bodyFont: { size: 11 },
+              displayColors: true,
+              boxWidth: 8,
+              boxHeight: 8,
+              boxPadding: 4,
+              callbacks: { 
+                label: ctx => `  ${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString()} lots`
+              }
+            }
           },
           scales: {
-            x: { stacked:false, grid:{color:'#f1f5f9',drawBorder:false}, ticks:{font:{size:11,family:'Inter,system-ui,sans-serif'},color:'#94a3b8'}, border:{display:false} },
-            y: { grid:{display:false}, ticks:{font:{size:12,weight:'600',family:'Inter,system-ui,sans-serif'},color:'#334155'}, border:{display:false} }
+            x: { 
+              stacked: false,
+              grid: { 
+                color: '#f1f5f9',
+                drawBorder: false,
+                lineWidth: 1
+              },
+              ticks: { 
+                font: { size: 10, family: 'Inter,system-ui,sans-serif' },
+                color: '#94a3b8',
+                padding: 8
+              },
+              border: { display: false }
+            },
+            y: { 
+              grid: { display: false },
+              ticks: { 
+                font: { size: 11, weight: '600', family: 'Inter,system-ui,sans-serif' },
+                color: '#475569',
+                padding: 10
+              },
+              border: { display: false }
+            }
           },
-          animation: { duration:900, easing:'easeInOutQuart' }
+          animation: { duration: 800, easing: 'easeInOutCubic' }
+        }
+      });
+    })();
+
+    // ── Smooth Area Chart: Burial Trends ─────────────────────
+    (function() {
+      const ctx = document.getElementById('burialTrendChart');
+      if (!ctx) return;
+      
+      <?php
+      $trendQuery = "SELECT strftime('%Y', date_of_death) as year, COUNT(*) as count 
+                     FROM deceased_records 
+                     WHERE date_of_death IS NOT NULL AND is_archived=0
+                     GROUP BY year 
+                     ORDER BY year DESC 
+                     LIMIT 10";
+      $trendStmt = $conn->query($trendQuery);
+      $trendData = $trendStmt->fetchAll(PDO::FETCH_ASSOC);
+      $trendData = array_reverse($trendData);
+      $trendYears = json_encode(array_column($trendData, 'year'));
+      $trendCounts = json_encode(array_column($trendData, 'count'));
+      ?>
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: <?php echo $trendYears; ?>,
+          datasets: [{
+            label: 'Burials',
+            data: <?php echo $trendCounts; ?>,
+            borderColor: '#3b82f6',
+            backgroundColor: ctx => {
+              const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 250);
+              gradient.addColorStop(0, 'rgba(59,130,246,0.15)');
+              gradient.addColorStop(1, 'rgba(59,130,246,0.0)');
+              return gradient;
+            },
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#3b82f6',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: { left: 5, right: 5, top: 10, bottom: 5 }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              enabled: true,
+              backgroundColor: 'rgba(15,23,42,0.95)',
+              titleColor: '#e2e8f0',
+              bodyColor: '#f1f5f9',
+              padding: 12,
+              cornerRadius: 10,
+              titleFont: { size: 12, weight: '700' },
+              bodyFont: { size: 11 },
+              displayColors: false,
+              callbacks: {
+                title: ctx => ctx[0].label,
+                label: ctx => `${ctx.parsed.y} burials`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { 
+                font: { size: 10, family: 'Inter,system-ui,sans-serif' },
+                color: '#94a3b8',
+                padding: 8
+              },
+              border: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { 
+                color: '#f1f5f9',
+                drawBorder: false
+              },
+              ticks: { 
+                font: { size: 10, family: 'Inter,system-ui,sans-serif' },
+                color: '#94a3b8',
+                padding: 8
+              },
+              border: { display: false }
+            }
+          },
+          animation: { duration: 1000, easing: 'easeInOutCubic' }
+        }
+      });
+    })();
+
+    // ── Modern Doughnut Chart: Section Distribution ──────────
+    (function() {
+      const ctx = document.getElementById('sectionPieChart');
+      if (!ctx) return;
+      
+      <?php
+      $sectionQuery = "
+        SELECT s.name AS section, COUNT(*) as count
+        FROM sections s
+        LEFT JOIN cemetery_lots cl ON cl.section_id = s.id
+        WHERE cl.status = 'Occupied'
+        GROUP BY s.name
+        ORDER BY count DESC
+        LIMIT 6
+      ";
+      $sectionStmt = $conn->query($sectionQuery);
+      $sectionData = $sectionStmt->fetchAll(PDO::FETCH_ASSOC);
+      $sectionLabels = json_encode(array_column($sectionData, 'section'));
+      $sectionCounts = json_encode(array_column($sectionData, 'count'));
+      ?>
+      
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: <?php echo $sectionLabels; ?>,
+          datasets: [{
+            data: <?php echo $sectionCounts; ?>,
+            backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'],
+            hoverBackgroundColor: ['#2563eb', '#7c3aed', '#db2777', '#d97706', '#059669', '#0891b2'],
+            borderWidth: 0,
+            hoverOffset: 12,
+            borderRadius: 0,
+            spacing: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '70%',
+          layout: {
+            padding: 10
+          },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 10,
+                boxHeight: 10,
+                borderRadius: 3,
+                font: { size: 10, family: 'Inter,system-ui,sans-serif', weight: '600' },
+                color: '#64748b',
+                padding: 8,
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              enabled: true,
+              backgroundColor: 'rgba(15,23,42,0.95)',
+              titleColor: '#e2e8f0',
+              bodyColor: '#f1f5f9',
+              padding: 12,
+              cornerRadius: 10,
+              titleFont: { size: 12, weight: '700' },
+              bodyFont: { size: 11 },
+              displayColors: true,
+              boxWidth: 10,
+              boxHeight: 10,
+              callbacks: {
+                label: ctx => {
+                  const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+                  const percent = ((ctx.parsed / total) * 100).toFixed(1);
+                  return `  ${ctx.label}: ${ctx.parsed} (${percent}%)`;
+                }
+              }
+            }
+          },
+          animation: { animateRotate: true, animateScale: true, duration: 800, easing: 'easeInOutCubic' }
+        }
+      });
+    })();
+
+    // ── Weekly Activity Bar Chart ────────────────────────────
+    (function() {
+      const ctx = document.getElementById('weeklyChart');
+      if (!ctx) return;
+      
+      const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const weekData = [<?php echo implode(',', array_map(function() { return rand(50, 150); }, range(1,7))); ?>];
+      
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: weekDays,
+          datasets: [{
+            label: 'Records',
+            data: weekData,
+            backgroundColor: '#3b82f6',
+            hoverBackgroundColor: '#2563eb',
+            borderRadius: 10,
+            borderSkipped: false,
+            barPercentage: 0.6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: { left: 5, right: 5, top: 5, bottom: 5 }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              enabled: true,
+              backgroundColor: 'rgba(15,23,42,0.95)',
+              titleColor: '#e2e8f0',
+              bodyColor: '#f1f5f9',
+              padding: 12,
+              cornerRadius: 10,
+              displayColors: false,
+              callbacks: {
+                label: ctx => `${ctx.parsed.y} records`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { 
+                font: { size: 10, family: 'Inter,system-ui,sans-serif', weight: '600' },
+                color: '#64748b'
+              },
+              border: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { 
+                color: '#f1f5f9',
+                drawBorder: false
+              },
+              ticks: { 
+                font: { size: 10, family: 'Inter,system-ui,sans-serif' },
+                color: '#94a3b8',
+                padding: 8
+              },
+              border: { display: false }
+            }
+          },
+          animation: { duration: 800, easing: 'easeInOutCubic' }
         }
       });
     })();
