@@ -17,7 +17,7 @@ $records = [
     ['Unknown',                        null,         null],
     ['Marites R. Rio',                 '1965-08-31', '1984-04-22'],
     ['Ma. Corazon M. Roldan',          '1953-04-23', '2023-11-27'],
-    ['Pelagia A. Bulcat',              '1935-05-04', '1984-01-02'],
+    ['Pelagia A. Bulcats',              '1935-05-04', '1984-01-02'],
     ['Cayssel B. Vasquez',             '1994-12-01', '2001-05-30'],
     ['Jose R. Bautista',               null,         '1983-12-14'],
     ['Eleuteria R. Bautista',          null,         '2000-08-13'],
