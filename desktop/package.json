@@ -1,0 +1,55 @@
+{
+  "name": "peaceplot",
+  "version": "1.0.0",
+  "description": "PeacePlot - Cemetery Management System for Barcenaga Holy Spirit Parish",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64",
+    "build:dir": "electron-builder --win --x64 --dir"
+  },
+  "build": {
+    "appId": "com.barcenaga.peaceplot",
+    "productName": "PeacePlot",
+    "copyright": "Copyright © 2025 Barcenaga Holy Spirit Parish",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "www/**/*",
+      "php/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "www",
+        "to": "www"
+      },
+      {
+        "from": "php",
+        "to": "php"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "PeacePlot"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}
