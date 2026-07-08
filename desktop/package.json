@@ -2,6 +2,7 @@
   "name": "peaceplot",
   "version": "1.0.0",
   "description": "PeacePlot - Cemetery Management System for Barcenaga Holy Spirit Parish",
+  "author": "Barcenaga Holy Spirit Parish",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
@@ -16,14 +17,19 @@
       "output": "dist"
     },
     "files": [
-      "electron/**/*",
-      "www/**/*",
-      "php/**/*"
+      "electron/**/*"
     ],
     "extraResources": [
       {
         "from": "www",
-        "to": "www"
+        "to": "www",
+        "filter": [
+          "**/*",
+          "!.git",
+          "!.git/**/*",
+          "!electron",
+          "!electron/**/*"
+        ]
       },
       {
         "from": "php",

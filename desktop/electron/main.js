@@ -1,4 +1,7 @@
 const { app, BrowserWindow, dialog, shell, Tray, Menu, nativeImage } = require('electron');
+
+// Remove the default application menu bar
+Menu.setApplicationMenu(null);
 const path = require('path');
 const { spawn } = require('child_process');
 const net = require('net');
