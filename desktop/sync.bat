@@ -36,11 +36,6 @@ robocopy "%SOURCE%" "%DEST%" /E /PURGE ^
   /NFL /NDL /NJH
 
 echo.
-echo ── Restoring router.php ────────────────────────
-copy /Y "%~dp0www\router.php" "%DEST%\router.php" >nul
-echo router.php restored!
-
-echo.
 echo ================================================
 echo  Done! Ready to build v%NEW_VERSION%
 echo  Run: npm run build
