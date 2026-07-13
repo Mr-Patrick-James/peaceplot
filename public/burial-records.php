@@ -58,8 +58,8 @@ if ($conn) {
   <title>PeacePlot Admin - Burial Records</title>
   <link rel="stylesheet" href="../assets/css/styles.css" />
   <!-- Flatpickr for better date selection -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="stylesheet" href="../assets/css/flatpickr.min.css">
+  <script src="../assets/js/flatpickr.min.js"></script>
   <style>
     /* Modern Dashboard Header & UI */
     .dashboard-header {

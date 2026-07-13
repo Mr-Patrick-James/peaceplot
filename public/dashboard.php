@@ -1959,7 +1959,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
     </main>
   </div><!-- /app -->
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="../assets/js/chart.umd.min.js"></script>
   <script src="../assets/js/app.js"></script>
   <script>
     // ── Burial data from PHP ──────────────────────────────────
