@@ -5,7 +5,7 @@ function requireLogin() {
     session_start();
     
     if (!isset($_SESSION['user_id'])) {
-        // Works for both WAMP (/peaceplot/) and desktop app (/)
+        // Desktop app runs at root /, WAMP runs at /peaceplot/
         $isDesktop = getenv('PEACEPLOT_DESKTOP') === 'true';
         header('Location: ' . ($isDesktop ? '/' : '/peaceplot/') . 'index.php');
         exit;

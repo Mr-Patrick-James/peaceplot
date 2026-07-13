@@ -52,6 +52,7 @@ async function startPHP(port) {
     phpProcess = spawn(phpBin, args, {
       cwd: wwwRoot,
       windowsHide: true,
+      env: { ...process.env, PEACEPLOT_DESKTOP: 'true' },
       stdio: ['ignore', 'pipe', 'pipe']
     });
 
