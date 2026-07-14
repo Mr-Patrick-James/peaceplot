@@ -27,6 +27,7 @@ if ($conn) {
         $stats['total_lots']    = $conn->query("SELECT COUNT(*) FROM cemetery_lots")->fetchColumn();
         $stats['total_sections']= $conn->query("SELECT COUNT(*) FROM sections")->fetchColumn();
         $stats['total_blocks']  = $conn->query("SELECT COUNT(*) FROM blocks")->fetchColumn();
+        $allBlocks = $conn->query("SELECT id, name FROM blocks ORDER BY CAST(SUBSTR(name, INSTR(name,' ')+1) AS INTEGER) ASC, name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $stats['total_burials'] = $conn->query("SELECT COUNT(*) FROM deceased_records WHERE is_archived=0")->fetchColumn();
 
         $occupancyQuery = "
@@ -1242,7 +1243,7 @@ $firstName = explode(' ', trim($user['full_name']))[0];
           <div class="search-results-dropdown" id="searchResults"></div>
         </div>
         <!-- Notification bell — placeholder for lot renewal feature -->
-        <button class="notif-bell" title="Notifications (coming soon)">
+        <button class="notif-bell" title="Notifications (coming soon)" onclick="showComingSoon()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -1898,8 +1899,13 @@ $firstName = explode(' ', trim($user['full_name']))[0];
                 <h3 class="chart-title-enhanced">🗂️ Section Occupancy</h3>
                 <p class="chart-subtitle-enhanced">Distribution across cemetery sections</p>
               </div>
-              <div class="chart-actions">
-                <span class="chart-badge" style="background: #fef3c7; color: #d97706;">SECTIONS</span>
+              <div class="chart-actions" style="display:flex;align-items:center;gap:8px;">
+                <select id="sectionBlockFilter" style="font-size:11px;font-weight:600;color:#d97706;background:#fef3c7;border:none;border-radius:8px;padding:4px 10px;outline:none;cursor:pointer;">
+                  <option value="">ALL BLOCKS</option>
+                  <?php foreach (($allBlocks ?? []) as $blk): ?>
+                    <option value="<?php echo $blk['id']; ?>"><?php echo htmlspecialchars(strtoupper($blk['name'])); ?></option>
+                  <?php endforeach; ?>
+                </select>
                 <button class="chart-action-btn" title="View Details">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 </button>
@@ -2658,14 +2664,84 @@ $firstName = explode(' ', trim($user['full_name']))[0];
     (function() {
       const ctx = document.getElementById('sectionPieChart');
       if (!ctx) return;
-      
+
+      const COLORS      = ['#3b82f6','#8b5cf6','#ec4899','#f59e0b','#10b981','#06b6d4'];
+      const COLORS_HOVER= ['#2563eb','#7c3aed','#db2777','#d97706','#059669','#0891b2'];
+
+      let pieChart = null;
+
+      function buildChart(labels, counts) {
+        if (pieChart) { pieChart.destroy(); }
+        pieChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: counts,
+              backgroundColor: COLORS,
+              hoverBackgroundColor: COLORS_HOVER,
+              borderWidth: 0,
+              hoverOffset: 12,
+              borderRadius: 0,
+              spacing: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            layout: { padding: 10 },
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  boxWidth: 10, boxHeight: 10, borderRadius: 3,
+                  font: { size: 10, family: 'Inter,system-ui,sans-serif', weight: '600' },
+                  color: '#64748b', padding: 8, usePointStyle: true, pointStyle: 'circle'
+                }
+              },
+              tooltip: {
+                enabled: true,
+                backgroundColor: 'rgba(15,23,42,0.95)',
+                titleColor: '#e2e8f0', bodyColor: '#f1f5f9',
+                padding: 12, cornerRadius: 10,
+                titleFont: { size: 12, weight: '700' }, bodyFont: { size: 11 },
+                displayColors: true, boxWidth: 10, boxHeight: 10,
+                callbacks: {
+                  label: c => {
+                    const total = c.dataset.data.reduce((a,b) => a+b, 0);
+                    const pct = ((c.parsed / total) * 100).toFixed(1);
+                    return `  ${c.label}: ${c.parsed} (${pct}%)`;
+                  }
+                }
+              }
+            },
+            animation: { animateRotate: true, animateScale: true, duration: 800, easing: 'easeInOutCubic' }
+          }
+        });
+      }
+
+      async function loadSectionChart(blockId) {
+        const url = `../api/sections.php?mode=occupancy` + (blockId ? `&block_id=${blockId}` : '');
+        try {
+          const res  = await fetch(url);
+          const data = await res.json();
+          if (data.labels && data.counts) {
+            buildChart(data.labels, data.counts);
+          }
+        } catch(e) {
+          console.error('Section chart load error:', e);
+        }
+      }
+
+      // Initial load using server-side data (no extra request)
       <?php
       $sectionQuery = "
-        SELECT s.name AS section, COUNT(*) as count
+        SELECT s.name AS section, COUNT(cl.id) as count
         FROM sections s
-        LEFT JOIN cemetery_lots cl ON cl.section_id = s.id
-        WHERE cl.status = 'Occupied'
-        GROUP BY s.name
+        LEFT JOIN cemetery_lots cl ON cl.section_id = s.id AND cl.status = 'Occupied'
+        GROUP BY s.id, s.name
+        HAVING count > 0
         ORDER BY count DESC
         LIMIT 6
       ";
@@ -2674,66 +2750,13 @@ $firstName = explode(' ', trim($user['full_name']))[0];
       $sectionLabels = json_encode(array_column($sectionData, 'section'));
       $sectionCounts = json_encode(array_column($sectionData, 'count'));
       ?>
-      
-      new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: <?php echo $sectionLabels; ?>,
-          datasets: [{
-            data: <?php echo $sectionCounts; ?>,
-            backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'],
-            hoverBackgroundColor: ['#2563eb', '#7c3aed', '#db2777', '#d97706', '#059669', '#0891b2'],
-            borderWidth: 0,
-            hoverOffset: 12,
-            borderRadius: 0,
-            spacing: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '70%',
-          layout: {
-            padding: 10
-          },
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                boxWidth: 10,
-                boxHeight: 10,
-                borderRadius: 3,
-                font: { size: 10, family: 'Inter,system-ui,sans-serif', weight: '600' },
-                color: '#64748b',
-                padding: 8,
-                usePointStyle: true,
-                pointStyle: 'circle'
-              }
-            },
-            tooltip: {
-              enabled: true,
-              backgroundColor: 'rgba(15,23,42,0.95)',
-              titleColor: '#e2e8f0',
-              bodyColor: '#f1f5f9',
-              padding: 12,
-              cornerRadius: 10,
-              titleFont: { size: 12, weight: '700' },
-              bodyFont: { size: 11 },
-              displayColors: true,
-              boxWidth: 10,
-              boxHeight: 10,
-              callbacks: {
-                label: ctx => {
-                  const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
-                  const percent = ((ctx.parsed / total) * 100).toFixed(1);
-                  return `  ${ctx.label}: ${ctx.parsed} (${percent}%)`;
-                }
-              }
-            }
-          },
-          animation: { animateRotate: true, animateScale: true, duration: 800, easing: 'easeInOutCubic' }
-        }
-      });
+      buildChart(<?php echo $sectionLabels; ?>, <?php echo $sectionCounts; ?>);
+
+      // Block filter change
+      const blockFilter = document.getElementById('sectionBlockFilter');
+      if (blockFilter) {
+        blockFilter.addEventListener('change', () => loadSectionChart(blockFilter.value));
+      }
     })();
 
     // ── Weekly Activity Bar Chart ────────────────────────────
@@ -2806,6 +2829,40 @@ $firstName = explode(' ', trim($user['full_name']))[0];
         }
       });
     })();
+  </script>
+
+  <!-- Coming Soon Toast -->
+  <div id="comingSoonToast" style="
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1e293b; color: #fff;
+    padding: 12px 20px; border-radius: 12px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 99999;
+  ">
+    <span style="font-size:16px;">🔔</span>
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;margin-bottom:2px;">Notifications</div>
+      <div>Coming Soon</div>
+    </div>
+  </div>
+
+  <script>
+    function showComingSoon() {
+      const toast = document.getElementById('comingSoonToast');
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+      toast.style.pointerEvents = 'auto';
+      clearTimeout(toast._hideTimer);
+      toast._hideTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
+        toast.style.pointerEvents = 'none';
+      }, 2500);
+    }
   </script>
 </body>
 </html>

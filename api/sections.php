@@ -13,6 +13,36 @@ header('Content-Type: application/json');
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
+    // --- Occupancy mode: return section name + occupied lot count, optionally filtered by block ---
+    if (isset($_GET['mode']) && $_GET['mode'] === 'occupancy') {
+        try {
+            $block_id = $_GET['block_id'] ?? '';
+            $params = [];
+            $blockWhere = '';
+            if ($block_id) {
+                $blockWhere = 'AND s.block_id = ?';
+                $params[] = (int)$block_id;
+            }
+            $stmt = $db->prepare("
+                SELECT s.name AS section, COUNT(cl.id) AS count
+                FROM sections s
+                LEFT JOIN cemetery_lots cl ON cl.section_id = s.id AND cl.status = 'Occupied'
+                WHERE 1=1 $blockWhere
+                GROUP BY s.id, s.name
+                HAVING count > 0
+                ORDER BY count DESC
+                LIMIT 6
+            ");
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll();
+            echo json_encode(['labels' => array_column($rows, 'section'), 'counts' => array_column($rows, 'count')]);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     try {
         $search = $_GET['search'] ?? '';
         $block_id = $_GET['block_id'] ?? '';

@@ -116,12 +116,9 @@ function createWindow(port) {
     mainWindow = null;
   });
 
-  // Hide to tray instead of closing
-  mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
-      event.preventDefault();
-      mainWindow.hide();
-    }
+  // Clicking X quits the app fully
+  mainWindow.on('close', () => {
+    app.isQuitting = true;
   });
 }
 
@@ -173,10 +170,8 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
-  // Keep app running in tray on Windows
-  if (process.platform !== 'darwin') {
-    // Don't quit — let tray handle it
-  }
+  // Quit the app when the window is closed on all platforms
+  app.quit();
 });
 
 app.on('activate', () => {
